@@ -141,7 +141,12 @@ void CGUIDialogContextMenu::SetPosition(float posX, float posY)
   const CGUIControl *top = GetControl(BACKGROUND_TOP);
   if (top)
     posY += top->GetHeight();
-  CGUIDialog::SetPosition(posX, posY);
+
+  // this will force centre it on the screen
+  CGUIDialog::SetPosition(640 - (GetWidth() / 2), 360 - (GetHeight() / 2));
+  
+  if (g_windowManager.IsWindowActive(WINDOW_LOGIN_SCREEN) || g_windowManager.IsWindowActive(WINDOW_FILES))
+  CGUIDialog::SetPosition(posX,posY);
 }
 
 int CGUIDialogContextMenu::AddButton(const CStdString &strLabel, int value /* = -1 */)

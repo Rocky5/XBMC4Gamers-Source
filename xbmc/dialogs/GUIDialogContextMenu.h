@@ -168,9 +168,9 @@ public:
   static int ShowAndGetChoice(const CContextButtons &choices);
 
   static CMediaSource *GetShare(const CStdString &type, const CFileItem *item);
-protected:
   float GetWidth();
   float GetHeight();
+protected:
   virtual void OnInitWindow();
   static CStdString GetDefaultShareNameByType(const CStdString &strType);
   static void SetDefault(const CStdString &strType, const CStdString &strDefault);

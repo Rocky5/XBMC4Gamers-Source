@@ -393,14 +393,14 @@ bool CGUIWindowPrograms::OnChooseVideoModeAndLaunch(int item)
 {
 	if (item < 0 || item >= m_vecItems->Size()) return false;
 	// calculate our position
-	float posX = 200;
-	float posY = 100;
-	const CGUIControl *pList = GetControl(CONTROL_LIST);
-	if (pList)
-	{
-		posX = pList->GetXPosition() + pList->GetWidth() / 2;
-		posY = pList->GetYPosition() + pList->GetHeight() / 2;
-	}
+	// float posX = 200;
+	// float posY = 100;
+	// const CGUIControl *pList = GetControl(CONTROL_LIST);
+	// if (pList)
+	// {
+		// posX = pList->GetXPosition() + pList->GetWidth() / 2;
+		// posY = pList->GetYPosition() + pList->GetHeight() / 2;
+	// }
 
 	// grab the context menu
 	CGUIDialogContextMenu *pMenu = (CGUIDialogContextMenu *)g_windowManager.GetWindow(WINDOW_DIALOG_CONTEXT_MENU);
@@ -431,7 +431,8 @@ bool CGUIWindowPrograms::OnChooseVideoModeAndLaunch(int item)
 	btn_NTSCJ = pMenu->AddButton(strNTSCJ);
 	btn_PAL60 = pMenu->AddButton(strPAL60);
 
-	pMenu->OffsetPosition(posX, posY);
+    // this will force centre it on the screen
+    pMenu->SetPosition(640 - (pMenu->GetWidth() / 2), 360 - (pMenu->GetHeight() / 2));
 	pMenu->DoModal();
 	int btnid = pMenu->GetButton();
 

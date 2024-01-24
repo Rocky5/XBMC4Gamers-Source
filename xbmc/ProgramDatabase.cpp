@@ -538,6 +538,20 @@ bool CProgramDatabase::GetTrainerOptions(const CStdString& strTrainerPath, unsig
 	return false;
 }
 
+CStdString CProgramDatabase::ReplaceWithForwardSlash(const CStdString& strInput, CStdString& strtoReplace)
+{
+	CStdString Output = strInput;
+	int i = 0;
+	for (;;) {
+		i = Output.find(strtoReplace, i);
+		if (i == std::string::npos) {
+			break;
+		}
+		Output.replace(i, 1, " /");
+	}
+	return Output;
+}
+
 int CProgramDatabase::GetProgramInfo(CFileItem *item)
 {
 	int SynopsisCheck = g_guiSettings.GetBool("mygames.gamesynopsisinfo");
@@ -584,8 +598,8 @@ int CProgramDatabase::GetProgramInfo(CFileItem *item)
 			strTest.ToLower();
 			if (strTest.Left(8).Equals("players "))
 			{
-				int pos = strTest.Find(",");
-				if (pos >= 0)
+				int pos = strTest.Find(" /");
+				if (pos > 0)
 				{
 					CStdString strNew = strTest.Mid(8, pos - 8);
 					item->SetLabelSynopsis_PlayerCount(strNew);
@@ -593,9 +607,19 @@ int CProgramDatabase::GetProgramInfo(CFileItem *item)
 				}
 				else
 				{
-					CStdString strNew = strTest.Mid(8);
-					item->SetLabelSynopsis_PlayerCount(strNew);
-					// CLog::Log(LOGNOTICE, "2 - Found player count: %s - %s", strNew.c_str(), m_pDS->fv("xbedescription").get_asString().c_str());
+					int pos = strTest.Find(",");
+					if (pos > 0)
+					{
+						CStdString strNew = strTest.Mid(8, pos - 8);
+						item->SetLabelSynopsis_PlayerCount(strNew);
+						// CLog::Log(LOGNOTICE, "1 - Found player count: %s - %s", strNew.c_str(), m_pDS->fv("xbedescription").get_asString().c_str());
+					}
+					else
+					{
+						CStdString strNew = strTest.Mid(8);
+						item->SetLabelSynopsis_PlayerCount(strNew);
+						// CLog::Log(LOGNOTICE, "2 - Found player count: %s - %s", strNew.c_str(), m_pDS->fv("xbedescription").get_asString().c_str());
+					}
 				}
 			}
 			else
@@ -662,6 +686,8 @@ bool CProgramDatabase::UpdateProgramInfo(CFileItem *item, unsigned int titleID)
 		CStdString fanart;
 		CStdString resources;
 		CStdString preview;
+		
+		// Check if the _resources folder exists or not
 		CStdString resources_path;
 		URIUtils::GetDirectory(item->GetPath(),resources_path);
 		URIUtils::AddFileToFolder(resources_path,"_resources\\",resources_path);
@@ -669,17 +695,18 @@ bool CProgramDatabase::UpdateProgramInfo(CFileItem *item, unsigned int titleID)
 		if (!CDirectory::Exists(resources))
 		resources = "";
 
+		// Get XBE name, if its empty it uses the file name :/ will need to fix that
 		CUtil::GetXBEDescription(item->GetPath(), xbedescription);
 		
+		// Gets the language of the system and then checks for the default.xml and then if there is a translated section
 		CStdString strLanguage = g_guiSettings.GetString("locale.language");
 		strLanguage.MakeLower();
-		CStdString strPath2;
-		URIUtils::GetDirectory(item->GetPath(),strPath2);
-		URIUtils::AddFileToFolder(strPath2,"_resources\\default.xml",strPath2);
-		if (CFile::Exists(strPath2))
+		CStdString defaultxml;
+		URIUtils::AddFileToFolder(resources,"default.xml",defaultxml);
+		if (CFile::Exists(defaultxml))
 		{
 			TiXmlDocument xml_path_load;
-			xml_path_load.LoadFile(strPath2);
+			xml_path_load.LoadFile(defaultxml);
 			TiXmlElement *pRootElement = xml_path_load.RootElement();
 			TiXmlElement *pChildElement = pRootElement->FirstChildElement(strLanguage);
 			if (pRootElement)
@@ -718,75 +745,51 @@ bool CProgramDatabase::UpdateProgramInfo(CFileItem *item, unsigned int titleID)
 					TiXmlElement *pChild14 = pChildElement->FirstChildElement("titleid");
 					TiXmlElement *pChild15 = pChildElement->FirstChildElement("overview");
 					if (pChild1)
-					{
-						XMLUtils::GetString(pChildElement,"title", altname);
-					}
+					XMLUtils::GetString(pChildElement,"title", altname);
 					if (pChild2)
-					{
-						XMLUtils::GetString(pChildElement,"developer", developer);
-					}
+					XMLUtils::GetString(pChildElement,"developer", developer);
 					if (pChild3)
-					{
-						XMLUtils::GetString(pChildElement,"publisher", publisher);
-					}
+					XMLUtils::GetString(pChildElement,"publisher", publisher);
 					if (pChild4)
-					{
-						XMLUtils::GetString(pChildElement,"features_general", features_general);
-					}
+					XMLUtils::GetString(pChildElement,"features_general", features_general);
 					if (pChild5)
-					{
-						XMLUtils::GetString(pChildElement,"features_online", features_online);
-					}
+					XMLUtils::GetString(pChildElement,"features_online", features_online);
 					if (pChild6)
-					{
-						XMLUtils::GetString(pChildElement,"esrb", esrb);
-					}
+					XMLUtils::GetString(pChildElement,"esrb", esrb);
 					if (pChild7)
-					{
-						XMLUtils::GetString(pChildElement,"esrb_descriptors", esrb_descriptors);
-					}
+					XMLUtils::GetString(pChildElement,"esrb_descriptors", esrb_descriptors);
 					if (pChild8)
-					{
-						XMLUtils::GetString(pChildElement,"genre", genre);
-					}
+					XMLUtils::GetString(pChildElement,"genre", genre);
 					if (pChild9)
-					{
-						XMLUtils::GetString(pChildElement,"release_date", release_date);
-					}
+					XMLUtils::GetString(pChildElement,"release_date", release_date);
 					if (pChild10)
-					{
-						XMLUtils::GetString(pChildElement,"year", year);
-					}
+					XMLUtils::GetString(pChildElement,"year", year);
 					if (pChild11)
-					{
-						XMLUtils::GetString(pChildElement,"rating", rating);
-					}
+					XMLUtils::GetString(pChildElement,"rating", rating);
 					if (pChild12)
-					{
-						XMLUtils::GetString(pChildElement,"platform", platform);
-					}
+					XMLUtils::GetString(pChildElement,"platform", platform);
 					if (pChild13)
-					{
-						XMLUtils::GetString(pChildElement,"exclusive", exclusive);
-					}
+					XMLUtils::GetString(pChildElement,"exclusive", exclusive);
 					if (pChild14)
-					{
-						XMLUtils::GetString(pChildElement,"titleid", title_id);
-					}
+					XMLUtils::GetString(pChildElement,"titleid", title_id);
 					if (pChild15)
-					{
-						XMLUtils::GetString(pChildElement,"overview", synopsis);
-					}
+					XMLUtils::GetString(pChildElement,"overview", synopsis);
 				}
 			}
-			CStdString strPath3;
-			URIUtils::GetDirectory(item->GetPath(),strPath3);
-			URIUtils::AddFileToFolder(strPath3,"_resources\\media\\preview.mp4",strPath3);
-			if (CFile::Exists(strPath3))
+			CStdString previewfile;
+			URIUtils::AddFileToFolder(resources,"media\\preview.mp4",previewfile);
+			if (CFile::Exists(previewfile))
 			{
 				preview = "1";
 			}
 		}
+		
+		CStdString toReplace = ", ";
+		features_general = ReplaceWithForwardSlash(features_general, toReplace);
+		features_online = ReplaceWithForwardSlash(features_online, toReplace);
+		esrb_descriptors = ReplaceWithForwardSlash(esrb_descriptors, toReplace);
+		genre = ReplaceWithForwardSlash(genre, toReplace);
+		platform = ReplaceWithForwardSlash(platform, toReplace);
 
 		// special case - programs in root of sources
 		CStdString strPath, strParent;
@@ -859,6 +862,8 @@ bool CProgramDatabase::AddProgramInfo(CFileItem *item, unsigned int titleID)
 		CStdString fanart;
 		CStdString resources;
 		CStdString preview;
+		
+		// Check if the _resources folder exists or not
 		CStdString resources_path;
 		URIUtils::GetDirectory(item->GetPath(),resources_path);
 		URIUtils::AddFileToFolder(resources_path,"_resources\\",resources_path);
@@ -866,15 +871,15 @@ bool CProgramDatabase::AddProgramInfo(CFileItem *item, unsigned int titleID)
 		if (!CDirectory::Exists(resources))
 		resources = "";
 
+		// Gets the language of the system and then checks for the default.xml and then if there is a translated section
 		CStdString strLanguage = g_guiSettings.GetString("locale.language");
 		strLanguage.MakeLower();
-		CStdString strPath4;
-		URIUtils::GetDirectory(item->GetPath(),strPath4);
-		URIUtils::AddFileToFolder(strPath4,"_resources\\default.xml",strPath4);
-		if (CFile::Exists(strPath4))
+		CStdString defaultxml;
+		URIUtils::AddFileToFolder(resources,"default.xml",defaultxml);
+		if (CFile::Exists(defaultxml))
 		{
 			TiXmlDocument xml_path_load;
-			xml_path_load.LoadFile(strPath4);
+			xml_path_load.LoadFile(defaultxml);
 			TiXmlElement *pRootElement = xml_path_load.RootElement();
 			TiXmlElement *pChildElement = pRootElement->FirstChildElement(strLanguage);
 			if (pRootElement)
@@ -913,73 +918,49 @@ bool CProgramDatabase::AddProgramInfo(CFileItem *item, unsigned int titleID)
 					TiXmlElement *pChild14 = pChildElement->FirstChildElement("titleid");
 					TiXmlElement *pChild15 = pChildElement->FirstChildElement("overview");
 					if (pChild1)
-					{
-						XMLUtils::GetString(pChildElement,"title", altname);
-					}
+					XMLUtils::GetString(pChildElement,"title", altname);
 					if (pChild2)
-					{
-						XMLUtils::GetString(pChildElement,"developer", developer);
-					}
+					XMLUtils::GetString(pChildElement,"developer", developer);
 					if (pChild3)
-					{
-						XMLUtils::GetString(pChildElement,"publisher", publisher);
-					}
+					XMLUtils::GetString(pChildElement,"publisher", publisher);
 					if (pChild4)
-					{
-						XMLUtils::GetString(pChildElement,"features_general", features_general);
-					}
+					XMLUtils::GetString(pChildElement,"features_general", features_general);
 					if (pChild5)
-					{
-						XMLUtils::GetString(pChildElement,"features_online", features_online);
-					}
+					XMLUtils::GetString(pChildElement,"features_online", features_online);
 					if (pChild6)
-					{
-						XMLUtils::GetString(pChildElement,"esrb", esrb);
-					}
+					XMLUtils::GetString(pChildElement,"esrb", esrb);
 					if (pChild7)
-					{
-						XMLUtils::GetString(pChildElement,"esrb_descriptors", esrb_descriptors);
-					}
+					XMLUtils::GetString(pChildElement,"esrb_descriptors", esrb_descriptors);
 					if (pChild8)
-					{
-						XMLUtils::GetString(pChildElement,"genre", genre);
-					}
+					XMLUtils::GetString(pChildElement,"genre", genre);
 					if (pChild9)
-					{
-						XMLUtils::GetString(pChildElement,"release_date", release_date);
-					}
+					XMLUtils::GetString(pChildElement,"release_date", release_date);
 					if (pChild10)
-					{
-						XMLUtils::GetString(pChildElement,"year", year);
-					}
+					XMLUtils::GetString(pChildElement,"year", year);
 					if (pChild11)
-					{
-						XMLUtils::GetString(pChildElement,"rating", rating);
-					}
+					XMLUtils::GetString(pChildElement,"rating", rating);
 					if (pChild12)
-					{
-						XMLUtils::GetString(pChildElement,"platform", platform);
-					}
+					XMLUtils::GetString(pChildElement,"platform", platform);
 					if (pChild13)
-					{
-						XMLUtils::GetString(pChildElement,"exclusive", exclusive);
-					}
+					XMLUtils::GetString(pChildElement,"exclusive", exclusive);
 					if (pChild14)
-					{
-						XMLUtils::GetString(pChildElement,"titleid", title_id);
-					}
+					XMLUtils::GetString(pChildElement,"titleid", title_id);
 					if (pChild15)
-					{
-						XMLUtils::GetString(pChildElement,"overview", synopsis);
-					}
+					XMLUtils::GetString(pChildElement,"overview", synopsis);
 				}
 			}
-			CStdString strPath5;
-			URIUtils::GetDirectory(item->GetPath(),strPath5);
-			URIUtils::AddFileToFolder(strPath5,"_resources\\media\\preview.mp4",strPath5);
-			if (CFile::Exists(strPath5))
+			CStdString previewfile;
+			URIUtils::AddFileToFolder(resources,"media\\preview.mp4",previewfile);
+			if (CFile::Exists(previewfile))
 			preview = "1";
 		}
+		
+		CStdString toReplace = ", ";
+		features_general = ReplaceWithForwardSlash(features_general, toReplace);
+		features_online = ReplaceWithForwardSlash(features_online, toReplace);
+		esrb_descriptors = ReplaceWithForwardSlash(esrb_descriptors, toReplace);
+		genre = ReplaceWithForwardSlash(genre, toReplace);
+		platform = ReplaceWithForwardSlash(platform, toReplace);
 
 		// special case - programs in root of sources
 		CStdString strPath6, strParent;

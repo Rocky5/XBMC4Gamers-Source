@@ -49,7 +49,11 @@ public:
   bool SetRegion(const CStdString& strFilenameAndPath, int iRegion=-1);
 
   int GetTitleId(const CStdString& strFilenameAndPath);
+  
   bool SetLastPlayed(const CStdString& strFilenameAndPath);
+  
+  CStdString ReplaceWithForwardSlash(const CStdString& strInput, CStdString& strtoReplace);
+  
   bool SetTitleId(const CStdString& strFilenameAndPath, int idTitle);
   bool IncTimesPlayed(const CStdString& strFileName1);
   bool SetDescription(const CStdString& strFileName1, const CStdString& strDescription);
