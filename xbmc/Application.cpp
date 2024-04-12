@@ -3705,92 +3705,92 @@ void CApplication::Render()
 	{
 		try
 		{
-			// g_windowManager.Delete(WINDOW_MUSIC_PLAYLIST);
-			// g_windowManager.Delete(WINDOW_MUSIC_PLAYLIST_EDITOR);
-			// g_windowManager.Delete(WINDOW_MUSIC_FILES);
-			// g_windowManager.Delete(WINDOW_MUSIC_NAV);
-			// g_windowManager.Delete(WINDOW_MUSIC_INFO);
-			// g_windowManager.Delete(WINDOW_VIDEO_INFO);
-			// g_windowManager.Delete(WINDOW_VIDEO_FILES);
-			// g_windowManager.Delete(WINDOW_VIDEO_PLAYLIST);
-			// g_windowManager.Delete(WINDOW_VIDEO_NAV);
-			// g_windowManager.Delete(WINDOW_FILES);
-			// g_windowManager.Delete(WINDOW_MUSIC_INFO);
-			// g_windowManager.Delete(WINDOW_VIDEO_INFO);
-			// g_windowManager.Delete(WINDOW_DIALOG_YES_NO);
-			// g_windowManager.Delete(WINDOW_DIALOG_PROGRESS);
-			// g_windowManager.Delete(WINDOW_DIALOG_NUMERIC);
-			// g_windowManager.Delete(WINDOW_DIALOG_GAMEPAD);
-			// g_windowManager.Delete(WINDOW_DIALOG_SUB_MENU);
-			// g_windowManager.Delete(WINDOW_DIALOG_BUTTON_MENU);
-			// g_windowManager.Delete(WINDOW_DIALOG_CONTEXT_MENU);
-			// g_windowManager.Delete(WINDOW_DIALOG_MUSIC_SCAN);
-			// g_windowManager.Delete(WINDOW_DIALOG_PLAYER_CONTROLS);
-			// g_windowManager.Delete(WINDOW_DIALOG_MUSIC_OSD);
-			// g_windowManager.Delete(WINDOW_DIALOG_VIS_SETTINGS);
-			// g_windowManager.Delete(WINDOW_DIALOG_VIS_PRESET_LIST);
-			// g_windowManager.Delete(WINDOW_DIALOG_SELECT);
-			// g_windowManager.Delete(WINDOW_DIALOG_OK);
-			// g_windowManager.Delete(WINDOW_DIALOG_FILESTACKING);
-			// g_windowManager.Delete(WINDOW_DIALOG_KEYBOARD);
-			// g_windowManager.Delete(WINDOW_FULLSCREEN_VIDEO);
-			// g_windowManager.Delete(WINDOW_DIALOG_TRAINER_SETTINGS);
-			// g_windowManager.Delete(WINDOW_DIALOG_PROFILE_SETTINGS);
-			// g_windowManager.Delete(WINDOW_DIALOG_LOCK_SETTINGS);
-			// g_windowManager.Delete(WINDOW_DIALOG_NETWORK_SETUP);
-			// g_windowManager.Delete(WINDOW_DIALOG_MEDIA_SOURCE);
-			// g_windowManager.Delete(WINDOW_DIALOG_VIDEO_OSD_SETTINGS);
-			// g_windowManager.Delete(WINDOW_DIALOG_AUDIO_OSD_SETTINGS);
-			// g_windowManager.Delete(WINDOW_DIALOG_VIDEO_BOOKMARKS);
-			// g_windowManager.Delete(WINDOW_DIALOG_VIDEO_SCAN);
-			// g_windowManager.Delete(WINDOW_DIALOG_CONTENT_SETTINGS);
-			// g_windowManager.Delete(WINDOW_DIALOG_FAVOURITES);
-			// g_windowManager.Delete(WINDOW_DIALOG_SONG_INFO);
-			// g_windowManager.Delete(WINDOW_DIALOG_SMART_PLAYLIST_EDITOR);
-			// g_windowManager.Delete(WINDOW_DIALOG_SMART_PLAYLIST_RULE);
-			// g_windowManager.Delete(WINDOW_DIALOG_BUSY);
-			// g_windowManager.Delete(WINDOW_DIALOG_PICTURE_INFO);
-			// g_windowManager.Delete(WINDOW_DIALOG_PLUGIN_SETTINGS);
-			// g_windowManager.Delete(WINDOW_DIALOG_SLIDER);
-			// g_windowManager.Delete(WINDOW_DIALOG_TEXT_VIEWER);
+			g_windowManager.Delete(WINDOW_MUSIC_PLAYLIST);
+			g_windowManager.Delete(WINDOW_MUSIC_PLAYLIST_EDITOR);
+			g_windowManager.Delete(WINDOW_MUSIC_FILES);
+			g_windowManager.Delete(WINDOW_MUSIC_NAV);
+			g_windowManager.Delete(WINDOW_MUSIC_INFO);
+			g_windowManager.Delete(WINDOW_VIDEO_INFO);
+			g_windowManager.Delete(WINDOW_VIDEO_FILES);
+			g_windowManager.Delete(WINDOW_VIDEO_PLAYLIST);
+			g_windowManager.Delete(WINDOW_VIDEO_NAV);
+			g_windowManager.Delete(WINDOW_FILES);
+			g_windowManager.Delete(WINDOW_MUSIC_INFO);
+			g_windowManager.Delete(WINDOW_VIDEO_INFO);
+			g_windowManager.Delete(WINDOW_DIALOG_YES_NO);
+			g_windowManager.Delete(WINDOW_DIALOG_PROGRESS);
+			g_windowManager.Delete(WINDOW_DIALOG_NUMERIC);
+			g_windowManager.Delete(WINDOW_DIALOG_GAMEPAD);
+			g_windowManager.Delete(WINDOW_DIALOG_SUB_MENU);
+			g_windowManager.Delete(WINDOW_DIALOG_BUTTON_MENU);
+			g_windowManager.Delete(WINDOW_DIALOG_CONTEXT_MENU);
+			g_windowManager.Delete(WINDOW_DIALOG_MUSIC_SCAN);
+			g_windowManager.Delete(WINDOW_DIALOG_PLAYER_CONTROLS);
+			g_windowManager.Delete(WINDOW_DIALOG_MUSIC_OSD);
+			g_windowManager.Delete(WINDOW_DIALOG_VIS_SETTINGS);
+			g_windowManager.Delete(WINDOW_DIALOG_VIS_PRESET_LIST);
+			g_windowManager.Delete(WINDOW_DIALOG_SELECT);
+			g_windowManager.Delete(WINDOW_DIALOG_OK);
+			g_windowManager.Delete(WINDOW_DIALOG_FILESTACKING);
+			g_windowManager.Delete(WINDOW_DIALOG_KEYBOARD);
+			g_windowManager.Delete(WINDOW_FULLSCREEN_VIDEO);
+			g_windowManager.Delete(WINDOW_DIALOG_TRAINER_SETTINGS);
+			g_windowManager.Delete(WINDOW_DIALOG_PROFILE_SETTINGS);
+			g_windowManager.Delete(WINDOW_DIALOG_LOCK_SETTINGS);
+			g_windowManager.Delete(WINDOW_DIALOG_NETWORK_SETUP);
+			g_windowManager.Delete(WINDOW_DIALOG_MEDIA_SOURCE);
+			g_windowManager.Delete(WINDOW_DIALOG_VIDEO_OSD_SETTINGS);
+			g_windowManager.Delete(WINDOW_DIALOG_AUDIO_OSD_SETTINGS);
+			g_windowManager.Delete(WINDOW_DIALOG_VIDEO_BOOKMARKS);
+			g_windowManager.Delete(WINDOW_DIALOG_VIDEO_SCAN);
+			g_windowManager.Delete(WINDOW_DIALOG_CONTENT_SETTINGS);
+			g_windowManager.Delete(WINDOW_DIALOG_FAVOURITES);
+			g_windowManager.Delete(WINDOW_DIALOG_SONG_INFO);
+			g_windowManager.Delete(WINDOW_DIALOG_SMART_PLAYLIST_EDITOR);
+			g_windowManager.Delete(WINDOW_DIALOG_SMART_PLAYLIST_RULE);
+			g_windowManager.Delete(WINDOW_DIALOG_BUSY);
+			g_windowManager.Delete(WINDOW_DIALOG_PICTURE_INFO);
+			g_windowManager.Delete(WINDOW_DIALOG_PLUGIN_SETTINGS);
+			g_windowManager.Delete(WINDOW_DIALOG_SLIDER);
+			g_windowManager.Delete(WINDOW_DIALOG_TEXT_VIEWER);
 
-			// g_windowManager.Delete(WINDOW_STARTUP_ANIM);
-			// g_windowManager.Delete(WINDOW_LOGIN_SCREEN);
-			// g_windowManager.Delete(WINDOW_VISUALISATION);
-			// g_windowManager.Delete(WINDOW_SETTINGS_MENU);
-			// g_windowManager.Delete(WINDOW_SETTINGS_PROFILES);
-			// g_windowManager.Delete(WINDOW_SETTINGS_MYPICTURES);  // all the settings categories
-			// g_windowManager.Delete(WINDOW_SCREEN_CALIBRATION);
-			// g_windowManager.Delete(WINDOW_SYSTEM_INFORMATION);
-			// g_windowManager.Delete(WINDOW_SCREENSAVER);
-			// g_windowManager.Delete(WINDOW_OSD);
-			// g_windowManager.Delete(WINDOW_MUSIC_OVERLAY);
-			// g_windowManager.Delete(WINDOW_VIDEO_OVERLAY);
-			// g_windowManager.Delete(WINDOW_SCRIPTS_INFO);
-			// g_windowManager.Delete(WINDOW_SLIDESHOW);
+			g_windowManager.Delete(WINDOW_STARTUP_ANIM);
+			g_windowManager.Delete(WINDOW_LOGIN_SCREEN);
+			g_windowManager.Delete(WINDOW_VISUALISATION);
+			g_windowManager.Delete(WINDOW_SETTINGS_MENU);
+			g_windowManager.Delete(WINDOW_SETTINGS_PROFILES);
+			g_windowManager.Delete(WINDOW_SETTINGS_MYPICTURES);  // all the settings categories
+			g_windowManager.Delete(WINDOW_SCREEN_CALIBRATION);
+			g_windowManager.Delete(WINDOW_SYSTEM_INFORMATION);
+			g_windowManager.Delete(WINDOW_SCREENSAVER);
+			g_windowManager.Delete(WINDOW_OSD);
+			g_windowManager.Delete(WINDOW_MUSIC_OVERLAY);
+			g_windowManager.Delete(WINDOW_VIDEO_OVERLAY);
+			g_windowManager.Delete(WINDOW_SCRIPTS_INFO);
+			g_windowManager.Delete(WINDOW_SLIDESHOW);
 
-			// g_windowManager.Delete(WINDOW_HOME);
-			// g_windowManager.Delete(WINDOW_PROGRAMS);
-			// g_windowManager.Delete(WINDOW_PICTURES);
-			// g_windowManager.Delete(WINDOW_SCRIPTS);
-			// g_windowManager.Delete(WINDOW_GAMESAVES);
-			// g_windowManager.Delete(WINDOW_WEATHER);
+			g_windowManager.Delete(WINDOW_HOME);
+			g_windowManager.Delete(WINDOW_PROGRAMS);
+			g_windowManager.Delete(WINDOW_PICTURES);
+			g_windowManager.Delete(WINDOW_SCRIPTS);
+			g_windowManager.Delete(WINDOW_GAMESAVES);
+			g_windowManager.Delete(WINDOW_WEATHER);
 
-			// g_windowManager.Delete(WINDOW_SETTINGS_MYPICTURES);
-			// g_windowManager.Remove(WINDOW_SETTINGS_MYPROGRAMS);
-			// g_windowManager.Remove(WINDOW_SETTINGS_MYWEATHER);
-			// g_windowManager.Remove(WINDOW_SETTINGS_MYMUSIC);
-			// g_windowManager.Remove(WINDOW_SETTINGS_SYSTEM);
-			// g_windowManager.Remove(WINDOW_SETTINGS_MYVIDEOS);
-			// g_windowManager.Remove(WINDOW_SETTINGS_NETWORK);
-			// g_windowManager.Remove(WINDOW_SETTINGS_APPEARANCE);
-			// g_windowManager.Remove(WINDOW_DIALOG_KAI_TOAST);
+			g_windowManager.Delete(WINDOW_SETTINGS_MYPICTURES);
+			g_windowManager.Remove(WINDOW_SETTINGS_MYPROGRAMS);
+			g_windowManager.Remove(WINDOW_SETTINGS_MYWEATHER);
+			g_windowManager.Remove(WINDOW_SETTINGS_MYMUSIC);
+			g_windowManager.Remove(WINDOW_SETTINGS_SYSTEM);
+			g_windowManager.Remove(WINDOW_SETTINGS_MYVIDEOS);
+			g_windowManager.Remove(WINDOW_SETTINGS_NETWORK);
+			g_windowManager.Remove(WINDOW_SETTINGS_APPEARANCE);
+			g_windowManager.Remove(WINDOW_DIALOG_KAI_TOAST);
 
-			// g_windowManager.Remove(WINDOW_DIALOG_SEEK_BAR);
-			// g_windowManager.Remove(WINDOW_DIALOG_VOLUME_BAR);
+			g_windowManager.Remove(WINDOW_DIALOG_SEEK_BAR);
+			g_windowManager.Remove(WINDOW_DIALOG_VOLUME_BAR);
 
-			// CLog::Log(LOGNOTICE, "unload sections");
-			// CSectionLoader::UnloadAll();
+			CLog::Log(LOGNOTICE, "unload sections");
+			CSectionLoader::UnloadAll();
 			// reset our d3d params before we destroy
 			g_graphicsContext.SetD3DDevice(NULL);
 			g_graphicsContext.SetD3DParameters(NULL);
@@ -3803,23 +3803,23 @@ void CApplication::Render()
 			//  shown are no real leaks, as parts of the app
 			//  are still allocated.
 
-			// g_localizeStrings.Clear();
-			// g_LangCodeExpander.Clear();
-			// g_charsetConverter.clear();
-			// g_directoryCache.Clear();
-			// CButtonTranslator::GetInstance().Clear();
-			// CLastfmScrobbler::RemoveInstance();
-			// CLibrefmScrobbler::RemoveInstance();
-			// CLastFmManager::RemoveInstance();
-			// #ifdef HAS_EVENT_SERVER
-			// CEventServer::RemoveInstance();
-			// #endif
-			// g_infoManager.Clear();
-			// DllLoaderContainer::Clear();
-			// g_playlistPlayer.Clear();
-			// g_settings.Clear();
+			g_localizeStrings.Clear();
+			g_LangCodeExpander.Clear();
+			g_charsetConverter.clear();
+			g_directoryCache.Clear();
+			CButtonTranslator::GetInstance().Clear();
+			CLastfmScrobbler::RemoveInstance();
+			CLibrefmScrobbler::RemoveInstance();
+			CLastFmManager::RemoveInstance();
+#ifdef HAS_EVENT_SERVER
+			CEventServer::RemoveInstance();
+#endif
+			g_infoManager.Clear();
+			DllLoaderContainer::Clear();
+			g_playlistPlayer.Clear();
+			g_settings.Clear();
 			g_guiSettings.Clear();
-			// g_advancedSettings.Clear();
+			g_advancedSettings.Clear();
 #endif
 
 #ifdef _CRTDBG_MAP_ALLOC

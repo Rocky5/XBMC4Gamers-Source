@@ -25,13 +25,16 @@
 #include "settings/GUISettings.h"
 #include "utils/log.h"
 
-#define PIC_ADDRESS      0x20
+#define ADM_ADDRESS      0x98 // ADM1032 System Temperature Monitor
+#define PIC_ADDRESS      0x20 // PIC16LC
 #define XCALIBUR_ADDRESS 0xE0 // XCalibur/1.6 videochip
 #define FAN_MODE         0x05 // Enable/ disable the custom fan speeds (0/1)
 #define FAN_REGISTER     0x06 // Set custom fan speeds (0-50)
 #define FAN_READBACK     0x10 // Current fan speed (0-50)
-#define GPU_TEMP         0x0A // GPU Temperature
-#define CPU_TEMP         0x09 // CPU Temperature
+#define PIC_MB_TEMP      0x0A // MB Temperature
+#define PIC_CPU_TEMP     0x09 // CPU Temperature
+#define ADM_CPU_TEMP     0x01 // CPU Temperature
+#define ADM_MB_TEMP      0x00 // MB Temperature
 
 CFanController* CFanController::_Instance = NULL;
 
@@ -134,10 +137,10 @@ void CFanController::RestoreStartupSpeed()
 {
   SetFanSpeed(systemFanSpeed);
   Sleep(100);
-  //if it's not a 1.6 box disable custom fanmode
+  // if it's not a 1.6 box disable custom fanmode
   if (!bIs16Box)
   {
-    //disable custom fanmode
+    // disable custom fanmode
     HalWriteSMBusValue(PIC_ADDRESS, FAN_MODE, 0, 0);
   }
   inCustomMode = false;
@@ -181,13 +184,13 @@ void CFanController::SetFanSpeed(const int fanspeed, const bool force)
   if ((currentFanSpeed == fanspeed) && (!force)) return ;
   if (force)
   {
-    //on boot or first time set it needs a kickstart in releasemode for some reason
-    //it works fine without this block in debugmode...
+    // on boot or first time set it needs a kickstart in releasemode for some reason
+    // it works fine without this block in debugmode...
     HalWriteSMBusValue(PIC_ADDRESS, FAN_MODE, 0, 1);
     Sleep(10);
     HalWriteSMBusValue(PIC_ADDRESS, FAN_REGISTER, 0, fanspeed);
   }
-  //enable custom fanspeeds
+  // enable custom fanspeeds
   HalWriteSMBusValue(PIC_ADDRESS, FAN_MODE, 0, 1);
   Sleep(10);
   HalWriteSMBusValue(PIC_ADDRESS, FAN_REGISTER, 0, fanspeed);
@@ -208,15 +211,23 @@ const CTemperature& CFanController::GetGPUTemp()
 void CFanController::GetGPUTempInternal()
 {
   unsigned long temp;
-  HalReadSMBusValue(PIC_ADDRESS, GPU_TEMP, 0, (LPBYTE)&temp);
-
+  if (!bIs16Box)
+  {
+    // 1.0-1.5 Read ADM1032
+    HalReadSMBusValue(ADM_ADDRESS, ADM_MB_TEMP, FALSE, (LPBYTE)&temp);
+  }
+  else
+  {
+    // 1.6 Read SMC instead
+    HalReadSMBusValue(PIC_ADDRESS, PIC_MB_TEMP, FALSE, (LPBYTE)&temp);
+  }
   gpuTemp = CTemperature::CreateFromCelsius((double)temp);
+
   // The XBOX v1.6 shows the temp to high! Let's recalc it! It will only do ~minus 10 degress
   if (bIs16Box)
   {
     gpuTemp *= 0.8f;
   }
-
 }
 
 const CTemperature& CFanController::GetCPUTemp()
@@ -230,68 +241,19 @@ const CTemperature& CFanController::GetCPUTemp()
 
 void CFanController::GetCPUTempInternal()
 {
-  unsigned short cpu, cpudec;
-  float temp1;
-
-  
+  unsigned long temp;
   if (!bIs16Box)
-  { //if it is an old xbox, then do as we have always done
-    _outp(0xc004, (0x4c << 1) | 0x01);
-    _outp(0xc008, 0x01);
-    _outpw(0xc000, _inpw(0xc000));
-    _outp(0xc002, (0) ? 0x0b : 0x0a);
-    while ((_inp(0xc000) & 8));
-    cpu = _inpw(0xc006);
-
-    _outp(0xc004, (0x4c << 1) | 0x01);
-    _outp(0xc008, 0x10);
-    _outpw(0xc000, _inpw(0xc000));
-    _outp(0xc002, (0) ? 0x0b : 0x0a);
-    while ((_inp(0xc000) & 8));
-    cpudec = _inpw(0xc006);
-
-    cpuTemp = CTemperature::CreateFromCelsius((float)cpu + (float)cpudec / 256.0f);
+  {
+    // 1.0-1.5 Read ADM1032
+    HalReadSMBusValue(ADM_ADDRESS, ADM_CPU_TEMP, FALSE, (LPBYTE)&temp);
   }
   else
-  { // if its a 1.6 then we get the CPU temperature from the xcalibur
-    _outp(0xc004, (0x70 << 1) | 0x01);  // address
-    _outp(0xc008, 0xC1);                // command
-    _outpw(0xc000, _inpw(0xc000));      // clear errors
-    _outp(0xc002, 0x0d);                // start block transfer
-    while ((_inp(0xc000) & 8));         // wait for response
-   
-    if (!(_inp(0xc000) & 0x23)) // if there was a error then just skip this read..
-    {
-      _inp(0xc004);                       // read out the data reg (no. bytes in block, will be 4)
-      cpudec = _inp(0xc009);              // first byte
-      cpu    = _inp(0xc009);              // second byte
-      _inp(0xc009);                       // read out the two last bytes, dont' think its neccesary
-      _inp(0xc009);                       // but done to be on the safe side
-
-      /* the temperature recieved from the xcalibur is very jumpy, so we try and smooth it
-          out by taking the average over 10 samples */
-      temp1 = (float)cpu + (float)cpudec / 256;
-      temp1 /= 10;
-      cpuFrac += temp1;
-
-      if (cpuTempCount == 9) // if we have taken 10 samples then commit the new temperature
-      {
-        cpuTemp = CTemperature::CreateFromCelsius(cpuFrac);
-        cpuTempCount = 0;
-        cpuFrac = 0;
-      }
-      else
-      {
-        cpuTempCount++;     // increse sample count
-      }
-    }
-
-    /* the first time we read the temp sensor we set the temperature right away */
-    if (cpuTemp == 0)
-      cpuTemp = CTemperature::CreateFromCelsius((float)cpu + (float)cpudec / 256);
+  {
+    // 1.6 Read SMC instead
+    HalReadSMBusValue(PIC_ADDRESS, PIC_CPU_TEMP, FALSE, (LPBYTE)&temp);
   }
+  cpuTemp = CTemperature::CreateFromCelsius((double)temp);
 }
-
 
 void CFanController::CalcSpeed(int targetTemp)
 {
@@ -315,7 +277,7 @@ void CFanController::CalcSpeed(int targetTemp)
 
   if ((temp >= targetTempFloor) && (temp <= targetTempCeiling))
   {
-    //within range, try to keep it steady
+    // within range, try to keep it steady
     tooHotLoopCount = 0;
     tooColdLoopCount = 0;
     if (temp > tempOld)
@@ -330,7 +292,7 @@ void CFanController::CalcSpeed(int targetTemp)
 
   else if (temp < targetTempFloor)
   {
-    //cool, lower speed unless it's getting hotter
+    // cool, lower speed unless it's getting hotter
     if (temp == tempOld)
     {
       tooColdLoopCount++;
@@ -342,14 +304,14 @@ void CFanController::CalcSpeed(int targetTemp)
     if ((temp < tempOld) || (tooColdLoopCount == 12))
     {
       calculatedFanSpeed--;
-      //CLog::Log(LOGDEBUG,"Lowering fanspeed to %i, tooHotLoopCount=%i tooColdLoopCount=%i", calculatedFanSpeed, tooHotLoopCount, tooColdLoopCount);
+      // CLog::Log(LOGDEBUG,"Lowering fanspeed to %i, tooHotLoopCount=%i tooColdLoopCount=%i", calculatedFanSpeed, tooHotLoopCount, tooColdLoopCount);
       tooColdLoopCount = 0;
     }
   }
 
   else if (temp > targetTempCeiling)
   {
-    //hot, increase fanspeed if it's still getting hotter or not getting any cooler for at leat loopcount*sleepvalue
+    // hot, increase fanspeed if it's still getting hotter or not getting any cooler for at leat loopcount*sleepvalue
     if (temp == tempOld)
     {
       tooHotLoopCount++;
@@ -361,14 +323,14 @@ void CFanController::CalcSpeed(int targetTemp)
     if ((temp > tempOld) || (tooHotLoopCount == 12))
     {
       calculatedFanSpeed++;
-      //CLog::Log(LOGDEBUG,"Increasing fanspeed to %i, tooHotLoopCount=%i tooColdLoopCount=%i", calculatedFanSpeed, tooHotLoopCount, tooColdLoopCount);
+      // CLog::Log(LOGDEBUG,"Increasing fanspeed to %i, tooHotLoopCount=%i tooColdLoopCount=%i", calculatedFanSpeed, tooHotLoopCount, tooColdLoopCount);
       tooHotLoopCount = 0;
     }
   }
 
-  if (calculatedFanSpeed < m_minFanspeed) 
+  if (calculatedFanSpeed < m_minFanspeed)
   {
     calculatedFanSpeed = m_minFanspeed;
-  } 
+  }
   if (calculatedFanSpeed > 50) {calculatedFanSpeed = 50;}
 }
