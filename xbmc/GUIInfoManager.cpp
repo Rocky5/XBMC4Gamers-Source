@@ -256,32 +256,32 @@ int CGUIInfoManager::TranslateSingleString(const CStdString &strCondition)
     else if (strTest.Equals("weather.fanartcode")) ret = WEATHER_FANART_CODE;
     else if (strTest.Equals("weather.plugin")) ret = WEATHER_PLUGIN;
   }
-  else if (strCategory.Equals("bar"))
-  {
-    if (strTest.Equals("bar.gputemperature")) ret = SYSTEM_GPU_TEMPERATURE;
-    else if (strTest.Equals("bar.cputemperature")) ret = SYSTEM_CPU_TEMPERATURE;
-    else if (strTest.Equals("bar.cpuusage")) ret = SYSTEM_CPU_USAGE;
-    else if (strTest.Equals("bar.freememory")) ret = SYSTEM_FREE_MEMORY;
-    else if (strTest.Equals("bar.usedmemory")) ret = SYSTEM_USED_MEMORY;
-    else if (strTest.Equals("bar.fanspeed")) ret = SYSTEM_FAN_SPEED;
-    else if (strTest.Equals("bar.usedspace")) ret = SYSTEM_USED_SPACE;
-    else if (strTest.Equals("bar.freespace")) ret = SYSTEM_FREE_SPACE;
-    else if (strTest.Equals("bar.usedspace(c)")) ret = SYSTEM_USED_SPACE_C;
-    else if (strTest.Equals("bar.freespace(c)")) ret = SYSTEM_FREE_SPACE_C;
-    else if (strTest.Equals("bar.usedspace(e)")) ret = SYSTEM_USED_SPACE_E;   
-    else if (strTest.Equals("bar.freespace(e)")) ret = SYSTEM_FREE_SPACE_E; 
-    else if (strTest.Equals("bar.usedspace(f)")) ret = SYSTEM_USED_SPACE_F;
-    else if (strTest.Equals("bar.freespace(f)")) ret = SYSTEM_FREE_SPACE_F;
-    else if (strTest.Equals("bar.usedspace(g)")) ret = SYSTEM_USED_SPACE_G;
-    else if (strTest.Equals("bar.freespace(g)")) ret = SYSTEM_FREE_SPACE_G;
-    else if (strTest.Equals("bar.usedspace(x)")) ret = SYSTEM_USED_SPACE_X;
-    else if (strTest.Equals("bar.freespace(x)")) ret = SYSTEM_FREE_SPACE_X;
-    else if (strTest.Equals("bar.usedspace(y)")) ret = SYSTEM_USED_SPACE_Y;
-    else if (strTest.Equals("bar.freespace(y)")) ret = SYSTEM_FREE_SPACE_Y;
-    else if (strTest.Equals("bar.usedspace(z)")) ret = SYSTEM_USED_SPACE_Z;
-    else if (strTest.Equals("bar.freespace(z)")) ret = SYSTEM_FREE_SPACE_Z;
-    else if (strTest.Equals("bar.hddtemperature")) ret = SYSTEM_HDD_TEMPERATURE;
-  }
+  // else if (strCategory.Equals("bar"))
+  // {
+    // if (strTest.Equals("bar.gputemperature")) ret = SYSTEM_GPU_TEMPERATURE;
+    // else if (strTest.Equals("bar.cputemperature")) ret = SYSTEM_CPU_TEMPERATURE;
+    // else if (strTest.Equals("bar.cpuusage")) ret = SYSTEM_CPU_USAGE;
+    // else if (strTest.Equals("bar.freememory")) ret = SYSTEM_FREE_MEMORY;
+    // else if (strTest.Equals("bar.usedmemory")) ret = SYSTEM_USED_MEMORY;
+    // else if (strTest.Equals("bar.fanspeed")) ret = SYSTEM_FAN_SPEED;
+    // else if (strTest.Equals("bar.usedspace")) ret = SYSTEM_USED_SPACE;
+    // else if (strTest.Equals("bar.freespace")) ret = SYSTEM_FREE_SPACE;
+    // else if (strTest.Equals("bar.usedspace(c)")) ret = SYSTEM_USED_SPACE_C;
+    // else if (strTest.Equals("bar.freespace(c)")) ret = SYSTEM_FREE_SPACE_C;
+    // else if (strTest.Equals("bar.usedspace(e)")) ret = SYSTEM_USED_SPACE_E;   
+    // else if (strTest.Equals("bar.freespace(e)")) ret = SYSTEM_FREE_SPACE_E; 
+    // else if (strTest.Equals("bar.usedspace(f)")) ret = SYSTEM_USED_SPACE_F;
+    // else if (strTest.Equals("bar.freespace(f)")) ret = SYSTEM_FREE_SPACE_F;
+    // else if (strTest.Equals("bar.usedspace(g)")) ret = SYSTEM_USED_SPACE_G;
+    // else if (strTest.Equals("bar.freespace(g)")) ret = SYSTEM_FREE_SPACE_G;
+    // else if (strTest.Equals("bar.usedspace(x)")) ret = SYSTEM_USED_SPACE_X;
+    // else if (strTest.Equals("bar.freespace(x)")) ret = SYSTEM_FREE_SPACE_X;
+    // else if (strTest.Equals("bar.usedspace(y)")) ret = SYSTEM_USED_SPACE_Y;
+    // else if (strTest.Equals("bar.freespace(y)")) ret = SYSTEM_FREE_SPACE_Y;
+    // else if (strTest.Equals("bar.usedspace(z)")) ret = SYSTEM_USED_SPACE_Z;
+    // else if (strTest.Equals("bar.freespace(z)")) ret = SYSTEM_FREE_SPACE_Z;
+    // else if (strTest.Equals("bar.hddtemperature")) ret = SYSTEM_HDD_TEMPERATURE;
+  // }
   else if (strCategory.Equals("system"))
   {
     if (strTest.Equals("system.date")) ret = SYSTEM_DATE;
@@ -372,6 +372,7 @@ int CGUIInfoManager::TranslateSingleString(const CStdString &strCondition)
     else if (strTest.Equals("system.memory(used)")) ret = SYSTEM_USED_MEMORY;
     else if (strTest.Equals("system.memory(used.percent)")) ret = SYSTEM_USED_MEMORY_PERCENT;
     else if (strTest.Equals("system.memory(total)")) ret = SYSTEM_TOTAL_MEMORY;
+    else if (strTest.Equals("system.memory(total_no_mb)")) ret = SYSTEM_TOTAL_MEMORY_NO_MB;
 
     else if (strTest.Equals("system.language")) ret = SYSTEM_LANGUAGE;
     else if (strTest.Equals("system.temperatureunits")) ret = SYSTEM_TEMPERATURE_UNITS;
@@ -1488,6 +1489,7 @@ CStdString CGUIInfoManager::GetLabel(int info, int contextWindow)
   case SYSTEM_USED_MEMORY_NO_MB:
   case SYSTEM_USED_MEMORY_PERCENT:
   case SYSTEM_TOTAL_MEMORY:
+  case SYSTEM_TOTAL_MEMORY_NO_MB:
     {
       MEMORYSTATUS stat;
       GlobalMemoryStatus(&stat);
@@ -1508,6 +1510,8 @@ CStdString CGUIInfoManager::GetLabel(int info, int contextWindow)
         strLabel.Format("%i%%", iMemPercentUsed);
       else if (info == SYSTEM_TOTAL_MEMORY)
         strLabel.Format("%iMB", stat.dwTotalPhys/MB);
+      else if (info == SYSTEM_TOTAL_MEMORY_NO_MB)
+        strLabel.Format("%i", stat.dwTotalPhys/MB);
     }
     break;
   case SYSTEM_SCREEN_MODE:

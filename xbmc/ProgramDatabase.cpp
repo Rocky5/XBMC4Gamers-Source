@@ -695,8 +695,11 @@ bool CProgramDatabase::UpdateProgramInfo(CFileItem *item, unsigned int titleID)
 		if (!CDirectory::Exists(resources))
 		resources = "";
 
-		// Get XBE name, if its empty it uses the file name :/ will need to fix that
+		// Get XBE name, if its empty it uses the folder name
 		CUtil::GetXBEDescription(item->GetPath(), xbedescription);
+		if (!CUtil::GetXBEDescription(item->GetPath(), xbedescription))
+		CUtil::GetDirectoryName(item->GetPath(), xbedescription);
+			
 		
 		// Gets the language of the system and then checks for the default.xml and then if there is a translated section
 		CStdString strLanguage = g_guiSettings.GetString("locale.language");

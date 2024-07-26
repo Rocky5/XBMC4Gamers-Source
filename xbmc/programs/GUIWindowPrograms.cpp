@@ -61,6 +61,7 @@ using namespace std;
 CStdString check_xbe_path;
 CStdString patched_xbe_path;
 CStdString ws_xbe_path;
+CStdString up_xbe_path;
 CStdString xhd_xbe_path;
 CStdString hd_xbe_path;
 CStdString xresizer_xbe_path;
@@ -166,6 +167,12 @@ void CGUIWindowPrograms::GetContextButtons(int itemNumber, CContextButtons &butt
 				URIUtils::GetParentPath(item->GetPath(), check_xbe_path);
 				check_xbe_path = CURL(check_xbe_path).GetWithoutUserDetails();
 				CURL::Decode(check_xbe_path);
+				
+				if (CFile::Exists(check_xbe_path+"default_orig.xbe"))
+				{
+					up_xbe_path = (check_xbe_path+"default_orig.xbe");
+					buttons.Add(CONTEXT_BUTTON_UNPATCHEDXBE, "Launch (Unpatched)");         // Unpatched Patched XBE
+				}
 				
 				if (CFile::Exists(check_xbe_path+"default720p.xbe"))
 				{
@@ -344,6 +351,11 @@ bool CGUIWindowPrograms::OnContextButton(int itemNumber, CONTEXT_BUTTON button)
 		{
 			CBuiltins::Execute("Skin.SetBool(UpdatingSynopsisInfo)");
 			Update(m_vecItems->GetPath());
+			return true;
+		}
+	case CONTEXT_BUTTON_UNPATCHEDXBE:
+		{
+			CBuiltins::Execute("runxbe("+up_xbe_path+")");
 			return true;
 		}
 	case CONTEXT_BUTTON_PATCHED720XBE:

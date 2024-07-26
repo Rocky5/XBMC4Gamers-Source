@@ -588,11 +588,8 @@ void CNetwork::LogState()
 bool CNetwork::IsAvailable(bool wait)
 {
   // if network isn't up, wait for it to setup
-  if (IsEthernetConnected())
-  {
-	  if( !m_networkup && wait )
-		WaitForSetup(WAIT_TIME);
-  }
+  if( !m_networkup && wait )
+    WaitForSetup(WAIT_TIME);
 
 #ifdef HAS_XBOX_NETWORK
   return m_networkup;
@@ -608,8 +605,8 @@ void CNetwork::NetworkMessage(EMESSAGE message, DWORD dwParam)
     case SERVICES_UP:
     {
       CLog::Log(LOGDEBUG, "%s - Starting network services",__FUNCTION__);
-      g_application.StartFtpServer();
       g_application.StartTimeServer();
+      g_application.StartFtpServer();
       // g_application.StartWebServer();
       // g_application.StartUPnP();
       // g_application.StartEventServer();
@@ -623,13 +620,13 @@ void CNetwork::NetworkMessage(EMESSAGE message, DWORD dwParam)
     {
       CLog::Log(LOGDEBUG, "%s - Stopping network services",__FUNCTION__);
       g_application.StopFtpServer();
-      g_application.StopTimeServer();
+      // g_application.StopTimeServer();
       // g_application.StopWebServer();
       // g_application.StopUPnP();
       // g_application.StopEventServer();
       // CLastfmScrobbler::GetInstance()->Term();
       // CLibrefmScrobbler::GetInstance()->Term();
-      // smb.Deinit(); // if any file is open over samba this will break.
+      // smb.Deinit(); if any file is open over samba this will break.
 
       // g_rssManager.Stop();
     }

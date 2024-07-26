@@ -1372,9 +1372,9 @@ HRESULT CApplication::Initialize()
 		g_guiSettings.m_LookAndFeelResolution = res;
 	}
 
-	if (CFile::Exists("Special://root/skins/profile skin/extras/disc artwork.zip"))
+	if (CFile::Exists("Special://root/skins/profile/extras/disc artwork.zip"))
 	{
-		CFile::Delete("Special://root/skins/profile skin/extras/disc artwork.zip");
+		CFile::Delete("Special://root/skins/profile/extras/disc artwork.zip");
 	}
 
 	if (CFile::Exists("Special://root/updater/default.xbe"))
@@ -1385,9 +1385,9 @@ HRESULT CApplication::Initialize()
 		}
 	}
 
-	if (CFile::Exists("Q:\\updater\\system\\xbmc.log"))
+	if (CFile::Exists("Special://root/updater/system/xbmc.log"))
 	{
-		CopyFile("Q:\\updater\\system\\xbmc.log","Q:\\system\\xbmc-updater.log",FALSE);
+		CopyFile("Special://root/updater/system/xbmc.log","Special://root/updater/xbmc-updater.log",FALSE);
 		CUtil::WipeDir("Special://root/updater");
 	}
 	
@@ -1415,7 +1415,7 @@ HRESULT CApplication::Initialize()
 	}
 
 	/* window id's 3000 - 3100 are reserved for python */
-	g_DownloadManager.Initialize();
+	// g_DownloadManager.Initialize();
 
 	m_ctrDpad.SetDelays(100, 500); //g_settings.m_iMoveDelayController, g_settings.m_iRepeatDelayController);
 
@@ -1432,7 +1432,12 @@ HRESULT CApplication::Initialize()
 
 	if (g_infoManager.GetBool(g_infoManager.TranslateString("skin.hassetting(introenabled)")) == 1 && !CFile::Exists("E:/CACHE/tmp.bin"))
 	{
-		if ( CFile::Exists("Special://root/intro.mp4") )
+#ifdef HAS_GAMEPAD
+		if (CFile::Exists(g_infoManager.GetLabel(g_infoManager.TranslateString("skin.string(intro_file)"))))
+		{
+			ExecuteXBMCAction(g_infoManager.GetLabel(g_infoManager.TranslateString("skin.string(intro_file)")));
+		}
+		else if ( CFile::Exists("Special://root/intro.mp4") )
 		{
 			ExecuteXBMCAction("Special://root/intro.mp4");
 		}
@@ -1441,61 +1446,39 @@ HRESULT CApplication::Initialize()
 			ExecuteXBMCAction("Special://root/system/intro/intro.mp4");
 		}
 		g_windowManager.ActivateWindow(WINDOW_FULLSCREEN_VIDEO);
-		
 		while (1)
 		{
 			Sleep(10);
 			ReadInput();
-#ifdef HAS_GAMEPAD
 			if (m_DefaultGamepad.bAnalogButtons[XINPUT_GAMEPAD_B])
 			{
 				m_pPlayer->CloseFile();
+				break;
 			}
 			if (!g_application.IsPlayingVideo())
-			{
-				if (g_settings.UsingLoginScreen())
-				{
-					g_windowManager.ActivateWindow(WINDOW_LOGIN_SCREEN);
-					break;
-				}
-				if (!g_settings.UsingLoginScreen())
-				{
-					if (g_infoManager.GetBool(g_infoManager.TranslateString("skin.hassetting(randomtheme)")) == 1)
-					{
-						g_windowManager.ActivateWindow(WINDOW_SLIDESHOW);
-						CBuiltins::Execute("RunScript(Special://root/system/scripts/XBMC4Gamers/Utilities/Random Theme.py)");
-					}
-					else
-					{
-						g_windowManager.ActivateWindow(g_SkinInfo.GetFirstWindow());
-					}
-					break;
-				}
-			}
-#endif
+				break;
 		}
+#endif
+	}
+
+	if (g_settings.UsingLoginScreen())
+	{
+		g_windowManager.ActivateWindow(WINDOW_LOGIN_SCREEN);
 	}
 	else
 	{
-		if (g_settings.UsingLoginScreen())
+		if (g_infoManager.GetBool(g_infoManager.TranslateString("skin.hassetting(randomtheme)")) == 1)
 		{
-			g_windowManager.ActivateWindow(WINDOW_LOGIN_SCREEN);
+			g_windowManager.ActivateWindow(WINDOW_SLIDESHOW);
+			CBuiltins::Execute("RunScript(Special://scripts/XBMC4Gamers/Utilities/Random Theme.py)");
 		}
-		if (!g_settings.UsingLoginScreen())
+		else
 		{
-			if (g_infoManager.GetBool(g_infoManager.TranslateString("skin.hassetting(randomtheme)")) == 1)
-			{
-				g_windowManager.ActivateWindow(WINDOW_SLIDESHOW);
-				CBuiltins::Execute("RunScript(Special://root/system/scripts/XBMC4Gamers/Utilities/Random Theme.py)");
-			}
-			else
-			{
-				g_windowManager.ActivateWindow(g_SkinInfo.GetFirstWindow());
-			}
+			g_windowManager.ActivateWindow(g_SkinInfo.GetFirstWindow());
 		}
 	}
 
-	//g_sysinfo.Refresh();
+	// g_sysinfo.Refresh();
 
 	CLog::Log(LOGINFO, "removing tempfiles");
 	// CUtil::initilise();
@@ -1585,7 +1568,7 @@ void CApplication::StopIdleThread()
 
 void CApplication::StartWebServer()
 {
-	if ( m_network.IsEthernetConnected() && g_guiSettings.GetBool("services.webserver") && m_network.IsAvailable() )
+	if ( g_guiSettings.GetBool("services.webserver") && m_network.IsAvailable() )
 	{
 		CLog::Log(LOGNOTICE, "Webserver: Starting...");
 		CSectionLoader::Load("LIBHTTP");
@@ -1617,7 +1600,7 @@ void CApplication::StopWebServer()
 void CApplication::StartFtpServer()
 {
 #ifdef HAS_FTP_SERVER
-	if ( m_network.IsEthernetConnected() && g_guiSettings.GetBool("services.ftpserver") && m_network.IsAvailable() )
+	if ( g_guiSettings.GetBool("services.ftpserver") && m_network.IsAvailable() )
 	{
 		CLog::Log(LOGNOTICE, "XBFileZilla: Starting...");
 		if (!m_pFileZilla)
@@ -1679,7 +1662,7 @@ void CApplication::StopFtpServer()
 void CApplication::StartTimeServer()
 {
 #ifdef HAS_TIME_SERVER
-	if ( m_network.IsEthernetConnected() && g_guiSettings.GetBool("locale.timeserver") && m_network.IsAvailable() )
+	if ( g_guiSettings.GetBool("locale.timeserver") && m_network.IsAvailable() )
 	{
 		if( !m_psntpClient )
 		{
@@ -1874,7 +1857,6 @@ void CApplication::StartServices()
 	CLog::Log(LOGNOTICE, "Not using idle thread with HLT (no power saving)");
 #endif
 
-	CheckDate();
 	StartLEDControl(false);
 
 	// Start Thread for DVD Mediatype detection
@@ -1929,6 +1911,7 @@ void CApplication::StartServices()
 		XKHDD::SetAPMLevel(0x7F);
 		break;
 	}
+	CheckDate();
 #endif
 }
 
@@ -1944,7 +1927,7 @@ void CApplication::CheckDate()
 	if ((CurTime.wYear > 2099) || (CurTime.wYear < 2001) )        // XBOX MS Dashboard also uses min/max DateYear 2001/2099 !!
 	{
 		CLog::Log(LOGNOTICE, "- The Date is Wrong: Setting New Date!");
-		NewTime.wYear       = 2020; // 2020
+		NewTime.wYear       = 2024; // 2020
 		NewTime.wMonth      = 1;  // January
 		NewTime.wDayOfWeek  = 1;  // Monday
 		NewTime.wDay        = 1;  // Monday 01.01.2019!!
@@ -1955,7 +1938,7 @@ void CApplication::CheckDate()
 		SystemTimeToFileTime(&NewTime, &stNewTime);
 		SystemTimeToFileTime(&CurTime, &stCurTime);
 #ifdef HAS_XBOX_HARDWARE
-		NtSetSystemTime(&stNewTime, &stCurTime);    // Set a Default Year 2020!
+		NtSetSystemTime(&stNewTime, &stCurTime);    // Set a Default Year 2024!
 #endif
 		CLog::Log(LOGNOTICE, "- New Date is now: %i-%i-%i",NewTime.wDay, NewTime.wMonth, NewTime.wYear);
 	}
@@ -2051,8 +2034,6 @@ void CApplication::LoadSkin(const CStdString& strSkin)
 	URIUtils::AddFileToFolder(strSkinPath, "language", langPath);
 	URIUtils::AddSlashAtEnd(langPath);
 
-	g_localizeStrings.LoadSkinStrings(langPath, g_guiSettings.GetString("locale.language"));
-
 	// Load in the skin.xml file if it exists
 	g_SkinInfo.Load(strSkinPath);
 
@@ -2072,6 +2053,9 @@ void CApplication::LoadSkin(const CStdString& strSkin)
 		else
 		CLog::Log(LOGERROR, "    no ttf font found, but needed for the language %s.", g_guiSettings.GetString("locale.language").c_str());
 	}
+
+	g_localizeStrings.LoadSkinStrings(langPath, g_guiSettings.GetString("locale.language"));
+	
 	g_colorManager.Load(g_guiSettings.GetString("lookandfeel.skincolors"));
 
 	g_fontManager.LoadFonts(g_guiSettings.GetString("lookandfeel.font"));
@@ -2096,7 +2080,6 @@ void CApplication::LoadSkin(const CStdString& strSkin)
 
 	// Load the user windows
 	LoadUserWindows();
-	LoadUserWindowsalt();
 
 	LARGE_INTEGER end, freq;
 	QueryPerformanceCounter(&end);
@@ -2179,193 +2162,103 @@ void CApplication::UnloadSkin()
 bool CApplication::LoadUserWindows()
 {
 	// Start from wherever home.xml is
-
 	std::vector<CStdString> vecSkinPath;
 	g_SkinInfo.GetSkinPaths(vecSkinPath);
-	for (unsigned int i = 0;i < vecSkinPath.size();++i)
+	for (unsigned int i = 0; i < vecSkinPath.size(); ++i)
 	{
-		CStdString strPath = URIUtils::AddFileToFolder(vecSkinPath[i], "custom*.xml");
-		CLog::Log(LOGINFO, "Loading user windows, path %s", vecSkinPath[i].c_str());
-		WIN32_FIND_DATA NextFindFileData;
-		HANDLE hFind = FindFirstFile(_P(strPath).c_str(), &NextFindFileData);
-		while (hFind != INVALID_HANDLE_VALUE)
+		std::vector<CStdString> patterns;
+		patterns.push_back("custom*.xml");
+		patterns.push_back("_script*.xml");
+		for (std::vector<CStdString>::const_iterator it = patterns.begin(); it != patterns.end(); ++it)
 		{
-			WIN32_FIND_DATA FindFileData = NextFindFileData;
-
-			if (!FindNextFile(hFind, &NextFindFileData))
+			const CStdString& Pattern = *it;
+			CStdString strPath = URIUtils::AddFileToFolder(vecSkinPath[i], Pattern);
+			
+			CLog::Log(LOGINFO, "Loading user windows, path %s", vecSkinPath[i].c_str());
+			WIN32_FIND_DATA NextFindFileData;
+			HANDLE hFind = FindFirstFile(_P(strPath).c_str(), &NextFindFileData);
+			while (hFind != INVALID_HANDLE_VALUE)
 			{
-				FindClose(hFind);
-				hFind = INVALID_HANDLE_VALUE;
-			}
+				WIN32_FIND_DATA FindFileData = NextFindFileData;
 
-			// skip "up" directories, which come in all queries
-			if (!strcmp(FindFileData.cFileName, ".") || !strcmp(FindFileData.cFileName, ".."))
-			continue;
+				if (!FindNextFile(hFind, &NextFindFileData))
+				{
+					FindClose(hFind);
+					hFind = INVALID_HANDLE_VALUE;
+				}
 
-			CStdString strFileName = URIUtils::AddFileToFolder(vecSkinPath[i], FindFileData.cFileName);
-			CLog::Log(LOGINFO, "Loading skin file: %s", strFileName.c_str());
-			CStdString strLower(FindFileData.cFileName);
-			strLower.MakeLower();
-			strLower = URIUtils::AddFileToFolder(vecSkinPath[i], strLower);
-			TiXmlDocument xmlDoc;
-			if (!xmlDoc.LoadFile(strFileName) && !xmlDoc.LoadFile(strLower))
-			{
-				CLog::Log(LOGERROR, "unable to load:%s, Line %d\n%s", strFileName.c_str(), xmlDoc.ErrorRow(), xmlDoc.ErrorDesc());
+				// skip "up" directories, which come in all queries
+				if (!strcmp(FindFileData.cFileName, ".") || !strcmp(FindFileData.cFileName, ".."))
 				continue;
-			}
 
-			// Root element should be <window>
-			TiXmlElement* pRootElement = xmlDoc.RootElement();
-			CStdString strValue = pRootElement->Value();
-			if (!strValue.Equals("window"))
-			{
-				CLog::Log(LOGERROR, "file :%s doesnt contain <window>", strFileName.c_str());
-				continue;
-			}
+				CStdString strFileName = URIUtils::AddFileToFolder(vecSkinPath[i], FindFileData.cFileName);
+				CLog::Log(LOGINFO, "Loading skin file: %s", strFileName.c_str());
+				CStdString strLower(FindFileData.cFileName);
+				strLower.MakeLower();
+				strLower = URIUtils::AddFileToFolder(vecSkinPath[i], strLower);
+				TiXmlDocument xmlDoc;
+				if (!xmlDoc.LoadFile(strFileName) && !xmlDoc.LoadFile(strLower))
+				{
+					CLog::Log(LOGERROR, "unable to load:%s, Line %d\n%s", strFileName.c_str(), xmlDoc.ErrorRow(), xmlDoc.ErrorDesc());
+					continue;
+				}
 
-			// Read the <type> element to get the window type to create
-			// If no type is specified, create a CGUIWindow as default
-			CGUIWindow* pWindow = NULL;
-			CStdString strType;
-			if (pRootElement->Attribute("type"))
-			strType = pRootElement->Attribute("type");
-			else
-			{
-				const TiXmlNode *pType = pRootElement->FirstChild("type");
-				if (pType && pType->FirstChild())
-				strType = pType->FirstChild()->Value();
-			}
-			int id = WINDOW_INVALID;
-			if (!pRootElement->Attribute("id", &id))
-			{
-				const TiXmlNode *pType = pRootElement->FirstChild("id");
-				if (pType && pType->FirstChild())
-				id = atol(pType->FirstChild()->Value());
-			}
-			int visibleCondition = 0;
-			CGUIControlFactory::GetConditionalVisibility(pRootElement, visibleCondition);
+				// Root element should be <window>
+				TiXmlElement* pRootElement = xmlDoc.RootElement();
+				CStdString strValue = pRootElement->Value();
+				if (!strValue.Equals("window"))
+				{
+					CLog::Log(LOGERROR, "file :%s doesnt contain <window>", strFileName.c_str());
+					continue;
+				}
 
-			if (strType.Equals("dialog"))
-			pWindow = new CGUIDialog(id + WINDOW_HOME, FindFileData.cFileName);
-			else if (strType.Equals("submenu"))
-			pWindow = new CGUIDialogSubMenu(id + WINDOW_HOME, FindFileData.cFileName);
-			else if (strType.Equals("buttonmenu"))
-			pWindow = new CGUIDialogButtonMenu(id + WINDOW_HOME, FindFileData.cFileName);
-			else
-			pWindow = new CGUIStandardWindow(id + WINDOW_HOME, FindFileData.cFileName);
+				// Read the <type> element to get the window type to create
+				// If no type is specified, create a CGUIWindow as default
+				CGUIWindow* pWindow = NULL;
+				CStdString strType;
+				if (pRootElement->Attribute("type"))
+				strType = pRootElement->Attribute("type");
+				else
+				{
+					const TiXmlNode *pType = pRootElement->FirstChild("type");
+					if (pType && pType->FirstChild())
+					strType = pType->FirstChild()->Value();
+				}
+				int id = WINDOW_INVALID;
+				if (!pRootElement->Attribute("id", &id))
+				{
+					const TiXmlNode *pType = pRootElement->FirstChild("id");
+					if (pType && pType->FirstChild())
+					id = atol(pType->FirstChild()->Value());
+				}
+				int visibleCondition = 0;
+				CGUIControlFactory::GetConditionalVisibility(pRootElement, visibleCondition);
 
-			// Check to make sure the pointer isn't still null
-			if (pWindow == NULL)
-			{
-				CLog::Log(LOGERROR, "Out of memory / Failed to create new object in LoadUserWindows");
-				return false;
+				if (strType.Equals("dialog"))
+				pWindow = new CGUIDialog(id + WINDOW_HOME, FindFileData.cFileName);
+				else if (strType.Equals("submenu"))
+				pWindow = new CGUIDialogSubMenu(id + WINDOW_HOME, FindFileData.cFileName);
+				else if (strType.Equals("buttonmenu"))
+				pWindow = new CGUIDialogButtonMenu(id + WINDOW_HOME, FindFileData.cFileName);
+				else
+				pWindow = new CGUIStandardWindow(id + WINDOW_HOME, FindFileData.cFileName);
+
+				// Check to make sure the pointer isn't still null
+				if (pWindow == NULL)
+				{
+					CLog::Log(LOGERROR, "Out of memory / Failed to create new object in LoadUserWindows");
+					return false;
+				}
+				if (id == WINDOW_INVALID || g_windowManager.GetWindow(WINDOW_HOME + id))
+				{
+					delete pWindow;
+					continue;
+				}
+				pWindow->SetVisibleCondition(visibleCondition, false);
+				g_windowManager.AddCustomWindow(pWindow);
 			}
-			if (id == WINDOW_INVALID || g_windowManager.GetWindow(WINDOW_HOME + id))
-			{
-				delete pWindow;
-				continue;
-			}
-			pWindow->SetVisibleCondition(visibleCondition, false);
-			g_windowManager.AddCustomWindow(pWindow);
+			CloseHandle(hFind);
 		}
-		CloseHandle(hFind);
-	}
-	return true;
-}
-
-bool CApplication::LoadUserWindowsalt()
-{
-	// Start from wherever home.xml is
-
-	std::vector<CStdString> vecSkinPath;
-	g_SkinInfo.GetSkinPaths(vecSkinPath);
-	for (unsigned int i = 0;i < vecSkinPath.size();++i)
-	{
-		CStdString strPath = URIUtils::AddFileToFolder(vecSkinPath[i], "_script*.xml");
-		CLog::Log(LOGINFO, "Loading user windows, path %s", vecSkinPath[i].c_str());
-		WIN32_FIND_DATA NextFindFileData;
-		HANDLE hFind = FindFirstFile(_P(strPath).c_str(), &NextFindFileData);
-		while (hFind != INVALID_HANDLE_VALUE)
-		{
-			WIN32_FIND_DATA FindFileData = NextFindFileData;
-
-			if (!FindNextFile(hFind, &NextFindFileData))
-			{
-				FindClose(hFind);
-				hFind = INVALID_HANDLE_VALUE;
-			}
-
-			// skip "up" directories, which come in all queries
-			if (!strcmp(FindFileData.cFileName, ".") || !strcmp(FindFileData.cFileName, ".."))
-			continue;
-
-			CStdString strFileName = URIUtils::AddFileToFolder(vecSkinPath[i], FindFileData.cFileName);
-			CLog::Log(LOGINFO, "Loading skin file: %s", strFileName.c_str());
-			CStdString strLower(FindFileData.cFileName);
-			strLower.MakeLower();
-			strLower = URIUtils::AddFileToFolder(vecSkinPath[i], strLower);
-			TiXmlDocument xmlDoc;
-			if (!xmlDoc.LoadFile(strFileName) && !xmlDoc.LoadFile(strLower))
-			{
-				CLog::Log(LOGERROR, "unable to load:%s, Line %d\n%s", strFileName.c_str(), xmlDoc.ErrorRow(), xmlDoc.ErrorDesc());
-				continue;
-			}
-
-			// Root element should be <window>
-			TiXmlElement* pRootElement = xmlDoc.RootElement();
-			CStdString strValue = pRootElement->Value();
-			if (!strValue.Equals("window"))
-			{
-				CLog::Log(LOGERROR, "file :%s doesnt contain <window>", strFileName.c_str());
-				continue;
-			}
-
-			// Read the <type> element to get the window type to create
-			// If no type is specified, create a CGUIWindow as default
-			CGUIWindow* pWindow = NULL;
-			CStdString strType;
-			if (pRootElement->Attribute("type"))
-			strType = pRootElement->Attribute("type");
-			else
-			{
-				const TiXmlNode *pType = pRootElement->FirstChild("type");
-				if (pType && pType->FirstChild())
-				strType = pType->FirstChild()->Value();
-			}
-			int id = WINDOW_INVALID;
-			if (!pRootElement->Attribute("id", &id))
-			{
-				const TiXmlNode *pType = pRootElement->FirstChild("id");
-				if (pType && pType->FirstChild())
-				id = atol(pType->FirstChild()->Value());
-			}
-			int visibleCondition = 0;
-			CGUIControlFactory::GetConditionalVisibility(pRootElement, visibleCondition);
-
-			if (strType.Equals("dialog"))
-			pWindow = new CGUIDialog(id + WINDOW_HOME, FindFileData.cFileName);
-			else if (strType.Equals("submenu"))
-			pWindow = new CGUIDialogSubMenu(id + WINDOW_HOME, FindFileData.cFileName);
-			else if (strType.Equals("buttonmenu"))
-			pWindow = new CGUIDialogButtonMenu(id + WINDOW_HOME, FindFileData.cFileName);
-			else
-			pWindow = new CGUIStandardWindow(id + WINDOW_HOME, FindFileData.cFileName);
-
-			// Check to make sure the pointer isn't still null
-			if (pWindow == NULL)
-			{
-				CLog::Log(LOGERROR, "Out of memory / Failed to create new object in LoadUserWindows");
-				return false;
-			}
-			if (id == WINDOW_INVALID || g_windowManager.GetWindow(WINDOW_HOME + id))
-			{
-				delete pWindow;
-				continue;
-			}
-			pWindow->SetVisibleCondition(visibleCondition, false);
-			g_windowManager.AddCustomWindow(pWindow);
-		}
-		CloseHandle(hFind);
 	}
 	return true;
 }
@@ -2419,7 +2312,7 @@ void CApplication::Render()
 				iBlinkRecord++;
 				if (iBlinkRecord > 25)
 				{
-					CGUIFont* pFont = g_fontManager.GetFont("debuglogging");
+					CGUIFont* pFont = g_fontManager.GetFont("mono_16");
 					CGUITextLayout::DrawText(pFont, 60, 50, 0xffff0000, 0, "REC", 0);
 				}
 
@@ -2473,7 +2366,7 @@ void CApplication::Render()
 				if (LOG_LEVEL_DEBUG_FREEMEM > g_advancedSettings.m_logLevel)
 				y = 0.08f * g_graphicsContext.GetHeight();
 #endif
-				CGUITextLayout::DrawOutlineText(g_fontManager.GetFont("debuglogging"), x, y, 0xffffffff, 0xff000000, 2, wszText);
+				CGUITextLayout::DrawOutlineText(g_fontManager.GetFont("mono_16"), x, y, 0xffffffff, 0xff000000, 2, wszText);
 				iShowRemoteCode--;
 			}
 #endif
@@ -2540,7 +2433,7 @@ void CApplication::Render()
 			CStdString wszText;
 			MEMORYSTATUS stat;
 			GlobalMemoryStatus(&stat);
-			wszText.Format("FreeMem %d/%d MB  (%d KB)  %s  CPU %d%s - %2.0f%%  MB %d%s  %s  FPS %2.1f",
+			wszText.Format("FreeMem %d/%d MB (%d KB) %s CPU %d%s (%2.0f%%) %s MB %d%s %s FPS %2.1f",
 			stat.dwAvailPhys / (1024 * 1024),
 			stat.dwTotalPhys / (1024 * 1024),
 			stat.dwAvailPhys/1024,
@@ -2548,6 +2441,7 @@ void CApplication::Render()
 			atoi(CFanController::Instance()->GetCPUTemp().ToString()),
 			g_langInfo.GetTempUnitString(),
 			(1.0f - m_idleThread.GetRelativeUsage())*100,
+			seperator,
 			atoi(CFanController::Instance()->GetGPUTemp().ToString()),
 			g_langInfo.GetTempUnitString(),
 			seperator,
@@ -2555,7 +2449,7 @@ void CApplication::Render()
 
 			float x = xShift + 0.04f * g_graphicsContext.GetWidth() + g_settings.m_ResInfo[res].Overscan.left;
 			float y = yShift + 0.04f * g_graphicsContext.GetHeight() + g_settings.m_ResInfo[res].Overscan.top;
-			CGUITextLayout::DrawOutlineText(g_fontManager.GetFont("debuglogging"), x, y, 0xffffffff, 0xff000000, 2, wszText);
+			CGUITextLayout::DrawOutlineText(g_fontManager.GetFont("mono_16"), x, y, 0xffffffff, 0xff000000, 2, wszText);
 		}
 		// render the skin debug info
 		if (g_SkinInfo.IsDebugging())
@@ -2587,7 +2481,7 @@ void CApplication::Render()
 
 			float x = xShift + 0.04f * g_graphicsContext.GetWidth() + g_settings.m_ResInfo[res].Overscan.left;
 			float y = yShift + 0.08f * g_graphicsContext.GetHeight() + g_settings.m_ResInfo[res].Overscan.top;
-			CGUITextLayout::DrawOutlineText(g_fontManager.GetFont("debuglogging"), x, y, 0xffffffff, 0xff000000, 2, info);
+			CGUITextLayout::DrawOutlineText(g_fontManager.GetFont("mono_16"), x, y, 0xffffffff, 0xff000000, 2, info);
 		}
 	}
 
@@ -3095,7 +2989,7 @@ void CApplication::Render()
 		float frameTime = m_frameTime.GetElapsedSeconds();
 		m_frameTime.StartZero();
 		// never set a frametime less than 2 fps to avoid problems when debuggin and on breaks
-		if( frameTime > 5 ) frameTime = 5;
+		if( frameTime > 0.5 ) frameTime = 0.5;
 
 		g_graphicsContext.Lock();
 		// check if there are notifications to display
@@ -3705,7 +3599,7 @@ void CApplication::Render()
 	{
 		try
 		{
-			g_windowManager.Delete(WINDOW_MUSIC_PLAYLIST);
+	/* 		g_windowManager.Delete(WINDOW_MUSIC_PLAYLIST);
 			g_windowManager.Delete(WINDOW_MUSIC_PLAYLIST_EDITOR);
 			g_windowManager.Delete(WINDOW_MUSIC_FILES);
 			g_windowManager.Delete(WINDOW_MUSIC_NAV);
@@ -3790,12 +3684,12 @@ void CApplication::Render()
 			g_windowManager.Remove(WINDOW_DIALOG_VOLUME_BAR);
 
 			CLog::Log(LOGNOTICE, "unload sections");
-			CSectionLoader::UnloadAll();
+			CSectionLoader::UnloadAll(); */
 			// reset our d3d params before we destroy
 			g_graphicsContext.SetD3DDevice(NULL);
 			g_graphicsContext.SetD3DParameters(NULL);
 
-#ifdef _DEBUG
+// #ifdef _DEBUG
 			//  Shutdown as much as possible of the
 			//  application, to reduce the leaks dumped
 			//  to the vc output window before calling
@@ -3803,29 +3697,29 @@ void CApplication::Render()
 			//  shown are no real leaks, as parts of the app
 			//  are still allocated.
 
-			g_localizeStrings.Clear();
-			g_LangCodeExpander.Clear();
-			g_charsetConverter.clear();
-			g_directoryCache.Clear();
-			CButtonTranslator::GetInstance().Clear();
-			CLastfmScrobbler::RemoveInstance();
-			CLibrefmScrobbler::RemoveInstance();
-			CLastFmManager::RemoveInstance();
-#ifdef HAS_EVENT_SERVER
-			CEventServer::RemoveInstance();
-#endif
-			g_infoManager.Clear();
-			DllLoaderContainer::Clear();
-			g_playlistPlayer.Clear();
-			g_settings.Clear();
-			g_guiSettings.Clear();
-			g_advancedSettings.Clear();
-#endif
+			// g_localizeStrings.Clear();
+			// g_LangCodeExpander.Clear();
+			// g_charsetConverter.clear();
+			// g_directoryCache.Clear();
+			// CButtonTranslator::GetInstance().Clear();
+			// CLastfmScrobbler::RemoveInstance();
+			// CLibrefmScrobbler::RemoveInstance();
+			// CLastFmManager::RemoveInstance();
+// #ifdef HAS_EVENT_SERVER
+			// CEventServer::RemoveInstance();
+// #endif
+			// g_infoManager.Clear();
+			// DllLoaderContainer::Clear();
+			// g_playlistPlayer.Clear();
+			// g_settings.Clear();
+			// g_guiSettings.Clear();
+			// g_advancedSettings.Clear();
+// #endif
 
-#ifdef _CRTDBG_MAP_ALLOC
-			_CrtDumpMemoryLeaks();
-			while(1); // execution ends
-#endif
+// #ifdef _CRTDBG_MAP_ALLOC
+			// _CrtDumpMemoryLeaks();
+			// while(1); // execution ends
+// #endif
 			return S_OK;
 		}
 		catch (...)
@@ -3873,7 +3767,7 @@ void CApplication::Render()
 			videoScan->StopScanning();
 
 			StopServices();
-			Sleep(500);
+			// Sleep(5000);
 
 #ifdef __APPLE__
 			g_xbmcHelper.ReleaseAllInput();
@@ -5456,8 +5350,8 @@ void CApplication::Render()
 	// We get called every 500ms
 	void CApplication::ProcessSlow()
 	{
-		// check our network state every 15 seconds or when net status changes
-		m_network.CheckNetwork(15);
+		// check our network state every 20 seconds or when net status changes
+		m_network.CheckNetwork(20);
 
 		// check if we need 2 spin down the harddisk
 		// CheckNetworkHDSpinDown();
@@ -5527,8 +5421,8 @@ void CApplication::Render()
 		m_Autorun.HandleAutorun();
 
 		// update upnp server/renderer states
-		// if(CUPnP::IsInstantiated())
-		// CUPnP::GetInstance()->UpdateState();
+		if(CUPnP::IsInstantiated())
+		CUPnP::GetInstance()->UpdateState();
 
 		//Check to see if current playing Title has changed and whether we should broadcast the fact
 		CheckForTitleChange();

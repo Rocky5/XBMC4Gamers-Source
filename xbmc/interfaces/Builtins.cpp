@@ -176,6 +176,9 @@ const BUILT_IN commands[] = {
   { "toggledebug",                false,  "Enables/disables debug mode" },
   { "FFPatchXBE",                 false,  "Flicker filter patch xbe" },
   { "FlushTextureCache",          false,  "Flushes the texture cache, freeing some memory" },
+  { "ReloadAdvancedSettings",     false,  "Reload advancedsettings.xml" },
+  { "EnableDebugMode",            false,  "Enable Debug mode" },
+  { "DisableDebugMode",           false,  "Disable Debug mode" },
 };
 
 bool CBuiltins::HasCommand(const CStdString& execString)
@@ -225,6 +228,24 @@ int CBuiltins::Execute(const CStdString& execString)
   {
     g_TextureManager.Flush(); // prob not needed but I added it here anyway
 	// CLog::Log(LOGNOTICE, "Flushed Texture Cache");
+  }
+  else if (execute.Equals("ReloadAdvancedSettings"))
+  {
+    g_advancedSettings.Load();
+  }
+  else if (execute.Equals("EnableDebugMode"))
+  {
+	g_guiSettings.SetBool("debug.showloginfo", 1);
+	g_advancedSettings.SetDebugMode(1);
+  }
+  else if (execute.Equals("DisableDebugMode"))
+  {
+	g_guiSettings.SetBool("debug.showloginfo", 0);
+	g_advancedSettings.SetDebugMode(0);
+  }
+  else if (execute.Equals("ReloadAdvancedSettings"))
+  {
+    g_advancedSettings.Load();
   }
   else if (execute.Equals("reboot") || execute.Equals("restart"))  //Will reboot the xbox, aka cold reboot
   {

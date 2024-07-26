@@ -370,7 +370,7 @@ bool CGUIDialogProfileSettings::ShowForProfile(unsigned int iProfile, bool bDeta
       g_settings.AddProfile(profile);
 
 // // Rocky5 Edits // New code
-	  g_guiSettings.SetString("lookandfeel.skin", "Profile Skin");
+	  g_guiSettings.SetString("lookandfeel.skin", "Profile");
 	  g_settings.Save();
 	  
 	  CFile::Cache(URIUtils::AddFileToFolder("special://masterprofile/","guisettings.xml"),URIUtils::AddFileToFolder("special://masterprofile/",dialog->m_strDirectory+"/guisettings.xml"));
@@ -379,7 +379,7 @@ bool CGUIDialogProfileSettings::ShowForProfile(unsigned int iProfile, bool bDeta
 
       CFile::Cache(URIUtils::AddFileToFolder("special://masterprofile/","advancedsettings.xml"),URIUtils::AddFileToFolder("special://masterprofile/",dialog->m_strDirectory+"/advancedsettings.xml"));
 	  
-	  g_guiSettings.SetString("lookandfeel.skin", "Manage Profiles Skin");
+	  g_guiSettings.SetString("lookandfeel.skin", "Manage Profiles");
 	  g_settings.Save();
     }
 /* Old code

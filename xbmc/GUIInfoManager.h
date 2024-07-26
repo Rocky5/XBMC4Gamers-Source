@@ -413,8 +413,6 @@ namespace INFO
 #define SYSTEM_SETTING              710
 #define SYSTEM_HAS_ADDON            711
 #define SYSTEM_SCREENSAVER_ACTIV    717
-#define SYSTEM_FREE_MEMORY_NO_MB    718
-#define SYSTEM_USED_MEMORY_NO_MB    719
 
 #define LIBRARY_HAS_MUSIC           720
 #define LIBRARY_HAS_VIDEO           721
@@ -432,6 +430,10 @@ namespace INFO
 
 #define SKIN_THEME                  800
 #define SKIN_COLOUR_THEME           801
+
+#define SYSTEM_FREE_MEMORY_NO_MB    850
+#define SYSTEM_USED_MEMORY_NO_MB    851
+#define SYSTEM_TOTAL_MEMORY_NO_MB   852
 
 #define SLIDE_INFO_START            900
 #define SLIDE_INFO_END              980
