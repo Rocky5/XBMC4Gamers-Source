@@ -1067,9 +1067,16 @@ HRESULT CApplication::Create(HWND hWnd)
 				bNeedReboot = true;
 				fDoPatchTest = true;
 			}
+			
+			if (g_advancedSettings.m_videoPatch)
+			{
+				CLog::Log(LOGINFO, "RemoveKernelPatch processed");
+				CUtil::RemoveKernelPatch(); // This removes the Resolution patch from the kernel if it is not needed (if actual resolution matches eeprom setting)
+			}
 			else
-			CUtil::RemoveKernelPatch(); // This removes the Resolution patch from the kernel if it is not needed (if actual resolution matches eeprom setting)
-
+			{
+				CLog::Log(LOGINFO, "RemoveKernelPatch skipped");
+			}
 			if (fDoPatchTest) // Is set if we have to test whether our patch is in the kernel & therefore responsible for the mismatch of resolution & eeprom setting
 			{
 				if (!CUtil::LookForKernelPatch()) // If our patch is not present we are not responsible for the mismatch of current resolution & eeprom setting

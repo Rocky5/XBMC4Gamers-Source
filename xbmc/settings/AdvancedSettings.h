@@ -118,9 +118,9 @@ class CAdvancedSettings
     bool m_fullScreenOnMovieStart;
     bool m_noDVDROM;
     bool m_enableintro;
-    bool m_fastscanning;
     bool m_slowscrolling;
     bool m_splashImage;
+    bool m_videoPatch;
     CStdString m_cachePath;
     bool m_displayRemoteCodes;
     CStdString m_videoCleanDateTimeRegExp;

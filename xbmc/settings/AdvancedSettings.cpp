@@ -102,9 +102,9 @@ CAdvancedSettings::CAdvancedSettings()
   m_fullScreenOnMovieStart = true;
   m_noDVDROM = false;
   m_enableintro = false;
-  m_fastscanning = true;
   m_slowscrolling = true;
   m_splashImage = true;
+  m_videoPatch = true;
   m_cachePath = "Z:\\";
   m_displayRemoteCodes = false;
 
@@ -458,9 +458,9 @@ bool CAdvancedSettings::Load()
   XMLUtils::GetBoolean(pRootElement, "usepcdvdrom", m_usePCDVDROM);
   XMLUtils::GetBoolean(pRootElement, "nodvdrom", m_noDVDROM);
   XMLUtils::GetBoolean(pRootElement, "enableintro", m_enableintro);
-  XMLUtils::GetBoolean(pRootElement, "fasterscanning", m_fastscanning);
   XMLUtils::GetBoolean(pRootElement, "slowscrolling", m_slowscrolling);
   XMLUtils::GetBoolean(pRootElement, "splash", m_splashImage);
+  XMLUtils::GetBoolean(pRootElement, "removekernelpatch", m_videoPatch);
   XMLUtils::GetBoolean(pRootElement, "disablemodchipdetection", m_DisableModChipDetection);
   XMLUtils::GetBoolean(pRootElement, "powersave", m_bPowerSave);
 
