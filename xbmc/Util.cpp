@@ -3970,7 +3970,7 @@ void CUtil::RemoveKernelPatch()
 			{
 				memcpy(&Kernel[i], &FourZeroThreeFour_FourOneThreeTwo_originalBytes[0], 70); // Reset Kernel
 			}
-			else if (kernel_version == "1.0.4267.1")
+			else if (kernel_version == "1.0.4627.1")
 			{
 				memcpy(&Kernel[i], &FourSixTwoSeven_originalBytes[0], 70); // Reset Kernel
 			}
