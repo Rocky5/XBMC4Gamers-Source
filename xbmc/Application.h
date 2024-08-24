@@ -33,6 +33,7 @@ class CFileItemList;
 #include "dialogs/GUIDialogKaiToast.h"
 #include "dialogs/GUIDialogVolumeBar.h"
 #include "dialogs/GUIDialogMuteBug.h"
+#include "dialogs/GUIDialogOverlay.h"
 #include "windows/GUIWindowPointer.h"   // Mouse pointer
 
 #include "xbox/Network.h"
@@ -185,6 +186,7 @@ public:
   CGUIDialogSeekBar m_guiDialogSeekBar;
   CGUIDialogKaiToast m_guiDialogKaiToast;
   CGUIDialogMuteBug m_guiDialogMuteBug;
+  CGUIDialogOverlay m_guiDialogOverlay;
   CGUIWindowPointer m_guiPointer;
 
   CIdleThread m_idleThread;

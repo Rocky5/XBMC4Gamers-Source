@@ -781,14 +781,14 @@ void LoadSettings()
 		  if (len < 4 || strcmpi(presets + len - 4, ".zip") != 0)
 		  {
 			  // Normal folder
-			  strcpy(m_szPresetsPath,  "Q:\\visualisations\\");
+			  strcpy(m_szPresetsPath,  "Q:\\system\\visualisations\\");
 			  strcat(m_szPresetsPath,  presets);
 			  strcat(m_szPresetsPath, "\\");
 		  }
 		  else
 		  {
 			  // Zip file
-			  strcpy(m_szPresetsPath, "zip://q%3A%5Cvisualisations%5C"); 
+			  strcpy(m_szPresetsPath, "zip://q%3A%5Csystem%5Cvisualisations%5C"); 
 			  strcat(m_szPresetsPath,  presets);
 			  strcat(m_szPresetsPath, "/");
 		  }

@@ -866,7 +866,7 @@ void InitParticleSystem(ParticleSystemSettings settings)
 	m_ParticleSystem.SetVVar			( settings.m_csValue.variation );
 
 	char szTexFile[1024];
-	strcpy(szTexFile, "Q:\\Visualisations\\");
+	strcpy(szTexFile, "Q:\\system\\visualisations\\");
 	strcat(szTexFile, settings.m_chTexFile);
 	m_ParticleSystem.SetTexture( szTexFile, m_pd3dDevice );
 }

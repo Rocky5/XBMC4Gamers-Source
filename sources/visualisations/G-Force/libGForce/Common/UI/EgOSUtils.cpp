@@ -24,7 +24,7 @@ void EgOSUtils::Initialize( void* inModuleInstance ) {
 	
 	srand( timeGetTime() );
 
-	sAppSpec.Assign( "q:\\visualisations\\", 0);
+	sAppSpec.Assign( "Q:\\system\\visualisations\\", 0);
 
 //>	char path[ 700 ];
 //>	long len = ::GetModuleFileName( (HINSTANCE) inModuleInstance, path, 699 );

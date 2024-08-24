@@ -21,7 +21,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="C:\Program Files\Microsoft Xbox SDK\xbox\include"
+				AdditionalIncludeDirectories="C:\Program Files (x86)\Microsoft Xbox SDK\xbox\include"
 				PreprocessorDefinitions="WIN32;_DEBUG"
 				MinimalRebuild="FALSE"
 				BasicRuntimeChecks="0"
@@ -67,7 +67,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				FavorSizeOrSpeed="1"
-				AdditionalIncludeDirectories="C:\Program Files\Microsoft Xbox SDK\xbox\include"
+				AdditionalIncludeDirectories="C:\Program Files (x86)\Microsoft Xbox SDK\xbox\include"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;STARBURST_EXPORTS;_XBOX"
 				MinimalRebuild="FALSE"
 				RuntimeLibrary="2"

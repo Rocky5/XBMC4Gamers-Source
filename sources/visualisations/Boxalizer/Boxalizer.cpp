@@ -21,7 +21,7 @@ bool CBoxalizer::Init(LPDIRECT3DDEVICE8 pd3dDevice)
 
 	//load the texture
 	char szTexFile[1024];
-	strcpy(szTexFile, "Q:\\Visualisations\\");
+	strcpy(szTexFile, "Q:\\system\\visualisations\\");
 	strcat(szTexFile, g_settings.m_szTextureFile);
 
 	if(FAILED(D3DXCreateTextureFromFile(m_pd3dDevice, szTexFile, &m_pTexture)))

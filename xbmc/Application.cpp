@@ -1254,15 +1254,16 @@ HRESULT CApplication::Initialize()
 	CUtil::WipeDir("Z:\\");
 	CreateDirectory("Z:\\temp", NULL); // temp directory for python and dllGetTempPathA
 	CreateDirectory("Q:\\system\\scripts", NULL);
-	CreateDirectory("Q:\\system\\plugins", NULL);
-	CreateDirectory("Q:\\system\\plugins\\music", NULL);
-	CreateDirectory("Q:\\system\\plugins\\video", NULL);
-	CreateDirectory("Q:\\system\\plugins\\pictures", NULL);
-	CreateDirectory("Q:\\system\\plugins\\programs", NULL);
+	// CreateDirectory("Q:\\system\\plugins", NULL);
+	// CreateDirectory("Q:\\system\\plugins\\music", NULL);
+	// CreateDirectory("Q:\\system\\plugins\\video", NULL);
+	// CreateDirectory("Q:\\system\\plugins\\pictures", NULL);
+	// CreateDirectory("Q:\\system\\plugins\\programs", NULL);
 	CreateDirectory("Q:\\system\\language", NULL);
 	CreateDirectory("Q:\\system\\screenshots", NULL);
 	CreateDirectory("Q:\\system\\trainers", NULL);
 	CreateDirectory("Q:\\system\\visualisations", NULL);
+	CreateDirectory(g_settings.GetUserDataFolder()+"\\visualisations",NULL);
 	CreateDirectory("E:\\CACHE", NULL);
 
 	// initialize network
@@ -1429,7 +1430,6 @@ HRESULT CApplication::Initialize()
 	m_ctrDpad.SetDelays(100, 500); //g_settings.m_iMoveDelayController, g_settings.m_iRepeatDelayController);
 
 	SAFE_DELETE(m_splash);
-	g_pythonParser.bStartup = true;
 	
 	if (g_guiSettings.GetBool("masterlock.startuplock") && 
 			g_settings.GetMasterProfile().getLockMode() != LOCK_MODE_EVERYONE &&
@@ -1470,6 +1470,8 @@ HRESULT CApplication::Initialize()
 #endif
 	}
 
+	g_pythonParser.bStartup = true;
+	
 	if (g_settings.UsingLoginScreen())
 	{
 		g_windowManager.ActivateWindow(WINDOW_LOGIN_SCREEN);
@@ -1490,7 +1492,7 @@ HRESULT CApplication::Initialize()
 	// g_sysinfo.Refresh();
 
 	CLog::Log(LOGINFO, "removing tempfiles");
-	// CUtil::initilise();
+
 	CUtil::RemoveTempFiles();
 
 	if (!m_bAllSettingsLoaded)
@@ -1866,6 +1868,7 @@ void CApplication::StartServices()
 	CLog::Log(LOGNOTICE, "Not using idle thread with HLT (no power saving)");
 #endif
 
+	CheckDate();
 	StartLEDControl(false);
 
 	// Start Thread for DVD Mediatype detection
@@ -1919,8 +1922,8 @@ void CApplication::StartServices()
 	case APM_HIPOWER_STANDBY:
 		XKHDD::SetAPMLevel(0x7F);
 		break;
-	}
-	CheckDate();
+  }
+			 
 #endif
 }
 
@@ -1972,7 +1975,7 @@ void CApplication::StopServices()
 
 void CApplication::DelayLoadSkin()
 {
-	m_skinReloadTime = CTimeUtils::GetFrameTime() + 1000;
+	m_skinReloadTime = CTimeUtils::GetFrameTime() + 2000;
 	return ;
 }
 
@@ -2096,11 +2099,12 @@ void CApplication::LoadSkin(const CStdString& strSkin)
 	CLog::Log(LOGDEBUG,"Load Skin XML: %.2fms", 1000.f * (end.QuadPart - start.QuadPart) / freq.QuadPart);
 
 	CLog::Log(LOGINFO, "  initialize new skin...");
-	m_guiPointer.AllocResources(true);
+	// m_guiPointer.AllocResources(true);
 	m_guiDialogVolumeBar.AllocResources(true);
 	m_guiDialogSeekBar.AllocResources(true);
 	m_guiDialogKaiToast.AllocResources(true);
 	m_guiDialogMuteBug.AllocResources(true);
+	m_guiDialogOverlay.AllocResources(true);
 	g_windowManager.AddMsgTarget(this);
 	g_windowManager.AddMsgTarget(&g_playlistPlayer);
 	g_windowManager.AddMsgTarget(&g_infoManager);
@@ -2111,6 +2115,12 @@ void CApplication::LoadSkin(const CStdString& strSkin)
 
 	if (g_SkinInfo.HasSkinFile("DialogFullScreenInfo.xml"))
 	g_windowManager.Add(new CGUIDialogFullScreenInfo);
+	
+	if (g_SkinInfo.HasSkinFile("DialogOverlay.xml"))
+	{
+		g_windowManager.Add(&m_guiDialogOverlay);
+		m_guiDialogOverlay.Show();
+	}
 
 	CLog::Log(LOGINFO, "  skin loaded...");
 
@@ -2153,6 +2163,9 @@ void CApplication::UnloadSkin()
 	m_guiDialogMuteBug.OnMessage(msg);
 	m_guiDialogMuteBug.ResetControlStates();
 	m_guiDialogMuteBug.FreeResources(true);
+	m_guiDialogOverlay.OnMessage(msg);
+	m_guiDialogOverlay.ResetControlStates();
+	m_guiDialogOverlay.FreeResources(true);
 
 	// remove the skin-dependent window
 	g_windowManager.Delete(WINDOW_DIALOG_FULLSCREEN_INFO);
@@ -3608,7 +3621,7 @@ void CApplication::Render()
 	{
 		try
 		{
-	/* 		g_windowManager.Delete(WINDOW_MUSIC_PLAYLIST);
+			g_windowManager.Delete(WINDOW_MUSIC_PLAYLIST);
 			g_windowManager.Delete(WINDOW_MUSIC_PLAYLIST_EDITOR);
 			g_windowManager.Delete(WINDOW_MUSIC_FILES);
 			g_windowManager.Delete(WINDOW_MUSIC_NAV);
@@ -3630,6 +3643,7 @@ void CApplication::Render()
 			g_windowManager.Delete(WINDOW_DIALOG_MUSIC_SCAN);
 			g_windowManager.Delete(WINDOW_DIALOG_PLAYER_CONTROLS);
 			g_windowManager.Delete(WINDOW_DIALOG_MUSIC_OSD);
+			// g_windowManager.Delete(WINDOW_DIALOG_OVERLAY);
 			g_windowManager.Delete(WINDOW_DIALOG_VIS_SETTINGS);
 			g_windowManager.Delete(WINDOW_DIALOG_VIS_PRESET_LIST);
 			g_windowManager.Delete(WINDOW_DIALOG_SELECT);
@@ -3693,42 +3707,42 @@ void CApplication::Render()
 			g_windowManager.Remove(WINDOW_DIALOG_VOLUME_BAR);
 
 			CLog::Log(LOGNOTICE, "unload sections");
-			CSectionLoader::UnloadAll(); */
+			CSectionLoader::UnloadAll();
 			// reset our d3d params before we destroy
 			g_graphicsContext.SetD3DDevice(NULL);
 			g_graphicsContext.SetD3DParameters(NULL);
 
-// #ifdef _DEBUG
-			//  Shutdown as much as possible of the
-			//  application, to reduce the leaks dumped
-			//  to the vc output window before calling
-			//  _CrtDumpMemoryLeaks(). Most of the leaks
-			//  shown are no real leaks, as parts of the app
-			//  are still allocated.
+#ifdef _DEBUG
+			 // Shutdown as much as possible of the
+			 // application, to reduce the leaks dumped
+			 // to the vc output window before calling
+			 // _CrtDumpMemoryLeaks(). Most of the leaks
+			 // shown are no real leaks, as parts of the app
+			 // are still allocated.
 
-			// g_localizeStrings.Clear();
-			// g_LangCodeExpander.Clear();
-			// g_charsetConverter.clear();
-			// g_directoryCache.Clear();
-			// CButtonTranslator::GetInstance().Clear();
-			// CLastfmScrobbler::RemoveInstance();
-			// CLibrefmScrobbler::RemoveInstance();
-			// CLastFmManager::RemoveInstance();
-// #ifdef HAS_EVENT_SERVER
-			// CEventServer::RemoveInstance();
-// #endif
-			// g_infoManager.Clear();
-			// DllLoaderContainer::Clear();
-			// g_playlistPlayer.Clear();
-			// g_settings.Clear();
-			// g_guiSettings.Clear();
-			// g_advancedSettings.Clear();
-// #endif
+			g_localizeStrings.Clear();
+			g_LangCodeExpander.Clear();
+			g_charsetConverter.clear();
+			g_directoryCache.Clear();
+			CButtonTranslator::GetInstance().Clear();
+			CLastfmScrobbler::RemoveInstance();
+			CLibrefmScrobbler::RemoveInstance();
+			CLastFmManager::RemoveInstance();
+#ifdef HAS_EVENT_SERVER
+			CEventServer::RemoveInstance();
+#endif
+			g_infoManager.Clear();
+			DllLoaderContainer::Clear();
+			g_playlistPlayer.Clear();
+			g_settings.Clear();
+			g_guiSettings.Clear();
+			g_advancedSettings.Clear();
+#endif
 
-// #ifdef _CRTDBG_MAP_ALLOC
-			// _CrtDumpMemoryLeaks();
-			// while(1); // execution ends
-// #endif
+#ifdef _CRTDBG_MAP_ALLOC
+			_CrtDumpMemoryLeaks();
+			while(1); // execution ends
+#endif
 			return S_OK;
 		}
 		catch (...)
@@ -4449,69 +4463,69 @@ void CApplication::Render()
 
 	void CApplication::SaveFileState()
 	{
-		CStdString progressTrackingFile = m_progressTrackingItem->GetPath();
+		/* CStdString progressTrackingFile = m_progressTrackingItem->GetPath();
 
 		if (progressTrackingFile != "")
 		{
-			/* if (m_progressTrackingItem->IsVideo())
-	{
-	CLog::Log(LOGDEBUG, "%s - Saving file state for video item %s", __FUNCTION__, progressTrackingFile.c_str());
+			if (m_progressTrackingItem->IsVideo())
+			{
+				CLog::Log(LOGDEBUG, "%s - Saving file state for video item %s", __FUNCTION__, progressTrackingFile.c_str());
 
-	CVideoDatabase videodatabase;
-	if (videodatabase.Open())
-	{
-	bool updateListing = false;
-	// No resume & watched status for livetv
-	if (!m_progressTrackingItem->IsLiveTV())
-	{
-	if (m_progressTrackingPlayCountUpdate)
-	{
-		CLog::Log(LOGDEBUG, "%s - Marking video item %s as watched", __FUNCTION__, progressTrackingFile.c_str());
+				CVideoDatabase videodatabase;
+				if (videodatabase.Open())
+				{
+				bool updateListing = false;
+				// No resume & watched status for livetv
+				if (!m_progressTrackingItem->IsLiveTV())
+				{
+				if (m_progressTrackingPlayCountUpdate)
+				{
+					CLog::Log(LOGDEBUG, "%s - Marking video item %s as watched", __FUNCTION__, progressTrackingFile.c_str());
 
-		// consider this item as played
-		videodatabase.IncrementPlayCount(*m_progressTrackingItem);
-		m_progressTrackingItem->GetVideoInfoTag()->m_playCount++;
-		m_progressTrackingItem->SetOverlayImage(CGUIListItem::ICON_OVERLAY_UNWATCHED, true);
-		updateListing = true;
-	}
+					// consider this item as played
+					videodatabase.IncrementPlayCount(*m_progressTrackingItem);
+					m_progressTrackingItem->GetVideoInfoTag()->m_playCount++;
+					m_progressTrackingItem->SetOverlayImage(CGUIListItem::ICON_OVERLAY_UNWATCHED, true);
+					updateListing = true;
+				}
 
-	if (m_progressTrackingVideoResumeBookmark.timeInSeconds < 0.0f)
-	{
-		videodatabase.ClearBookMarksOfFile(progressTrackingFile, CBookmark::RESUME);
-	}
-	else if (m_progressTrackingVideoResumeBookmark.timeInSeconds > 0.0f)
-	{
-		videodatabase.AddBookMarkToFile(progressTrackingFile, m_progressTrackingVideoResumeBookmark, CBookmark::RESUME);
-	}
-	}
+				if (m_progressTrackingVideoResumeBookmark.timeInSeconds < 0.0f)
+				{
+					videodatabase.ClearBookMarksOfFile(progressTrackingFile, CBookmark::RESUME);
+				}
+				else if (m_progressTrackingVideoResumeBookmark.timeInSeconds > 0.0f)
+				{
+					videodatabase.AddBookMarkToFile(progressTrackingFile, m_progressTrackingVideoResumeBookmark, CBookmark::RESUME);
+				}
+				}
 
-	if (g_settings.m_currentVideoSettings != g_settings.m_defaultVideoSettings)
-	{
-	videodatabase.SetVideoSettings(progressTrackingFile, g_settings.m_currentVideoSettings);
-	}
+				if (g_settings.m_currentVideoSettings != g_settings.m_defaultVideoSettings)
+				{
+				videodatabase.SetVideoSettings(progressTrackingFile, g_settings.m_currentVideoSettings);
+				}
 
-	if ((m_progressTrackingItem->IsDVDImage() ||
-		m_progressTrackingItem->IsDVDFile()    ) &&
-		m_progressTrackingItem->HasVideoInfoTag() &&
-		m_progressTrackingItem->GetVideoInfoTag()->HasStreamDetails())
-	{
-	videodatabase.SetStreamDetailsForFile(m_progressTrackingItem->GetVideoInfoTag()->m_streamDetails,progressTrackingFile);
-	updateListing = true;
-	}
-	videodatabase.Close();
-	
-	if (updateListing)
-	{
-	CUtil::DeleteVideoDatabaseDirectoryCache();
-//          CFileItemPtr msgItem(new CFileItem(*m_progressTrackingItem));
-//          if (m_progressTrackingItem->HasProperty("original_listitem_url"))
-//            msgItem->SetPath(m_progressTrackingItem->GetProperty("original_listitem_url"));
-	CGUIMessage message(GUI_MSG_NOTIFY_ALL, g_windowManager.GetActiveWindow(), 0, GUI_MSG_UPDATE, 0);
-//          CGUIMessage message(GUI_MSG_NOTIFY_ALL, g_windowManager.GetActiveWindow(), 0, GUI_MSG_UPDATE_ITEM, 1, msgItem); // 1 to update the listing as well 
-	g_windowManager.SendThreadMessage(message);
-	}
-	}
-	} */
+				if ((m_progressTrackingItem->IsDVDImage() ||
+					m_progressTrackingItem->IsDVDFile()    ) &&
+					m_progressTrackingItem->HasVideoInfoTag() &&
+					m_progressTrackingItem->GetVideoInfoTag()->HasStreamDetails())
+				{
+				videodatabase.SetStreamDetailsForFile(m_progressTrackingItem->GetVideoInfoTag()->m_streamDetails,progressTrackingFile);
+				updateListing = true;
+				}
+				videodatabase.Close();
+				
+				if (updateListing)
+				{
+				CUtil::DeleteVideoDatabaseDirectoryCache();
+			//          CFileItemPtr msgItem(new CFileItem(*m_progressTrackingItem));
+			//          if (m_progressTrackingItem->HasProperty("original_listitem_url"))
+			//            msgItem->SetPath(m_progressTrackingItem->GetProperty("original_listitem_url"));
+				CGUIMessage message(GUI_MSG_NOTIFY_ALL, g_windowManager.GetActiveWindow(), 0, GUI_MSG_UPDATE, 0);
+			//          CGUIMessage message(GUI_MSG_NOTIFY_ALL, g_windowManager.GetActiveWindow(), 0, GUI_MSG_UPDATE_ITEM, 1, msgItem); // 1 to update the listing as well 
+				g_windowManager.SendThreadMessage(message);
+				}
+				}
+			}
 
 			if (m_progressTrackingItem->IsAudio())
 			{
@@ -4535,7 +4549,7 @@ void CApplication::Render()
 					}
 				}
 			}
-		}
+		} */
 	}
 
 	void CApplication::UpdateFileState()
@@ -5359,13 +5373,13 @@ void CApplication::Render()
 	// We get called every 500ms
 	void CApplication::ProcessSlow()
 	{
-		// check our network state every 20 seconds or when net status changes
-		m_network.CheckNetwork(20);
+		// check our network state every 15 seconds or when net status changes
+		m_network.CheckNetwork(30);
 
 		// check if we need 2 spin down the harddisk
-		// CheckNetworkHDSpinDown();
-		// if (!m_bNetworkSpinDown)
-		// CheckHDSpindown();
+		CheckNetworkHDSpinDown();
+		if (!m_bNetworkSpinDown)
+		CheckHDSpindown();
 
 		// Store our file state for use on close()
 		UpdateFileState();
@@ -5572,7 +5586,6 @@ void CApplication::Render()
 			g_settings.m_dynamicRangeCompressionLevel = 0;
 			g_settings.m_nVolumeLevel = hardwareVolume;
 		}
-
 		// update mute state
 		if(!g_settings.m_bMute && hardwareVolume <= VOLUME_MINIMUM)
 		{
@@ -5947,17 +5960,13 @@ void CApplication::Render()
 		pUser->SetShortcutsEnabled(false);
 		pUser->SetUseRelativePaths(false);
 		pUser->SetBypassUserLimit(false);
-		pUser->SetUserLimit(5);
+		pUser->SetUserLimit(2);
 		pUser->SetIPLimit(0);
 		pUser->AddDirectory("/", XBFILE_READ | XBFILE_WRITE | XBFILE_DELETE | XBFILE_APPEND | XBDIR_DELETE | XBDIR_CREATE | XBDIR_LIST | XBDIR_SUBDIRS | XBDIR_HOME);
 		pUser->AddDirectory("C:\\", XBFILE_READ | XBFILE_WRITE | XBFILE_DELETE | XBFILE_APPEND | XBDIR_DELETE | XBDIR_CREATE | XBDIR_LIST | XBDIR_SUBDIRS);
 		pUser->AddDirectory("D:\\", XBFILE_READ | XBDIR_LIST | XBDIR_SUBDIRS);
 		pUser->AddDirectory("E:\\", XBFILE_READ | XBFILE_WRITE | XBFILE_DELETE | XBFILE_APPEND | XBDIR_DELETE | XBDIR_CREATE | XBDIR_LIST | XBDIR_SUBDIRS);
 		pUser->AddDirectory("Q:\\", XBFILE_READ | XBFILE_WRITE | XBFILE_DELETE | XBFILE_APPEND | XBDIR_DELETE | XBDIR_CREATE | XBDIR_LIST | XBDIR_SUBDIRS);
-		pUser->AddDirectory("X:\\", XBFILE_READ | XBFILE_WRITE | XBFILE_DELETE | XBFILE_APPEND | XBDIR_DELETE | XBDIR_CREATE | XBDIR_LIST | XBDIR_SUBDIRS);
-		pUser->AddDirectory("Y:\\", XBFILE_READ | XBFILE_WRITE | XBFILE_DELETE | XBFILE_APPEND | XBDIR_DELETE | XBDIR_CREATE | XBDIR_LIST | XBDIR_SUBDIRS);
-		pUser->AddDirectory("Z:\\", XBFILE_READ | XBFILE_WRITE | XBFILE_DELETE | XBFILE_APPEND | XBDIR_DELETE | XBDIR_CREATE | XBDIR_LIST | XBDIR_SUBDIRS);
-		pUser->AddDirectory("P:\\", XBFILE_READ | XBFILE_WRITE | XBFILE_DELETE | XBFILE_APPEND | XBDIR_DELETE | XBDIR_CREATE | XBDIR_LIST | XBDIR_SUBDIRS);
 		//Add existing extended partitions
 		if (CIoSupport::DriveExists('F')){
 			pUser->AddDirectory("F:\\", XBFILE_READ | XBFILE_WRITE | XBFILE_DELETE | XBFILE_APPEND | XBDIR_DELETE | XBDIR_CREATE | XBDIR_LIST | XBDIR_SUBDIRS);

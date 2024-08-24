@@ -135,6 +135,9 @@ public:
   void SetSynopsis_Preview(const CStdString& strLabel);
   const CStdString& GetSynopsis_Preview() const;
   
+  void SetSynopsis_Fanart(const CStdString& strLabel);
+  const CStdString& GetSynopsis_Fanart() const;
+  
   void SetLabelSynopsis_PlayerCount(const CStdString& strLabel);
   const CStdString& GetLabelSynopsis_PlayerCount() const;
 

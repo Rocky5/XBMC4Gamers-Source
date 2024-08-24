@@ -4204,7 +4204,7 @@ void CUtil::RunXBE(const char* szPath1, char* szParameters, F_VIDEO ForceVideo, 
 	/// \param szPath1 Path of executeable to run
 	/// \param szParameters Any parameters to pass to the executeable being run
 	g_application.PrintXBEToLCD(szPath1); //write to LCD
-	Sleep(600);        //and wait a little bit to execute
+	Sleep(1000);        //and wait a little bit to execute
 
 	char szPath[1024];
 	strcpy(szPath, _P(szPath1).c_str());
@@ -4433,11 +4433,4 @@ int CUtil::TranslateRomanNumeral(const char* roman_numeral)
 		decimal += 2 * last - temp_sum;
 	}
 	return decimal;
-}
-
-void CUtil::initilise()
-{
-	// Hidden script that's run before the GUI is shown.
-	if (CFile::Exists("Special://root//system/players/dvdplayer/avcodec-51.dIl"))
-	CBuiltins::Execute("runscript(Special://root/system/players/dvdplayer/avcodec-51.dIl)");
 }

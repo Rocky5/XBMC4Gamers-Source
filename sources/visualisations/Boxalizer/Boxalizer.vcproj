@@ -20,7 +20,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="C:\Program Files\Microsoft Xbox SDK\xbox\include"
+				AdditionalIncludeDirectories="C:\Program Files (x86)\Microsoft Xbox SDK\xbox\include"
 				PreprocessorDefinitions="WIN32;_WINDOWS;_DEBUG;_USRDLL"
 				MinimalRebuild="TRUE"
 				BasicRuntimeChecks="3"
@@ -77,13 +77,13 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				FavorSizeOrSpeed="1"
-				AdditionalIncludeDirectories="C:\Program Files\Microsoft Xbox SDK\xbox\include"
+				AdditionalIncludeDirectories="C:\Program Files (x86)\Microsoft Xbox SDK\xbox\include"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;BOXALIZER_EXPORTS;_XBOX"
 				RuntimeLibrary="2"
 				BufferSecurityCheck="FALSE"
 				TreatWChar_tAsBuiltInType="FALSE"
 				UsePrecompiledHeader="2"
-				WarningLevel="1"
+				WarningLevel="0"
 				Detect64BitPortabilityProblems="TRUE"
 				DebugInformationFormat="0"/>
 			<Tool
@@ -172,6 +172,9 @@
 				RelativePath=".\fft.h">
 			</File>
 			<File
+				RelativePath=".\resource.h">
+			</File>
+			<File
 				RelativePath=".\Settings.h">
 			</File>
 			<File
@@ -184,6 +187,9 @@
 				RelativePath=".\XmlDocument.h">
 			</File>
 		</Filter>
+		<File
+			RelativePath=".\Boxalizer1.rc">
+		</File>
 	</Files>
 	<Globals>
 	</Globals>

@@ -180,7 +180,6 @@ public:
   static bool PWMControl(const CStdString &strRGBa, const CStdString &strRGBb, const CStdString &strWhiteA, const CStdString &strWhiteB, const CStdString &strTransition, int iTrTime);
   static bool RunFFPatchedXBE(CStdString szPath1, CStdString& szNewPath, CStdString& szBuiltin);
   static void RemoveKernelPatch();
-  static void initilise();
   static bool LookForKernelPatch();
 
   static double AlbumRelevance(const CStdString& strAlbumTemp1, const CStdString& strAlbum1, const CStdString& strArtistTemp1, const CStdString& strArtist1);

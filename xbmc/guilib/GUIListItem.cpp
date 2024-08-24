@@ -62,6 +62,7 @@ CGUIListItem::CGUIListItem(void)
   m_strSynopsisFanart = "";
   m_strSynopsisResources = "";
   m_strSynopsisPreview = "";
+  m_strSynopsisFanart = "";
   m_strSynopsisPlayerCount = "1";
 }
 
@@ -96,6 +97,7 @@ CGUIListItem::CGUIListItem(const CStdString& strLabel)
   m_strSynopsisFanart = "";
   m_strSynopsisResources = "";
   m_strSynopsisPreview = "";
+  m_strSynopsisFanart = "";
   m_strSynopsisPlayerCount = "1";
 }
 
@@ -355,6 +357,19 @@ const CStdString& CGUIListItem::GetSynopsis_Preview() const
   return m_strSynopsisPreview;
 }
 
+void CGUIListItem::SetSynopsis_Fanart(const CStdString& strSynopsisFanart)
+{
+  if (m_strSynopsisFanart == strSynopsisFanart)
+    return;
+  m_strSynopsisFanart = strSynopsisFanart;
+  SetInvalid();
+}
+
+const CStdString& CGUIListItem::GetSynopsis_Fanart() const
+{
+  return m_strSynopsisFanart;
+}
+
 void CGUIListItem::SetLabelSynopsis_PlayerCount(const CStdString& strSynopsisPlayerCount)
 {
   if (m_strSynopsisPlayerCount == strSynopsisPlayerCount)
@@ -503,6 +518,7 @@ const CGUIListItem& CGUIListItem::operator =(const CGUIListItem& item)
   m_strSynopsisFanart = item.m_strSynopsisFanart;
   m_strSynopsisResources = item.m_strSynopsisResources;
   m_strSynopsisPreview = item.m_strSynopsisPreview;
+  m_strSynopsisFanart = item.m_strSynopsisFanart;
   m_strSynopsisPlayerCount = item.m_strSynopsisPlayerCount;
   
   FreeMemory();
@@ -543,6 +559,7 @@ void CGUIListItem::Archive(CArchive &ar)
     ar << m_strSynopsisFanart;
     ar << m_strSynopsisResources;
     ar << m_strSynopsisPreview;
+    ar << m_strSynopsisFanart;
     ar << m_strSynopsisPlayerCount;
 	
     ar << m_strThumbnailImage;
@@ -581,6 +598,7 @@ void CGUIListItem::Archive(CArchive &ar)
     ar >> m_strSynopsisFanart;
     ar >> m_strSynopsisResources;
     ar >> m_strSynopsisPreview;
+    ar >> m_strSynopsisFanart;
     ar >> m_strSynopsisPlayerCount;
 	
     ar >> m_strThumbnailImage;
@@ -622,6 +640,7 @@ void CGUIListItem::Serialize(CVariant &value)
   value["strSynopsisFanart"] = m_strSynopsisFanart;
   value["strSynopsisResources"] = m_strSynopsisResources;
   value["strSynopsisPreview"] = m_strSynopsisPreview;
+  value["strSynopsisFanart"] = m_strSynopsisFanart;
   value["strSynopsisPlayerCount"] = m_strSynopsisPlayerCount;
   
   value["sortLabel"] = CStdString(m_sortLabel);

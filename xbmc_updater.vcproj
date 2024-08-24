@@ -1356,6 +1356,9 @@ bundler xbelogo\saveimage-updater.rdf -o xbelogo\saveimage-updater.xbx
 					RelativePath=".\xbmc\dialogs\GUIDialogMuteBug.cpp">
 				</File>
 				<File
+					RelativePath=".\xbmc\dialogs\GUIDialogOverlay.cpp">
+				</File>
+				<File
 					RelativePath=".\xbmc\network\GUIDialogNetworkSetup.cpp">
 				</File>
 				<File
@@ -2998,6 +3001,9 @@ bundler xbelogo\saveimage-updater.rdf -o xbelogo\saveimage-updater.xbx
 			</File>
 			<File
 				RelativePath=".\xbmc\dialogs\GUIDialogMuteBug.h">
+			</File>
+			<File
+				RelativePath=".\xbmc\dialogs\GUIDialogOverlay.h">
 			</File>
 			<File
 				RelativePath=".\xbmc\dialogs\GUIDialogNumeric.h">

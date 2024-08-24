@@ -57,7 +57,7 @@ bool CProgramDatabase::CreateTables()
 		CDatabase::CreateTables();
 
 		CLog::Log(LOGINFO, "create files table");
-		m_pDS->exec("CREATE TABLE files ( idFile integer primary key, strFilename text, titleId integer, xbedescription text, iTimesPlayed integer, lastAccessed integer, iRegion integer, iSize integer, altname text, developer text, publisher text, features_general text, features_online text, esrb text, esrb_descriptors text, genre text, release_date text, year text, rating text, platform text, exclusive text, title_id text, synopsis text, resources text, preview text,last_played text NOT NULL DEFAULT '')\n");
+		m_pDS->exec("CREATE TABLE files ( idFile integer primary key, strFilename text, titleId integer, xbedescription text, iTimesPlayed integer, lastAccessed integer, iRegion integer, iSize integer, altname text, developer text, publisher text, features_general text, features_online text, esrb text, esrb_descriptors text, genre text, release_date text, year text, rating text, platform text, exclusive text, title_id text, synopsis text, resources text, preview text, fanart text, last_played text NOT NULL DEFAULT '')\n");
 		CLog::Log(LOGINFO, "create trainers table");
 		m_pDS->exec("CREATE TABLE trainers (idKey integer auto_increment primary key, idCRC integer, idTitle integer, strTrainerPath text, strSettings text, Active integer)\n");
 		CLog::Log(LOGINFO, "create files index");
@@ -121,6 +121,15 @@ bool CProgramDatabase::UpdateOldVersion(int version)
 		{
 			m_pDS->exec("ALTER TABLE files ADD COLUMN last_played text NOT NULL DEFAULT ''");
 			CLog::Log(LOGINFO, "Updated database to version 5");
+		}
+	} catch (...){}
+	
+	try
+	{	
+		if (version < 6)
+		{
+			m_pDS->exec("ALTER TABLE files ADD COLUMN fanart text NOT NULL DEFAULT ''");
+			CLog::Log(LOGINFO, "Updated database to version 6");
 		}
 	} catch (...){}
 	
@@ -561,7 +570,7 @@ int CProgramDatabase::GetProgramInfo(CFileItem *item)
 		if (NULL == m_pDB.get()) return false;
 		if (NULL == m_pDS.get()) return false;
 
-		CStdString strSQL = PrepareSQL("select xbedescription,iTimesPlayed,lastAccessed,titleId,iSize,altname,developer,publisher,features_general,features_online,esrb,esrb_descriptors,genre,release_date,year,rating,platform,exclusive,title_id,synopsis,resources,preview from files where strFileName like '%s'", item->GetPath().c_str());
+		CStdString strSQL = PrepareSQL("select xbedescription,iTimesPlayed,lastAccessed,titleId,iSize,altname,developer,publisher,features_general,features_online,esrb,esrb_descriptors,genre,release_date,year,rating,platform,exclusive,title_id,synopsis,resources,preview,fanart from files where strFileName like '%s'", item->GetPath().c_str());
 		m_pDS->query(strSQL.c_str());
 		if (!m_pDS->eof())
 		{ // get info - only set the label if not preformatted
@@ -640,6 +649,7 @@ int CProgramDatabase::GetProgramInfo(CFileItem *item)
 			item->SetLabelSynopsis_Overview(m_pDS->fv("files.synopsis").get_asString());
 			item->SetLabelSynopsis_Resources(m_pDS->fv("files.resources").get_asString());
 			item->SetSynopsis_Preview(m_pDS->fv("files.preview").get_asString());
+			item->SetSynopsis_Fanart(m_pDS->fv("files.fanart").get_asString());
 
 			if (item->m_dwSize == -1)
 			{
@@ -683,9 +693,9 @@ bool CProgramDatabase::UpdateProgramInfo(CFileItem *item, unsigned int titleID)
 		CStdString exclusive;
 		CStdString title_id;
 		CStdString synopsis;
-		CStdString fanart;
 		CStdString resources;
 		CStdString preview;
+		CStdString fanart;
 		
 		// Check if the _resources folder exists or not
 		CStdString resources_path;
@@ -779,12 +789,16 @@ bool CProgramDatabase::UpdateProgramInfo(CFileItem *item, unsigned int titleID)
 					XMLUtils::GetString(pChildElement,"overview", synopsis);
 				}
 			}
+			
 			CStdString previewfile;
 			URIUtils::AddFileToFolder(resources,"media\\preview.mp4",previewfile);
 			if (CFile::Exists(previewfile))
-			{
 				preview = "1";
-			}
+			
+			CStdString fanartfile1;
+			URIUtils::AddFileToFolder(resources,"artwork\\fanart.jpg",fanartfile1);
+			if (CFile::Exists(fanartfile1))
+				fanart = "1";
 		}
 		
 		CStdString toReplace = ", ";
@@ -811,8 +825,8 @@ bool CProgramDatabase::UpdateProgramInfo(CFileItem *item, unsigned int titleID)
 		if (titleID == 0)
 		titleID = (unsigned int) -1;
 		
-		strSQL=PrepareSQL("update files set strFileName='%s', titleId=%u, xbedescription='%s', iSize=%I64u, altname='%s', developer='%s', publisher='%s', features_general='%s', features_online='%s', esrb='%s', esrb_descriptors='%s', genre='%s', release_date='%s', year='%s', rating='%s', platform='%s', exclusive='%s', title_id='%s', synopsis='%s', resources='%s', preview='%s' where idFile=%i",
-		item->GetPath().c_str(), titleID, xbedescription.c_str(), iSize, altname.c_str(), developer.c_str(), publisher.c_str(), features_general.c_str(), features_online.c_str(), esrb.c_str(), esrb_descriptors.c_str(), genre.c_str(), release_date.c_str(), year.c_str(), rating.c_str(), platform.c_str(), exclusive.c_str(), title_id.c_str(), synopsis.c_str(), resources.c_str(), preview.c_str(), idFile);
+		strSQL=PrepareSQL("update files set strFileName='%s', titleId=%u, xbedescription='%s', iSize=%I64u, altname='%s', developer='%s', publisher='%s', features_general='%s', features_online='%s', esrb='%s', esrb_descriptors='%s', genre='%s', release_date='%s', year='%s', rating='%s', platform='%s', exclusive='%s', title_id='%s', synopsis='%s', resources='%s', preview='%s', fanart='%s' where idFile=%i",
+		item->GetPath().c_str(), titleID, xbedescription.c_str(), iSize, altname.c_str(), developer.c_str(), publisher.c_str(), features_general.c_str(), features_online.c_str(), esrb.c_str(), esrb_descriptors.c_str(), genre.c_str(), release_date.c_str(), year.c_str(), rating.c_str(), platform.c_str(), exclusive.c_str(), title_id.c_str(), synopsis.c_str(), resources.c_str(), preview.c_str(), fanart.c_str(), idFile);
 		m_pDS->exec(strSQL.c_str());
 
 		item->m_dwSize = iSize;
@@ -862,9 +876,9 @@ bool CProgramDatabase::AddProgramInfo(CFileItem *item, unsigned int titleID)
 		CStdString exclusive;
 		CStdString title_id;
 		CStdString synopsis;
-		CStdString fanart;
 		CStdString resources;
 		CStdString preview;
+		CStdString fanart;
 		
 		// Check if the _resources folder exists or not
 		CStdString resources_path;
@@ -872,7 +886,7 @@ bool CProgramDatabase::AddProgramInfo(CFileItem *item, unsigned int titleID)
 		URIUtils::AddFileToFolder(resources_path,"_resources\\",resources_path);
 		resources = resources_path.c_str();
 		if (!CDirectory::Exists(resources))
-		resources = "";
+			resources = "";
 
 		// Gets the language of the system and then checks for the default.xml and then if there is a translated section
 		CStdString strLanguage = g_guiSettings.GetString("locale.language");
@@ -955,7 +969,12 @@ bool CProgramDatabase::AddProgramInfo(CFileItem *item, unsigned int titleID)
 			CStdString previewfile;
 			URIUtils::AddFileToFolder(resources,"media\\preview.mp4",previewfile);
 			if (CFile::Exists(previewfile))
-			preview = "1";
+				preview = "1";
+
+			CStdString fanartfile1;
+			URIUtils::AddFileToFolder(resources,"artwork\\fanart.jpg",fanartfile1);
+			if (CFile::Exists(fanartfile1))
+				fanart = "1";
 		}
 		
 		CStdString toReplace = ", ";
@@ -981,8 +1000,8 @@ bool CProgramDatabase::AddProgramInfo(CFileItem *item, unsigned int titleID)
 		iSize = CGUIWindowFileManager::CalculateFolderSize(strPath6);
 		if (titleID == 0)
 		titleID = (unsigned int) -1;
-		CStdString strSQL=PrepareSQL("insert into files (idFile, strFileName, titleId, xbedescription, iTimesPlayed, lastAccessed, iRegion, iSize, altname, developer, publisher, features_general, features_online, esrb, esrb_descriptors, genre, release_date, year, rating, platform, exclusive, title_id, synopsis, resources, preview) values(NULL, '%s', %u, '%s', %i, %I64u, %i, %I64u, '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s')",
-		item->GetPath().c_str(), titleID, item->GetLabel().c_str(), 0, lastAccessed.QuadPart, iRegion, iSize, altname.c_str(), developer.c_str(), publisher.c_str(), features_general.c_str(), features_online.c_str(), esrb.c_str(), esrb_descriptors.c_str(), genre.c_str(), release_date.c_str(), year.c_str(), rating.c_str(), platform.c_str(), exclusive.c_str(), title_id.c_str(), synopsis.c_str(), resources.c_str(), preview.c_str());
+		CStdString strSQL=PrepareSQL("insert into files (idFile, strFileName, titleId, xbedescription, iTimesPlayed, lastAccessed, iRegion, iSize, altname, developer, publisher, features_general, features_online, esrb, esrb_descriptors, genre, release_date, year, rating, platform, exclusive, title_id, synopsis, resources, preview, fanart) values(NULL, '%s', %u, '%s', %i, %I64u, %i, %I64u, '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s')",
+		item->GetPath().c_str(), titleID, item->GetLabel().c_str(), 0, lastAccessed.QuadPart, iRegion, iSize, altname.c_str(), developer.c_str(), publisher.c_str(), features_general.c_str(), features_online.c_str(), esrb.c_str(), esrb_descriptors.c_str(), genre.c_str(), release_date.c_str(), year.c_str(), rating.c_str(), platform.c_str(), exclusive.c_str(), title_id.c_str(), synopsis.c_str(), resources.c_str(), preview.c_str(), fanart.c_str());
 		
 		m_pDS->exec(strSQL.c_str());
 		item->m_dwSize = iSize;

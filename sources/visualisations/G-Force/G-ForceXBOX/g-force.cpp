@@ -54,10 +54,10 @@ void SetDefaults()
 	vInfo.iSyncDelay = 16;
 	m_iWidth = 320;
 	m_iHeight = 320;
-  strcpy(m_szColorMaps,"Q:\\visualisations\\G-Force ColorMaps");
-  strcpy(m_szDeltaFields,"Q:\\visualisations\\G-Force DeltaFields");
-  strcpy(m_szParticles,"Q:\\visualisations\\G-Force Particles");
-  strcpy(m_szWaveShapes,"Q:\\visualisations\\G-Force WaveShapes");
+  strcpy(m_szColorMaps,"Q:\\system\\visualisations\\G-Force ColorMaps");
+  strcpy(m_szDeltaFields,"Q:\\system\\visualisations\\G-Force DeltaFields");
+  strcpy(m_szParticles,"Q:\\system\\visualisations\\G-Force Particles");
+  strcpy(m_szWaveShapes,"Q:\\system\\visualisations\\G-Force WaveShapes");
 }
 
 // Load settings from the Goom.xml configuration file
@@ -121,34 +121,34 @@ void LoadSettings()
     if (childNode = doc.GetChildNode(node,"ColorMapsFolder"))
     {
       if (strstr(doc.GetNodeText(childNode),".zip")) // this is a zip
-        sprintf(m_szColorMaps,"zip://q%%3A%%5Cvisualisations%%5C%s/",doc.GetNodeText(childNode));
+        sprintf(m_szColorMaps,"zip://q%%3A%%5Csystem%%5Cvisualisations%%5C%s/",doc.GetNodeText(childNode));
       else
-        sprintf(m_szColorMaps,"Q:\\visualisations\\%s",doc.GetNodeText(childNode));
+        sprintf(m_szColorMaps,"Q:\\system\\visualisations\\%s",doc.GetNodeText(childNode));
       printf("colormaps %s\n",m_szColorMaps);
     }
     if (childNode = doc.GetChildNode(node,"DeltaFieldsFolder"))
     {
       if (strstr(doc.GetNodeText(childNode),".zip")) // this is a zip
-        sprintf(m_szDeltaFields,"zip://q%%3A%%5Cvisualisations%%5C%s/",doc.GetNodeText(childNode));
+        sprintf(m_szDeltaFields,"zip://q%%3A%%5Csystem%%5Cvisualisations%%5C%s/",doc.GetNodeText(childNode));
       else
-        sprintf(m_szDeltaFields,"Q:\\visualisations\\%s",doc.GetNodeText(childNode));
+        sprintf(m_szDeltaFields,"Q:\\system\\visualisations\\%s",doc.GetNodeText(childNode));
       printf("colormaps %s\n",m_szDeltaFields);
     }
     if (childNode = doc.GetChildNode(node,"ParticlesFolder"))
     {
       if (strstr(doc.GetNodeText(childNode),".zip")) // this is a zip
-        sprintf(m_szParticles,"zip://q%%3A%%5Cvisualisations%%5C%s/",doc.GetNodeText(childNode));
+        sprintf(m_szParticles,"zip://q%%3A%%5Csystem%%5Cvisualisations%%5C%s/",doc.GetNodeText(childNode));
       else
-        sprintf(m_szParticles,"Q:\\visualisations\\%s",doc.GetNodeText(childNode));
+        sprintf(m_szParticles,"Q:\\system\\visualisations\\%s",doc.GetNodeText(childNode));
             printf("colormaps %s\n",m_szParticles);
 
     }
     if (childNode = doc.GetChildNode(node,"WaveShapesFolder"))
     {
       if (strstr(doc.GetNodeText(childNode),".zip")) // this is a zip
-        sprintf(m_szWaveShapes,"zip://q%%3A%%5Cvisualisations%%5C%s/",doc.GetNodeText(childNode));
+        sprintf(m_szWaveShapes,"zip://q%%3A%%5Csystem%%5Cvisualisations%%5C%s/",doc.GetNodeText(childNode));
       else
-        sprintf(m_szWaveShapes,"Q:\\visualisations\\%s",doc.GetNodeText(childNode));
+        sprintf(m_szWaveShapes,"Q:\\system\\visualisations\\%s",doc.GetNodeText(childNode));
             printf("colormaps %s\n",m_szWaveShapes);
 
     }

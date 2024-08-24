@@ -19,7 +19,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;C:\Program Files\Microsoft Xbox SDK\xbox\include&quot;"
+				AdditionalIncludeDirectories="&quot;C:\Program Files (x86)\Microsoft Xbox SDK\xbox\include&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;Goom_EXPORTS;_XBOX"
 				MinimalRebuild="TRUE"
 				BasicRuntimeChecks="0"
@@ -79,7 +79,7 @@
 				InlineFunctionExpansion="2"
 				EnableIntrinsicFunctions="TRUE"
 				OmitFramePointers="TRUE"
-				AdditionalIncludeDirectories="&quot;C:\Program Files\Microsoft Xbox SDK\xbox\include&quot;"
+				AdditionalIncludeDirectories="&quot;C:\Program Files (x86)\Microsoft Xbox SDK\xbox\include&quot;"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;Goom_EXPORTS;_XBOX"
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"

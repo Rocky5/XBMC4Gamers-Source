@@ -67,7 +67,7 @@
 			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="C:\Program Files\Microsoft Xbox SDK\xbox\include"
+				AdditionalIncludeDirectories="C:\Program Files (x86)\Microsoft Xbox SDK\xbox\include"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;Goom_EXPORTS;_XBOX"
 				RuntimeLibrary="2"
 				BufferSecurityCheck="FALSE"

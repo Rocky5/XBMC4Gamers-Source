@@ -1,4 +1,4 @@
-#include "settings/Settings.h"
+#include "../../../xbmc/settings/Settings.h"
 #include "Boxalizer.h"
 #include <cstdio>
 #include <io.h>
@@ -71,13 +71,13 @@ void CSettings::LoadSettings()
       if (len < 4 || strcmpi(presets + len - 4, ".zip") != 0)
       {
         // Normal folder
-        strcpy(m_szPresetsPath,  "Q:\\visualisations\\");
+        strcpy(m_szPresetsPath,  "Q:\\system\\visualisations\\");
         strcat(m_szPresetsPath,  presets);
         strcat(m_szPresetsPath, "\\");
       }
       else
       {
-        strcpy(m_szPresetsPath, "zip://q%3A%5Cvisualisations%5C"); 
+        strcpy(m_szPresetsPath, "zip://q%3A%5Csystem%5Cvisualisations%5C"); 
         strcat(m_szPresetsPath,  presets);
         strcat(m_szPresetsPath, "/");
       }

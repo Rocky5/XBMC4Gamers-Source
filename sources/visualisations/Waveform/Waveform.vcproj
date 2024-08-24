@@ -67,7 +67,7 @@
 			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="&quot;C:\Program Files\Microsoft Xbox SDK\xbox\include&quot;"
+				AdditionalIncludeDirectories="&quot;C:\Program Files (x86)\Microsoft Xbox SDK\xbox\include&quot;"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;WAVEFORM_EXPORTS"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"

@@ -1022,16 +1022,16 @@ void GForce::BuildConfigLists(const char* szColorMaps, const char* szDeltaFields
 	bool startOver;
 
   // 4353 = RAR_OVERWRITE+EXFILE_OVERWRITE+EXFILE_AUTODELETE
-  //__loadFolder( "Q:\\Visualisations\\G-Force DeltaFields", mDeltaFields, mFieldPlayList )
+  //__loadFolder( "Q:\\system\\visualisations\\G-Force DeltaFields", mDeltaFields, mFieldPlayList )
   __loadFolder(szDeltaFields,mDeltaFields,mFieldPlayList )
 
-	//__loadFolder( "Q:\\Visualisations\\G-Force WaveShapes", mWaveShapes, mShapePlayList )
+	//__loadFolder( "Q:\\system\\visualisations\\G-Force WaveShapes", mWaveShapes, mShapePlayList )
   __loadFolder(szWaveShapes, mWaveShapes, mShapePlayList )
 
-	//__loadFolder( "Q:\\Visualisations\\G-Force ColorMaps", mColorMaps, mColorPlayList )
+	//__loadFolder( "Q:\\system\\visualisations\\G-Force ColorMaps", mColorMaps, mColorPlayList )
   __loadFolder(szColorMaps,mColorMaps,mColorPlayList )
 	
-	//__loadFolder( "Q:\\Visualisations\\G-Force Particles", mParticles, mParticlePlayList )
+	//__loadFolder( "Q:\\system\\visualisations\\G-Force Particles", mParticles, mParticlePlayList )
   __loadFolder(szParticles, mParticles, mParticlePlayList )
 	
 }
