@@ -111,14 +111,13 @@ void CGUIDialogProfileSettings::CreateSettings()
 			SET_CONTROL_LABEL(1000,m_strName);
 		}
 	}
-  
-  AddButton(8,20092);
-  
-  if (m_strName != "Manage Profiles")
-  AddButton(1,20093);
-  
-  if (m_strName != "Manage Profiles")
-  AddButton(2,20065);
+
+  if (m_strName != "Add User")
+  {
+    AddButton(8,20092);
+    AddButton(1,20093);
+    AddButton(2,20065);
+  }
 
   if (!m_bIsDefault && m_bShowDetails)
 //    AddButton(3,20070);
@@ -369,18 +368,12 @@ bool CGUIDialogProfileSettings::ShowForProfile(unsigned int iProfile, bool bDeta
       CProfile profile;
       g_settings.AddProfile(profile);
 
-// // Rocky5 Edits // New code
-	  g_guiSettings.SetString("lookandfeel.skin", "Profile");
-	  g_settings.Save();
-	  
+	  // Rocky5 Edits // New code
 	  CFile::Cache(URIUtils::AddFileToFolder("special://masterprofile/","guisettings.xml"),URIUtils::AddFileToFolder("special://masterprofile/",dialog->m_strDirectory+"/guisettings.xml"));
 
       CFile::Cache(URIUtils::AddFileToFolder("special://masterprofile/","sources.xml"),URIUtils::AddFileToFolder("special://masterprofile/",dialog->m_strDirectory+"/sources.xml"));
 
       CFile::Cache(URIUtils::AddFileToFolder("special://masterprofile/","advancedsettings.xml"),URIUtils::AddFileToFolder("special://masterprofile/",dialog->m_strDirectory+"/advancedsettings.xml"));
-	  
-	  g_guiSettings.SetString("lookandfeel.skin", "Manage Profiles");
-	  g_settings.Save();
     }
 /* Old code
       if (bExists)

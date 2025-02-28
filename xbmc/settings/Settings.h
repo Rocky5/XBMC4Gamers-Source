@@ -21,7 +21,7 @@
 
 #define PRE_SKIN_VERSION_9_10_COMPATIBILITY 1
 
-#define DEFAULT_SKIN "Manage Profiles"
+#define DEFAULT_SKIN "Add User"
 #define DEFAULT_WEATHER_PLUGIN "Weather.com (standard)"
 
 #include "settings/VideoSettings.h"

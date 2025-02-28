@@ -23,9 +23,9 @@
 #include "AutoPtrHandle.h"
 #include "video/windows/GUIWindowVideoBase.h"
 #include "Util.h"
+#include "ProgramDatabase.h"
 #include "xbox/IoSupport.h"
 #include "xbox/xbeheader.h"
-#include "ProgramDatabase.h"
 #ifdef HAS_XBOX_HARDWARE
 #include "xbox/Undocumented.h"
 #include "xbresource.h"
@@ -1248,7 +1248,8 @@ nohookigk:
 			}
 			ourmemaddr=(PVOID *)(((unsigned int) ourmemaddr) + sizeof(igk_main_toy));
 
-			if (g_guiSettings.GetInt("lcd.mode") > 0 && g_guiSettings.GetInt("lcd.type") == MODCHIP_SMARTXX)
+			int modchip = g_guiSettings.GetInt("lcd.modchip");
+			if (modchip == MODCHIP_SMARTXX_HD44780 || modchip == MODCHIP_SMARTXX_KS0073 || modchip == MODCHIP_SMARTXX_VFD_HD44780 || modchip == MODCHIP_SMARTXX_VFD_KS0073)
 			{
 				memcpy(ourmemaddr, lcd_toy_xx, sizeof(lcd_toy_xx));
 				_asm
@@ -4024,6 +4025,17 @@ void CUtil::BootToDash()
 #endif
 }
 
+unsigned int CUtil::InitRandomSeedint()
+{
+	// Init random seed 
+	LARGE_INTEGER now; 
+	QueryPerformanceCounter(&now); 
+	unsigned int seed = (now.LowPart);
+	//  CLog::Log(LOGDEBUG, "%s - Initializing random seed with %u", __FUNCTION__, seed);
+	srand(seed);
+	return seed;
+}
+
 void CUtil::InitRandomSeed()
 {
 	// Init random seed 
@@ -4184,30 +4196,106 @@ CFile	xbe;
 	return true;
 }
 
+void CUtil::UpdateXBELastPlayed(const char* szPath1)
+{
+	CProgramDatabase m_database;
+    m_database.Open();
+    m_database.SetLastPlayed(szPath1);
+    m_database.IncTimesPlayed(szPath1);
+    m_database.Close();
+}
+
+CStdString CUtil::UpdateXBEPath(const char* szPath1)
+{
+	CProgramDatabase m_database;
+    m_database.Open();
+    CStdString szPathOut = m_database.GetXBEType(szPath1);
+    m_database.Close();
+    return szPathOut;
+}
+
+bool CUtil::MediaPlayHack(const char* szPath1, const CStdString& folderPath)
+{
+    // Hack to play videos in gamers without using the video menus, to keep the look consistent and everything in 1 menu.
+    // Check for video files if the titleid matches what am looking for.
+    DWORD TitleId = CUtil::GetXbeID(szPath1);
+    CStdString strTitleID;
+    strTitleID.Format("%08X", TitleId);
+
+    if (strTitleID == _T("4C464456"))
+    {
+        CLog::Log(LOGDEBUG, "Found video titleid: %s\n", strTitleID.c_str());
+        const TCHAR* videoExtensions = _T(g_settings.m_videoExtensions);
+        const TCHAR* searchPattern = _T("\\*");
+        CStdString concatenatedPath = folderPath + searchPattern;
+        WIN32_FIND_DATA findData;
+        HANDLE hFind = FindFirstFile(concatenatedPath, &findData);
+        if (hFind != INVALID_HANDLE_VALUE)
+        {
+            do
+            {
+                if (!(findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
+                {
+                    const TCHAR* fileName = findData.cFileName;
+                    const TCHAR* fileExtension = _tcsrchr(fileName, _T('.'));
+                    if (fileExtension && _tcsstr(videoExtensions, fileExtension))
+                    {
+                        CStdString videoFilePath;
+                        URIUtils::AddFileToFolder(folderPath, fileName, videoFilePath);
+                        
+						CLog::Log(LOGDEBUG, "Found video file: %s\n", fileName);
+                        
+						UpdateXBELastPlayed(szPath1);
+						Sleep(400);
+                        CBuiltins::Execute("Skin.SetBool(HomeReloadCustoms)");
+                        CBuiltins::Execute(CStdString("PlayMedia(") + videoFilePath + ")");
+						// CLog::Log(LOGDEBUG, "Playing video file: %s\n", fileName);
+                        return true;
+                    }
+                }
+            } while (FindNextFile(hFind, &findData) != 0);
+            FindClose(hFind);
+        }
+    }
+    return false;
+}
+
 void CUtil::RunXBE(const char* szPath1, char* szParameters, F_VIDEO ForceVideo, F_COUNTRY ForceCountry, CUSTOM_LAUNCH_DATA* pData)
 {
-
-	// write time stamp to database, its here so all items that use RunXBE will be updated
-	CProgramDatabase m_database;
-	m_database.Open();
-	m_database.SetLastPlayed(szPath1);
-	m_database.IncTimesPlayed(szPath1);
-	m_database.Close();
+    CStdString xbePath(szPath1);
+	CStdString folderPath;
+	URIUtils::GetDirectory(xbePath, folderPath);
 	
+    if (MediaPlayHack(xbePath, folderPath))
+        return;
+
+    // Update last played (this is in this file so the home screen updates the database)
+    UpdateXBELastPlayed(xbePath);
+	Sleep(200);
+
+	// Check for alt xbe from the database and run it instead.
+	CStdString AltXBEPath = UpdateXBEPath(xbePath);
+	CStdString strXBEFullpath;
+	URIUtils::AddFileToFolder(folderPath, AltXBEPath, strXBEFullpath);
+	if (CFile::Exists(strXBEFullpath))
+		xbePath = strXBEFullpath;
+	Sleep(200);
+
 	// check if locked
-	if (g_settings.GetCurrentProfile().programsLocked() && 
-			g_settings.GetMasterProfile().getLockMode() != LOCK_MODE_EVERYONE)
-	if (!g_passwordManager.IsMasterLockUnlocked(true))
-	return;
+	// if (g_settings.GetCurrentProfile().programsLocked() && 
+			// g_settings.GetMasterProfile().getLockMode() != LOCK_MODE_EVERYONE)
+	// if (!g_passwordManager.IsMasterLockUnlocked(true))
+	// return;
 
 	/// \brief Runs an executable file
-	/// \param szPath1 Path of executeable to run
-	/// \param szParameters Any parameters to pass to the executeable being run
-	g_application.PrintXBEToLCD(szPath1); //write to LCD
-	Sleep(1000);        //and wait a little bit to execute
-
+	/// \param szPath1 Path of executable to run
+	/// \param szParameters Any parameters to pass to the executable being run
+	g_application.PrintXBEToLCD(xbePath); //write to LCD
+	
+	Sleep(600); //and wait a little bit to execute
+	
 	char szPath[1024];
-	strcpy(szPath, _P(szPath1).c_str());
+	strcpy(szPath, _P(xbePath).c_str());
 	
 	CStdString szNewPath;
 	CStdString szBuiltin = "false";

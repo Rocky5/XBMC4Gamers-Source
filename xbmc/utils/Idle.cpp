@@ -47,8 +47,6 @@ void CIdleThread::Process()
       hlt
       hlt
       hlt
-      hlt
-      hlt
     }
   }
 }

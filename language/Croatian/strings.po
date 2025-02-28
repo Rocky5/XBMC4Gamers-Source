@@ -7562,8 +7562,8 @@ msgid "OpenGL version:"
 msgstr "OpenGL inačica:"
 
 msgctxt "#22010"
-msgid "GPU temperature:"
-msgstr "GPU temperatura:"
+msgid "MB temperature:"
+msgstr "MB temperatura:"
 
 msgctxt "#22011"
 msgid "CPU temperature:"

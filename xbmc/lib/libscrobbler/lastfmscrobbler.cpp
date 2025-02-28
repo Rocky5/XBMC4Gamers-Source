@@ -67,7 +67,7 @@ void CLastfmScrobbler::LoadCredentials()
 CStdString CLastfmScrobbler::GetJournalFileName()
 {
   CStdString strFileName = g_settings.GetProfileUserDataFolder();
-  return URIUtils::AddFileToFolder(strFileName, "LastfmScrobbler.xml");
+  return URIUtils::AddFileToFolder(strFileName, "");
 }
 
 void CLastfmScrobbler::NotifyUser(int error)

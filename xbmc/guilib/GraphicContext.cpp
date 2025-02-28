@@ -364,8 +364,8 @@ void CGraphicContext::GetAllowedResolutions(vector<RESOLUTION> &res, bool bAllow
     }
     if (g_videoConfig.Has720p())
       res.push_back(HDTV_720p);
-    if (g_videoConfig.Has1080i())
-      res.push_back(HDTV_1080i);
+    // if (g_videoConfig.Has1080i())
+      // res.push_back(HDTV_1080i);
   }
 }
 
@@ -451,11 +451,11 @@ void CGraphicContext::SetVideoResolution(RESOLUTION &res, BOOL NeedZ, bool force
     }
 
     /* need to clear and preset, otherwise flicker filters won't take effect */
-	// if (NeedReset || forceClear)
-    // {
-      // m_pd3dDevice->Clear( 0L, NULL, D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER | D3D_CLEAR_STENCIL, NULL, 1.0f, 0L );
-      // m_pd3dDevice->Present( NULL, NULL, NULL, NULL );
-    // }
+	if (NeedReset || forceClear)
+    {
+      m_pd3dDevice->Clear( 0L, NULL, D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER | D3D_CLEAR_STENCIL, 0x00010001, 1.0f, 0L );
+      m_pd3dDevice->Present( NULL, NULL, NULL, NULL );
+    }
 
     m_iScreenWidth = m_pd3dParams->BackBufferWidth;
     m_iScreenHeight = m_pd3dParams->BackBufferHeight;
@@ -506,10 +506,10 @@ void CGraphicContext::ResetOverscan(RESOLUTION res, OVERSCAN &overscan)
   overscan.top = 0;
   switch (res)
   {
-  case HDTV_1080i:
-    overscan.right = 1920;
-    overscan.bottom = 1080;
-    break;
+  // case HDTV_1080i:
+    // overscan.right = 1920;
+    // overscan.bottom = 1080;
+    // break;
   case HDTV_720p:
     overscan.right = 1280;
     overscan.bottom = 720;
@@ -540,14 +540,14 @@ void CGraphicContext::ResetScreenParameters(RESOLUTION res)
   // 1080i
   switch (res)
   {
-  case HDTV_1080i:
-    g_settings.m_ResInfo[res].iSubtitles = (int)(0.965 * 1080);
-    g_settings.m_ResInfo[res].iWidth = 1920;
-    g_settings.m_ResInfo[res].iHeight = 1080;
-    g_settings.m_ResInfo[res].dwFlags = D3DPRESENTFLAG_INTERLACED | D3DPRESENTFLAG_WIDESCREEN;
-    g_settings.m_ResInfo[res].fPixelRatio = 1.0f;
-    strcpy(g_settings.m_ResInfo[res].strMode, "1080i 16:9");
-    break;
+  // case HDTV_1080i:
+    // g_settings.m_ResInfo[res].iSubtitles = (int)(0.965 * 1080);
+    // g_settings.m_ResInfo[res].iWidth = 1920;
+    // g_settings.m_ResInfo[res].iHeight = 1080;
+    // g_settings.m_ResInfo[res].dwFlags = D3DPRESENTFLAG_INTERLACED | D3DPRESENTFLAG_WIDESCREEN;
+    // g_settings.m_ResInfo[res].fPixelRatio = 1.0f;
+    // strcpy(g_settings.m_ResInfo[res].strMode, "1080i 16:9");
+    // break;
   case HDTV_720p:
     g_settings.m_ResInfo[res].iSubtitles = (int)(0.965 * 720);
     g_settings.m_ResInfo[res].iWidth = 1280;

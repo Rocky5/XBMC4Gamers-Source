@@ -19,6 +19,7 @@
  */
 
 #include "include.h"
+#include "FileItem.h"
 #include "GUIPanelContainer.h"
 #include "GUIListItem.h"
 #include "GUIInfoManager.h"
@@ -76,6 +77,7 @@ void CGUIPanelContainer::Render()
       if (current >= 0)
       {
         CGUIListItemPtr item = m_items[current];
+		item->SetCurrentItem(current + 1);
         bool focused = (current == m_offset * m_itemsPerRow + m_cursor) && m_bHasFocus;
         // render our item
         if (focused)
@@ -391,7 +393,7 @@ unsigned int CGUIPanelContainer::GetRows() const
 
 float CGUIPanelContainer::AnalogScrollSpeed() const
 {
-  return 10.0f / m_itemsPerPage;
+  return 4.0f / m_itemsPerPage;
 }
 
 int CGUIPanelContainer::CorrectOffset(int offset, int cursor) const

@@ -48,6 +48,9 @@ protected:
 
   int GetRegion(int iItem, bool bReload=false);
   bool OnChooseVideoModeAndLaunch(int iItem);
+  bool OnChooseAltXBEAndLaunch(int iItem);
+  bool OnChooseTrainersMenu(int iItem);
+  bool OnChooseEditRefreshMenu(int iItem);
 
   CGUIDialogProgress* m_dlgProgress;
 

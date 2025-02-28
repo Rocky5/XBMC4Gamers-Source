@@ -59,10 +59,10 @@ bool CGUIWrappingListContainer::OnAction(const CAction &action)
     {
       m_analogScrollCount += action.GetAmount() * action.GetAmount();
       bool handled = false;
-      while (m_analogScrollCount > 0.4)
+      while (m_analogScrollCount > AnalogScrollSpeed())
       {
         handled = true;
-        m_analogScrollCount -= 0.4f;
+        m_analogScrollCount -= AnalogScrollSpeed();
         Scroll(-1);
       }
       return handled;
@@ -72,10 +72,10 @@ bool CGUIWrappingListContainer::OnAction(const CAction &action)
     {
       m_analogScrollCount += action.GetAmount() * action.GetAmount();
       bool handled = false;
-      while (m_analogScrollCount > 0.4)
+      while (m_analogScrollCount > AnalogScrollSpeed())
       {
         handled = true;
-        m_analogScrollCount -= 0.4f;
+        m_analogScrollCount -= AnalogScrollSpeed();
         Scroll(1);
       }
       return handled;
@@ -83,6 +83,11 @@ bool CGUIWrappingListContainer::OnAction(const CAction &action)
     break;
   }
   return CGUIBaseContainer::OnAction(action);
+}
+
+float CGUIWrappingListContainer::AnalogScrollSpeed() const
+{
+  return 4.0f / m_itemsPerPage;
 }
 
 bool CGUIWrappingListContainer::OnMessage(CGUIMessage& message)
@@ -185,7 +190,7 @@ bool CGUIWrappingListContainer::SelectItemFromPoint(const CPoint &point)
     if (m_analogScrollCount > 1)
     {
       Scroll(-1);
-      m_analogScrollCount-=1.0f;
+      m_analogScrollCount-=AnalogScrollSpeed();
     }
     return true;
   }
@@ -199,7 +204,7 @@ bool CGUIWrappingListContainer::SelectItemFromPoint(const CPoint &point)
     if (m_analogScrollCount > 1)
     {
       Scroll(1);
-      m_analogScrollCount-=1.0f;
+      m_analogScrollCount-=AnalogScrollSpeed();
     }
     return true;
   }
@@ -208,6 +213,8 @@ bool CGUIWrappingListContainer::SelectItemFromPoint(const CPoint &point)
 
 void CGUIWrappingListContainer::SelectItem(int item)
 {
+  // Check that m_offset is valid
+  ValidateOffset();
   if (item >= 0 && item < (int)m_items.size())
     ScrollToOffset(item - m_cursor);
 }

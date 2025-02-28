@@ -718,6 +718,7 @@ int CGUIInfoManager::TranslateSingleString(const CStdString &strCondition)
     else if (info.Equals("hasthumb")) ret = CONTAINER_HAS_THUMB;
     else if (info.Equals("numpages")) ret = CONTAINER_NUM_PAGES;
     else if (info.Equals("numitems")) ret = CONTAINER_NUM_ITEMS;
+    else if (info.Equals("currentitem")) ret = CONTAINER_CURRENT_ITEM;
     else if (info.Equals("currentpage")) ret = CONTAINER_CURRENT_PAGE;
     else if (info.Equals("sortmethod")) ret = CONTAINER_SORT_METHOD;
     else if (info.Left(13).Equals("sortdirection"))
@@ -750,7 +751,7 @@ int CGUIInfoManager::TranslateSingleString(const CStdString &strCondition)
     }
     else if (info.Equals("showplot")) ret = CONTAINER_SHOWPLOT;
     if (id && ((ret >= CONTAINER_SCROLL_PREVIOUS && ret <= CONTAINER_SCROLL_NEXT) || ret == CONTAINER_NUM_PAGES ||
-               ret == CONTAINER_NUM_ITEMS || ret == CONTAINER_CURRENT_PAGE))
+               ret == CONTAINER_NUM_ITEMS || ret == CONTAINER_CURRENT_PAGE || ret == CONTAINER_CURRENT_ITEM))
       return AddMultiInfo(GUIInfo(bNegate ? -ret : ret, id));
   }
   else if (strCategory.Left(8).Equals("listitem"))
@@ -949,6 +950,7 @@ int CGUIInfoManager::TranslateListItem(const CStdString &info)
   else if (info.Equals("Synopsis_Fanart")) return LISTITEM_SYNOPSISFANART;
   else if (info.Equals("Synopsis_Resources")) return LISTITEM_SYNOPSISRESOURCES;
   else if (info.Equals("Synopsis_Preview")) return LISTITEM_SYNOPSISPREVIEW;
+  else if (info.Equals("Synopsis_Screenshot")) return LISTITEM_SYNOPSISSCREENSHOT;
   else if (info.Equals("Synopsis_PlayerCount")) return LISTITEM_SYNOPSISPLAYERCOUNT;
   
   else if (info.Equals("icon")) return LISTITEM_ICON;
@@ -1013,6 +1015,7 @@ int CGUIInfoManager::TranslateListItem(const CStdString &info)
   else if (info.Equals("lastplayed")) return MUSICPLAYER_LASTPLAYED;
   else if (info.Equals("discnumber")) return LISTITEM_DISC_NUMBER;
   else if (info.Equals("isresumable")) return LISTITEM_IS_RESUMABLE;
+  else if (info.Equals("currentitem")) return LISTITEM_CURRENTITEM;
   else if (info.Left(9).Equals("property(")) return AddListItemProp(info.Mid(9, info.GetLength() - 10));
   return 0;
 }
@@ -1446,6 +1449,7 @@ CStdString CGUIInfoManager::GetLabel(int info, int contextWindow)
     break;
   case CONTAINER_NUM_PAGES:
   case CONTAINER_NUM_ITEMS:
+  case CONTAINER_CURRENT_ITEM:
   case CONTAINER_CURRENT_PAGE:
     return GetMultiInfoLabel(GUIInfo(info), contextWindow);
     break;
@@ -2761,7 +2765,8 @@ CStdString CGUIInfoManager::GetMultiInfoLabel(const GUIInfo &info, int contextWi
     return GetTime((TIME_FORMAT)info.GetData1());
   }
   else if (info.m_info == CONTAINER_NUM_PAGES || info.m_info == CONTAINER_CURRENT_PAGE ||
-           info.m_info == CONTAINER_NUM_ITEMS || info.m_info == CONTAINER_POSITION)
+           info.m_info == CONTAINER_NUM_ITEMS || info.m_info == CONTAINER_POSITION ||
+		   info.m_info == CONTAINER_CURRENT_ITEM)
   {
     const CGUIControl *control = NULL;
     if (info.GetData1())
@@ -3923,6 +3928,8 @@ CStdString CGUIInfoManager::GetItemLabel(const CFileItem *item, int info)
 	 return item->GetLabelSynopsis_Resources();
    case LISTITEM_SYNOPSISPREVIEW:
 	 return item->GetSynopsis_Preview();
+   case LISTITEM_SYNOPSISSCREENSHOT:
+	 return item->GetSynopsis_Screenshot();
    case LISTITEM_SYNOPSISPLAYERCOUNT:
 	 return item->GetLabelSynopsis_PlayerCount();
 	
@@ -3944,7 +3951,7 @@ CStdString CGUIInfoManager::GetItemLabel(const CFileItem *item, int info)
       if (item->HasMusicInfoTag() && item->GetMusicInfoTag()->GetPlayCount() > 0)
         strPlayCount.Format("%i", item->GetMusicInfoTag()->GetPlayCount());
       return strPlayCount;
-    }
+    } 
   case LISTITEM_LASTPLAYED:
     {
       CStdString strLastPlayed;
@@ -3952,7 +3959,10 @@ CStdString CGUIInfoManager::GetItemLabel(const CFileItem *item, int info)
         return item->GetVideoInfoTag()->m_lastPlayed;
       if (item->HasMusicInfoTag())
         return item->GetMusicInfoTag()->GetLastPlayed();
-      break;
+	  // Game last played
+	  if (item && item->GetLabelLastPlayed())
+		return item->GetLabelLastPlayed();
+	  break;
     }
   case LISTITEM_TRACKNUMBER:
     {
@@ -4037,6 +4047,12 @@ CStdString CGUIInfoManager::GetItemLabel(const CFileItem *item, int info)
     if (item->m_dateTime.IsValid())
       return item->m_dateTime.GetAsLocalizedDate();
     break;
+  case LISTITEM_CURRENTITEM:
+  {
+      CStdString CurrentItem;
+      CurrentItem.Format("%u", item->GetCurrentItem());
+      return CurrentItem;
+  }
   case LISTITEM_SIZE:
     if (!item->m_bIsFolder || item->m_dwSize)
       return StringUtils::SizeToString(item->m_dwSize);

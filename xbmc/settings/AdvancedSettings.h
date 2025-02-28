@@ -121,6 +121,26 @@ class CAdvancedSettings
     bool m_slowscrolling;
     bool m_splashImage;
     bool m_videoPatch;
+	
+    // resources images
+    CStdString m_fanartthumbImage;
+    CStdString m_fanartblurImage;
+    CStdString m_posterImage;
+    CStdString m_postersmallImage;
+    CStdString m_thumbImage;
+    CStdString m_fanartImage;
+    CStdString m_fogImage;
+    CStdString m_synopsisImage;
+    CStdString m_bannerImage;
+    CStdString m_cdImage;
+    CStdString m_cdsmallImage;
+    CStdString m_cdposterImage;
+    CStdString m_dual3dImage;
+    CStdString m_iconImage;
+    CStdString m_opencaseImage;
+	// wallpapers
+    CStdString m_wallpaperImage;
+	
     CStdString m_cachePath;
     bool m_displayRemoteCodes;
     CStdString m_videoCleanDateTimeRegExp;

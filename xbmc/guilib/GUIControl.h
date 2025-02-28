@@ -252,6 +252,8 @@ public:
   GUICONTROLTYPES GetControlType() const { return ControlType; }
 
   enum GUIVISIBLE { HIDDEN = 0, DELAYED, VISIBLE };
+  
+  enum GUISCROLLVALUE { FOCUS = 0, NEVER, ALWAYS };
 
 #ifdef _DEBUG
   virtual void DumpTextureUse() {};

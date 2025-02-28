@@ -21,6 +21,8 @@
 #include "include.h"
 #include "GUILabelControl.h"
 #include "utils/CharsetConverter.h"
+#include "XMLUtils.h"
+#include "skininfo.h"
 
 using namespace std;
 
@@ -35,8 +37,17 @@ CGUILabelControl::CGUILabelControl(int parentID, int controlID, float posX, floa
   ControlType = GUICONTROL_LABEL;
   m_startHighlight = m_endHighlight = 0;
   m_minWidth = 0;
-  if ((labelInfo.align & XBFONT_RIGHT) && m_width)
+  
+  // Compatibility with legacy skins
+  std::ostringstream oss;
+  oss << g_SkinInfo.GetVersion(); 
+  std::string StringVersion = oss.str();
+  if ( StringVersion < "2.2")
+  {
     m_posX -= m_width;
+    CLog::Log(LOGNOTICE, "legacy right align enabled");
+  }
+
 }
 
 CGUILabelControl::~CGUILabelControl(void)

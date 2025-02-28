@@ -48,6 +48,9 @@
 #include "Util.h"
 #include "video/VideoDatabase.h"
 #include "TextureManager.h"
+#include "pictures/Picture.h"
+#include "ViewDatabase.h"
+#include "GUIInfoManager.h"
 
 #include "FileSystem/PluginDirectory.h"
 #include "FileSystem/RarManager.h"
@@ -179,6 +182,12 @@ const BUILT_IN commands[] = {
   { "ReloadAdvancedSettings",     false,  "Reload advancedsettings.xml" },
   { "EnableDebugMode",            false,  "Enable Debug mode" },
   { "DisableDebugMode",           false,  "Disable Debug mode" },
+  { "CacheThumbnail",             false,  "Cache the passed image" },
+  { "SetWallpaper",         	  false,  "Select an image for your wallpaper" },
+  { "CleanWallpaper",         	  false,  "Delete the cached wallpapers" },
+  { "Screenshot",                 false,  "Takes a Screenshot in png format" },
+  { "CleanViewsDB",               false,  "Clear views from the view databases" },
+  { "RandomSelect",               false,  "Randomly select an item from a list" }
 };
 
 bool CBuiltins::HasCommand(const CStdString& execString)
@@ -218,20 +227,90 @@ int CBuiltins::Execute(const CStdString& execString)
   
   if (execute.Equals("FFPatchXBE"))
   {
-      CFileItem item(params[0]);
-      item.SetPath(params[0]);
-	  CStdString szNewPath;
-	  CStdString szBuiltin = "true";
-	  CUtil::RunFFPatchedXBE(params[0].c_str(), szNewPath, szBuiltin);
+    CFileItem item(params[0]);
+    item.SetPath(params[0]);
+	CStdString szNewPath;
+	CStdString szBuiltin = "true";
+	CUtil::RunFFPatchedXBE(params[0].c_str(), szNewPath, szBuiltin);
+  }
+  else if (execute.Equals("RandomSelect"))
+  {
+    if (!g_application.IsPlayingVideo() && !g_application.IsPlayingAudio())
+    {
+      CStdString setfocusString;
+	  unsigned int seed = CUtil::InitRandomSeedint();
+	  srand(static_cast<unsigned int>(seed));
+      int viewID = atoi(g_infoManager.GetLabel(g_infoManager.TranslateString("Container.Viewmode")).Mid(4));
+      int numItems = atoi(g_infoManager.GetLabel(g_infoManager.TranslateString("Container.numItems")));
+      int randomIndex = rand() % numItems;
+
+      setfocusString.Format(_T("%d,%d"), viewID, randomIndex);
+      Execute("SetFocus(" + setfocusString + ")");
+
+      // CLog::Log(LOGDEBUG, "Seed: %llu\n", seed);
+      // CLog::Log(LOGDEBUG, "Current view ID: %d", viewID);
+      // CLog::Log(LOGDEBUG, "Number of items: %d", numItems);
+      // CLog::Log(LOGDEBUG, "Lucky item: %d", randomIndex);
+      // CLog::Log(LOGDEBUG, "Executed SetFocus with combined string: SetFocus(%s)", setfocusString.c_str());
+    }
+    else
+      Execute("ActivateWindow(114)");
+  }
+  else if (execute.Equals("CleanViewsDB"))
+  {
+	CViewDatabase viewDatabase; 
+	if (viewDatabase.Open())
+	{
+		viewDatabase.ClearViewStates(10001);
+	}
+	viewDatabase.Close();
   }
   else if (execute.Equals("flushtexturecache"))
   {
     g_TextureManager.Flush(); // prob not needed but I added it here anyway
 	// CLog::Log(LOGNOTICE, "Flushed Texture Cache");
   }
+  else if (execute.Equals("CacheThumbnail"))
+  {
+	CStdString strUserThumb = params[0];
+	CStdString strThumb = params[1];
+    CPicture::CacheThumb(strUserThumb, strThumb);
+  }
+  else if (execute.Equals("CleanWallpaper"))
+  {
+	CStdString strWallpaper = "P:\\Thumbnails\\Wallpapers\\wallpaper.jpg";
+	CStdString strWallpaperSmall = "P:\\Thumbnails\\Wallpapers\\wallpaper_small.jpg";
+	CFile::Delete(strWallpaper);
+	CFile::Delete(strWallpaperSmall);
+  }
+  else if (execute.Equals("SetWallpaper"))
+  {
+	CreateDirectory("P:\\Thumbnails\\Wallpapers", NULL);
+	CStdString strWallpaper = "P:\\Thumbnails\\Wallpapers\\wallpaper.jpg";
+	CStdString strWallpaperSmall = "P:\\Thumbnails\\Wallpapers\\wallpaper_small.jpg";
+	g_settings.ResetSkinSetting(params[0]);
+	CStdString value, strMask = ".png|.jpg|.jpeg|.bmp|.tbn";
+	VECSOURCES localShares; g_mediaManager.GetLocalDrives(localShares);
+	int skinString, height = 480;
+	if (params.size() > 0)
+	{
+	  if (CGUIDialogFileBrowser::ShowAndGetFile(localShares, strMask, g_localizeStrings.Get(1030), value, true))
+	  {
+		skinString = g_settings.TranslateSkinString(params[0]);
+		if (params.size() > 1)
+			height = atoi(params[1].c_str());
+		
+		if (CPicture::CacheWallpaper(value, strWallpaper, height))
+			g_settings.SetSkinString(skinString, strWallpaper);
+		
+		CPicture::CacheWallpaper(value, strWallpaperSmall, 128);
+	  }
+	}
+  }
   else if (execute.Equals("ReloadAdvancedSettings"))
   {
-    g_advancedSettings.Load();
+    if (!g_advancedSettings.Load())
+		g_advancedSettings.Load();
   }
   else if (execute.Equals("EnableDebugMode"))
   {
@@ -311,6 +390,10 @@ int CBuiltins::Execute(const CStdString& execString)
   {
     CUtil::TakeScreenshot();
   }
+  else if (execute.Equals("screenshot"))
+  {
+    Execute("RunScript(Special://scripts/XBMC4Gamers/Utilities/Screenshot.py)");
+  }
   else if (execute.Equals("credits"))
   {
 #ifdef HAS_CREDITS
@@ -372,11 +455,13 @@ int CBuiltins::Execute(const CStdString& execString)
   {
     RESOLUTION res = PAL_4x3;
     if (parameter.Equals("pal")) res = PAL_4x3;
+    else if (parameter.Equals("pal60")) res = PAL60_4x3;
+    else if (parameter.Equals("pal6016x9")) res = PAL60_16x9;
     else if (parameter.Equals("pal16x9")) res = PAL_16x9;
     else if (parameter.Equals("ntsc")) res = NTSC_4x3;
     else if (parameter.Equals("ntsc16x9")) res = NTSC_16x9;
     else if (parameter.Equals("720p")) res = HDTV_720p;
-    else if (parameter.Equals("1080i")) res = HDTV_1080i;
+    // else if (parameter.Equals("1080i")) res = HDTV_1080i;
     if (g_videoConfig.IsValidResolution(res))
     {
       g_guiSettings.SetInt("videoscreen.resolution", res);

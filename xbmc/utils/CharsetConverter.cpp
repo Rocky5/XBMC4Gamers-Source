@@ -116,14 +116,14 @@ static bool convert_checked(iconv_t& type, int multiplier, const CStdString& str
 
       if (iconv_const(type, &src, &inBytes, &dst, &outBytes) == (size_t)-1)
       {
-        CLog::Log(LOGERROR, "%s failed", __FUNCTION__);
+        // CLog::Log(LOGERROR, "%s failed", __FUNCTION__);
         strDest.ReleaseBuffer();
         return false;
       }
 
       if (iconv_const(type, NULL, NULL, &dst, &outBytes) == (size_t)-1)
       {
-        CLog::Log(LOGERROR, "%s failed cleanup", __FUNCTION__);
+        // CLog::Log(LOGERROR, "%s failed cleanup", __FUNCTION__);
         strDest.ReleaseBuffer();
         return false;
       }

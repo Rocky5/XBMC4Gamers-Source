@@ -1,0 +1,17 @@
+[Dd]ebug/
+[Rr]elease/
+[Rr]elease_LTCG/
+[Rr]eleases/
+BUILD Action Replay/
+BUILD Artwork Installer/
+BUILD Dashloader Customizer/
+BUILD XBMC4Gamers/
+BUILD Updater/
+skin/Confluence Lite/BUILD
+skin/Project Mayhem III/BUILD
+*.ncb
+*.sln
+*.suo
+exclude.txt
+XBPyErrorPath.h
+svn_rev.h

@@ -15,23 +15,6 @@ CXeniumLCD::CXeniumLCD()
   m_iColumns = 20;        // display rows each line
   m_iBackLight=32;
   m_iLCDContrast=50;      // Extra Xenium feature
-
-  if (g_guiSettings.GetInt("lcd.type") == LCD_TYPE_LCD_KS0073)
-  {
-    // Special case: it's the KS0073
-    m_iRow1adr = 0x00;
-    m_iRow2adr = 0x20;
-    m_iRow3adr = 0x40;
-    m_iRow4adr = 0x60;
-  }
-  else
-  {
-    // We assume that it's a HD44780 compatible
-    m_iRow1adr = 0x00;
-    m_iRow2adr = 0x40;
-    m_iRow3adr = 0x14;
-    m_iRow4adr = 0x54;
-  }
 }
 
 //*************************************************************************************************************
@@ -43,11 +26,6 @@ CXeniumLCD::~CXeniumLCD()
 void CXeniumLCD::Initialize()
 {
   StopThread();
-  if (g_guiSettings.GetInt("lcd.type") == LCD_TYPE_NONE) 
-  {
-    CLog::Log(LOGINFO, "lcd not used");
-    return;
-  }
   ILCD::Initialize();
   Create();
   
@@ -64,19 +42,17 @@ void CXeniumLCD::SetContrast(int iContrast)
 //*************************************************************************************************************
 void CXeniumLCD::Stop()
 {
-  if (g_guiSettings.GetInt("lcd.type") == LCD_TYPE_NONE) return;
   StopThread();
 }
 
 //*************************************************************************************************************
 void CXeniumLCD::SetLine(int iLine, const CStdString& strLine)
 {
-  if (g_guiSettings.GetInt("lcd.type") == LCD_TYPE_NONE) return;
   if (iLine < 0 || iLine >= (int)m_iRows) return;
   
   CStdString strLineLong=strLine;
   strLineLong.Trim();
-	StringToLCDCharSet(strLineLong);
+  StringToLCDCharSet(LCD_TYPE_HD44780, strLineLong);
 
   while (strLineLong.size() < m_iColumns) strLineLong+=" ";
   if (strLineLong != m_strLine[iLine])
@@ -191,10 +167,6 @@ void CXeniumLCD::Process()
 
   m_iColumns = g_advancedSettings.m_lcdColumns;
   m_iRows    = g_advancedSettings.m_lcdRows;
-  m_iRow1adr = g_advancedSettings.m_lcdAddress1;
-  m_iRow2adr = g_advancedSettings.m_lcdAddress2;
-  m_iRow3adr = g_advancedSettings.m_lcdAddress3;
-  m_iRow4adr = g_advancedSettings.m_lcdAddress4;
   m_iBackLight= g_guiSettings.GetInt("lcd.backlight");
   m_iLCDContrast = g_guiSettings.GetInt("lcd.contrast");
   if (m_iRows >= MAX_ROWS) m_iRows=MAX_ROWS-1;

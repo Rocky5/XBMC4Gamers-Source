@@ -46,6 +46,8 @@ public:
 
   virtual bool OnAction(const CAction &action);
   virtual bool OnMessage(CGUIMessage& message);
+  
+  float AnalogScrollSpeed() const;
 
   virtual bool HasNextPage() const;
   virtual bool HasPreviousPage() const;

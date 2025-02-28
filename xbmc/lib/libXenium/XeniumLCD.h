@@ -30,10 +30,6 @@ protected:
   void    wait_us(unsigned int value) ;
   unsigned int m_iColumns;				// display columns for each line
   unsigned int m_iRows;				// total number of rows
-  unsigned int m_iRow1adr ;
-  unsigned int m_iRow2adr ;
-  unsigned int m_iRow3adr ;
-  unsigned int m_iRow4adr ;
   unsigned int m_iActualpos;				// actual cursor possition
   int          m_iBackLight;
   int          m_iLCDContrast;

@@ -97,7 +97,12 @@ public:
   static bool CheckForKernelPatchable(int strText);
   static void RunShortcut(const char* szPath);
   static void RunXBE(const char* szPath, char* szParameters = NULL, F_VIDEO ForceVideo=VIDEO_NULL, F_COUNTRY ForceCountry=COUNTRY_NULL, CUSTOM_LAUNCH_DATA* pData=NULL);
-  static void LaunchXbe(const char* szPath, const char* szXbe, const char* szParameters, F_VIDEO ForceVideo=VIDEO_NULL, F_COUNTRY ForceCountry=COUNTRY_NULL, CUSTOM_LAUNCH_DATA* pData=NULL); 
+  static void LaunchXbe(const char* szPath, const char* szXbe, const char* szParameters, F_VIDEO ForceVideo=VIDEO_NULL, F_COUNTRY ForceCountry=COUNTRY_NULL, CUSTOM_LAUNCH_DATA* pData=NULL);
+  
+  static void UpdateXBELastPlayed(const char* szPath1);
+  static CStdString UpdateXBEPath(const char* szPath1);
+  static bool MediaPlayHack(const char* szPath1, const CStdString& folderPath);
+  
   static void GetHomePath(CStdString& strPath);
   static bool ExcludeFileOrFolder(const CStdString& strFileOrFolder, const CStdStringArray& regexps);
   static void GetFileAndProtocol(const CStdString& strURL, CStdString& strDir);
@@ -207,6 +212,7 @@ public:
   static void BootToDash();
   
   static void InitRandomSeed();
+  static unsigned int InitRandomSeedint();
 
   // Get decimal integer representation of roman digit, ivxlcdm are valid
   // return 0 for other chars;

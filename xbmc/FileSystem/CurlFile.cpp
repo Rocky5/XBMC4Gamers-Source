@@ -166,10 +166,10 @@ size_t CCurlFile::CReadState::ReadCallback(char *buffer, size_t size, size_t nit
   }
 
   int64_t retSize = XMIN(m_fileSize - m_filePos, int64_t(nitems * size));
-  memcpy(buffer, m_readBuffer + m_filePos, retSize);
+  memcpy(buffer, m_readBuffer + m_filePos, static_cast<size_t>(retSize));
   m_filePos += retSize;
 
-  return retSize;
+  return static_cast<size_t>(retSize);
 }
 
 size_t CCurlFile::CReadState::WriteCallback(char *buffer, size_t size, size_t nitems)
@@ -1041,7 +1041,7 @@ int CCurlFile::Write(const void* lpBuf, int64_t uiBufSize)
     if (result != CURLM_OK)
     {
       long code;
-      if(g_curlInterface.easy_getinfo(m_state->m_easyHandle, CURLINFO_RESPONSE_CODE, &code) == CURLE_OK )
+      if (g_curlInterface.easy_getinfo(m_state->m_easyHandle, CURLINFO_RESPONSE_CODE, &code) == CURLE_OK)
         CLog::Log(LOGERROR, "%s - Unable to write curl resource (%s) - %ld", __FUNCTION__, m_url.c_str(), code);
       m_inError = true;
       return -1;
@@ -1049,7 +1049,7 @@ int CCurlFile::Write(const void* lpBuf, int64_t uiBufSize)
   }
 
   m_writeOffset += m_state->m_filePos;
-  return m_state->m_filePos;
+  return static_cast<int>(m_state->m_filePos);
 }
 
 bool CCurlFile::CReadState::ReadString(char *szLine, int iLineLength)

@@ -60,7 +60,7 @@ public:
   void Render(LCD_MODE mode);
 protected:
   virtual void Process() = 0;
-  void StringToLCDCharSet(CStdString& strText);
+  void StringToLCDCharSet(unsigned int type, CStdString& strText);
   unsigned char GetLCDCharsetCharacter( UINT _nCharacter, int _nCharset=-1);
   void LoadMode(TiXmlNode *node, LCD_MODE mode);
 private:

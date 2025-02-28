@@ -39,6 +39,7 @@ public:
   static bool CreateThumbnail(const CStdString& strFileName, const CStdString& strThumbFileName, bool checkExistence = false);
   static bool CacheThumb(const CStdString& sourceUrl, const CStdString& destFileName);
   static bool CacheFanart(const CStdString& sourceUrl, const CStdString& destFileName);
+  static bool CacheWallpaper(const CStdString& sourceUrl, const CStdString& destFileName, const int& height);
 
   // caches a skin image as a thumbnail image
   bool CacheSkinImage(const CStdString &srcFile, const CStdString &destFile);

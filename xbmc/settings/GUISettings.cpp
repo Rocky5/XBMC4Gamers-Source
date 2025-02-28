@@ -233,7 +233,8 @@ void CGUISettings::Initialize()
   AddCategory(1, "mygames", 32000);
   AddBool(2, "mygames.gamesfasterparsing",32002,false);
   AddBool(3, "mygames.gamesynopsisinfo",32003,false);
-  AddBool(4, "mygames.games128mbartwork",32005,false);
+  AddBool(4, "mygames.gamesaltsynpsisbutton",32001,false);
+  AddBool(5, "mygames.games128mbartwork",32005,false);
 
   // AddString(5, "mygames.deletemyprogramsdb",32005, "", BUTTON_CONTROL_STANDARD);
 
@@ -333,23 +334,24 @@ void CGUISettings::Initialize()
   AddCategory(4, "system", 128);
   AddBool(3, "system.mceremote", 13601, false);
   AddInt(4, "system.shutdowntime", 357, 0, 0, 5, 120, SPIN_CONTROL_INT_PLUS, MASK_MINS, TEXT_OFF);
-  AddInt(5, "system.ledcolour", 13339, LED_COLOUR_NO_CHANGE, LED_COLOUR_NO_CHANGE, 1, LED_COLOUR_OFF, SPIN_CONTROL_TEXT);
-  AddInt(6, "system.leddisableonplayback", 13345, LED_PLAYBACK_OFF, LED_PLAYBACK_OFF, 1, LED_PLAYBACK_VIDEO_MUSIC, SPIN_CONTROL_TEXT);
-  AddBool(7, "system.ledenableonpaused", 20313, true);
-  AddSeparator(8, "system.sep1");
-  AddBool(9, "system.fanspeedcontrol", 13302, false);
-  AddInt(10, "system.fanspeed", 13300, CFanController::Instance()->GetFanSpeed(), 5, 5, 50, SPIN_CONTROL_TEXT);
-  AddSeparator(11, "system.sep2");
-  AddBool(12, "system.autotemperature", 13301, false);
-  AddInt(13, "system.targettemperature", 13299, 55, 40, 1, 68, SPIN_CONTROL_TEXT);
-  AddInt(14, "system.minfanspeed", 13411, 1, 1, 1, 50, SPIN_CONTROL_TEXT);
+  AddBool(5, "system.enablepowersaving",32020,false);
+  AddInt(6, "system.ledcolour", 13339, LED_COLOUR_NO_CHANGE, LED_COLOUR_NO_CHANGE, 1, LED_COLOUR_OFF, SPIN_CONTROL_TEXT);
+  AddInt(7, "system.leddisableonplayback", 13345, LED_PLAYBACK_OFF, LED_PLAYBACK_OFF, 1, LED_PLAYBACK_VIDEO_MUSIC, SPIN_CONTROL_TEXT);
+  AddBool(8, "system.ledenableonpaused", 20313, true);
+  AddSeparator(9, "system.sep1");
+  AddBool(10, "system.fanspeedcontrol", 13302, false);
+  AddInt(11, "system.fanspeed", 13300, CFanController::Instance()->GetFanSpeed(), 5, 5, 50, SPIN_CONTROL_TEXT);
+  AddSeparator(12, "system.sep2");
+  AddBool(13, "system.autotemperature", 13301, false);
+  AddInt(14, "system.targettemperature", 13299, 55, 40, 1, 68, SPIN_CONTROL_TEXT);
+  AddInt(15, "system.minfanspeed", 13411, 1, 1, 1, 50, SPIN_CONTROL_TEXT);
 #endif
   
   AddCategory(4, "videooutput", 21373);
   AddInt(1, "videooutput.aspect", 21374, VIDEO_NORMAL, VIDEO_NORMAL, 1, VIDEO_WIDESCREEN, SPIN_CONTROL_TEXT);
   AddBool(2,  "videooutput.hd480p", 21378, true);
   AddBool(3,  "videooutput.hd720p", 21379, true);
-  // AddBool(4,  "videooutput.hd1080i", 21380, false);
+  AddBool(4,  "videooutput.hd1080i", 21380, true);
 
   AddCategory(4, "audiooutput", 772);
   AddInt(3, "audiooutput.mode", 337, AUDIO_ANALOG, AUDIO_ANALOG, 1, AUDIO_DIGITAL, SPIN_CONTROL_TEXT);
@@ -361,16 +363,16 @@ void CGUISettings::Initialize()
 #endif
 
   AddCategory(4, "lcd", 448);
-  AddInt(2, "lcd.type", 4501, LCD_TYPE_NONE, LCD_TYPE_NONE, 1, LCD_TYPE_VFD, SPIN_CONTROL_TEXT);
-  AddInt(3, "lcd.modchip", 471, MODCHIP_SMARTXX, MODCHIP_SMARTXX, 1, MODCHIP_XECUTER3, SPIN_CONTROL_TEXT);
-  AddInt(4, "lcd.backlight", 463, 80, 0, 5, 100, SPIN_CONTROL_INT_PLUS, MASK_PERCENT);
-  AddInt(5, "lcd.contrast", 465, 100, 0, 5, 100, SPIN_CONTROL_INT_PLUS, MASK_PERCENT);
-  AddSeparator(6, "lcd.sep1");
-  AddInt(7, "lcd.disableonplayback", 20310, LED_PLAYBACK_OFF, LED_PLAYBACK_OFF, 1, LED_PLAYBACK_VIDEO_MUSIC, SPIN_CONTROL_TEXT);
-  AddBool(8, "lcd.enableonpaused", 20312, true);
+  AddInt(1, "lcd.modchip", 471, 0, 0, 1, MODCHIP_SMBUS_HD44780, SPIN_CONTROL_TEXT);
+  AddInt(2, "lcd.i2caddress", 472, 0, 0, 1, 15, SPIN_CONTROL_TEXT);
+  AddInt(3, "lcd.backlight", 463, 80, 0, 5, 100, SPIN_CONTROL_INT_PLUS, MASK_PERCENT);
+  AddInt(4, "lcd.contrast", 465, 100, 0, 5, 100, SPIN_CONTROL_INT_PLUS, MASK_PERCENT);
+  AddSeparator(5, "lcd.sep1");
+  AddInt(6, "lcd.disableonplayback", 20310, LED_PLAYBACK_OFF, LED_PLAYBACK_OFF, 1, LED_PLAYBACK_VIDEO_MUSIC, SPIN_CONTROL_TEXT);
+  AddBool(7, "lcd.enableonpaused", 20312, true);
 
   AddCategory(4, "debug", 14092);
-  AddBool(1, "debug.showloginfo", 20191, false);
+  // AddBool(1, "debug.showloginfo", 20191, false);
   AddPath(2, "debug.screenshotpath",20004,"select writable folder",BUTTON_CONTROL_PATH_INPUT,false,657);
 
   AddCategory(4, "autorun", 447);
@@ -455,7 +457,7 @@ void CGUISettings::Initialize()
   AddBool(14, "videoplayer.fast", 22026, false);
   AddInt(15, "videoplayer.skiploopfilter", 14100, VS_SKIPLOOP_NONREF, VS_SKIPLOOP_DEFAULT, 1, VS_SKIPLOOP_ALL, SPIN_CONTROL_TEXT);
 
-  //AddCategory(5, "myvideos", 14081);
+  AddCategory(5, "myvideos", 14081);
  
   AddInt(0, "videoplayer.resumeautomatically", 12017, RESUME_ASK, RESUME_NO, 1, RESUME_ASK, SPIN_CONTROL_TEXT);
   AddBool(0, "myvideos.treatstackasfile", 20051, true);
@@ -463,7 +465,7 @@ void CGUISettings::Initialize()
   AddBool(3, "myvideos.cleanstrings", 20418, false);
   AddBool(0, "myvideos.extractthumb",20433, false);
 
-  //AddCategory(5, "subtitles", 287);
+  AddCategory(5, "subtitles", 287);
  
   AddString(1, "subtitles.font", 288, "Arial.ttf", SPIN_CONTROL_TEXT);
   AddInt(2, "subtitles.height", 289, 28, 16, 2, 74, SPIN_CONTROL_TEXT); // use text as there is a disk based lookup needed
@@ -483,7 +485,7 @@ void CGUISettings::Initialize()
   AddString(5, "dvds.externaldvdplayer", 20002, "",  BUTTON_CONTROL_PATH_INPUT, true, 655);
 
   // Don't add the category - makes them hidden in the GUI
-  //AddCategory(5, "postprocessing", 14041);
+  AddCategory(5, "postprocessing", 14041);
  
   AddBool(2, "postprocessing.enable", 286, false);
   AddBool(3, "postprocessing.auto", 307, true); // only has effect if PostProcessing.Enable is on.
@@ -532,7 +534,7 @@ void CGUISettings::Initialize()
   AddString(14,"services.ftpserverpassword",1246, "xbox", EDIT_CONTROL_HIDDEN_INPUT, true, 1246);
   AddBool(15,  "services.ftpautofatx",      771, true);
 
-  // AddCategory(6,"autodetect",           1250  );
+  AddCategory(6,"autodetect",           1250  );
  
   AddBool(1,    "autodetect.onoff",     1251, false);
   AddBool(2,    "autodetect.popupinfo", 1254, true);
@@ -540,7 +542,7 @@ void CGUISettings::Initialize()
   AddSeparator(4, "autodetect.sep1");
   AddBool(5,    "autodetect.senduserpw",1255, true); // can be in advanced.xml! default:true
 
-  //AddCategory(6, "smb", 1200);
+  AddCategory(6, "smb", 1200);
  
   AddString(3, "smb.winsserver",  1207,   "",  EDIT_CONTROL_IP_INPUT);
   AddString(4, "smb.workgroup",   1202,   "WORKGROUP", EDIT_CONTROL_INPUT, false, 1202);
@@ -564,9 +566,7 @@ void CGUISettings::Initialize()
 
   // appearance settings
   AddGroup(7, 480);
-#ifndef HAS_XBOX_HARDWARE
-  AddCategory(7,"lookandfeel", 166);
-#endif
+  // AddCategory(7,"lookandfeel", 166);
   AddString(1, "lookandfeel.skin",166,DEFAULT_SKIN, SPIN_CONTROL_TEXT);
   AddString(2, "lookandfeel.skintheme",15111,"SKINDEFAULT", SPIN_CONTROL_TEXT);
   AddString(3, "lookandfeel.skincolors",14078, "SKINDEFAULT", SPIN_CONTROL_TEXT);
@@ -574,10 +574,11 @@ void CGUISettings::Initialize()
   AddInt(5, "lookandfeel.skinzoom",20109, 0, -20, 2, 20, SPIN_CONTROL_INT, MASK_PERCENT);
   AddInt(6, "lookandfeel.startupwindow",512,1, WINDOW_HOME, 1, WINDOW_PYTHON_END, SPIN_CONTROL_TEXT);
   AddString(7, "lookandfeel.soundskin",15108,"SKINDEFAULT", SPIN_CONTROL_TEXT);
-  AddSeparator(8, "lookandfeel.sep2");
-  AddBool(9, "lookandfeel.enablerssfeeds",13305,  true);
-  AddString(10, "lookandfeel.rssedit", 21450, "", BUTTON_CONTROL_STANDARD);
-  AddSeparator(14, "lookandfeel.sep3");
+  AddBool(8,"lookandfeel.soundsduringplayback",21370, false);
+  AddSeparator(9, "lookandfeel.sep2");
+  AddBool(10, "lookandfeel.enablerssfeeds",13305,  true);
+  AddString(11, "lookandfeel.rssedit", 21450, "", BUTTON_CONTROL_STANDARD);
+  AddSeparator(12, "lookandfeel.sep3");
   AddBool(15, "lookandfeel.enablemouse", 21369, false);
 
   AddCategory(7, "locale", 14090);

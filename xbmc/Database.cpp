@@ -26,6 +26,7 @@
 #include "utils/Crc32.h"
 #include "FileSystem/SpecialProtocol.h"
 #include "AutoPtrHandle.h"
+#include "interfaces/Builtins.h"
 
 using namespace AUTOPTR;
 using namespace dbiplus;
@@ -431,6 +432,8 @@ bool CDatabase::CreateTables()
 
 bool CDatabase::UpdateVersionNumber()
 {
+  // Disabled as I do this via a script
+  return true;
   try
   {
     CStdString strSQL=PrepareSQL("UPDATE version SET idVersion=%i\n", GetMinVersion());

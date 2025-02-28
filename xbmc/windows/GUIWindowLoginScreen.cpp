@@ -175,6 +175,7 @@ void CGUIWindowLoginScreen::OnWindowLoaded()
   m_viewControl.Reset();
   m_viewControl.SetParentWindow(GetID());
   m_viewControl.AddView(GetControl(CONTROL_BIG_LIST));
+  g_graphicsContext.SetVideoResolution(g_guiSettings.m_LookAndFeelResolution, TRUE); // update resolution when login screen is reloaded from a logout.
 }
 
 void CGUIWindowLoginScreen::Update()
@@ -268,14 +269,15 @@ void CGUIWindowLoginScreen::LoadProfile(unsigned int profile)
 {
   if (profile != 0 || !g_settings.IsMasterUser())
   {
-    g_application.getNetwork().NetworkMessage(CNetwork::SERVICES_DOWN,1);
-    g_application.getNetwork().Deinitialize();
+    // g_application.getNetwork().NetworkMessage(CNetwork::SERVICES_DOWN,1);
+    // g_application.getNetwork().Deinitialize();
 #ifdef HAS_XBOX_HARDWARE
     CLog::Log(LOGNOTICE, "stop fancontroller");
     CFanController::Instance()->Stop();
 #endif
     g_windowManager.ChangeActiveWindow(WINDOW_LOGIN_SCREEN);
     g_settings.LoadProfile(profile);
+	g_graphicsContext.SetVideoResolution(g_guiSettings.m_LookAndFeelResolution, TRUE); // update resolution when logging into a profile that differs from the master profile.
     g_application.getNetwork().SetupNetwork();
   }
   else

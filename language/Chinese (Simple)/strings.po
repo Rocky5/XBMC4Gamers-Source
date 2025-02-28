@@ -7598,8 +7598,8 @@ msgid "OpenGL version:"
 msgstr "OpenGL 版本："
 
 msgctxt "#22010"
-msgid "GPU temperature:"
-msgstr "显示卡温度："
+msgid "MB temperature:"
+msgstr "主板温度："
 
 msgctxt "#22011"
 msgid "CPU temperature:"

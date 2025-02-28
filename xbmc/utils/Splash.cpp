@@ -57,19 +57,19 @@ void CSplash::Process()
 	g_graphicsContext.Get3DDevice()->Clear(0, NULL, D3DCLEAR_TARGET, 0, 0, 0);
 
 	g_graphicsContext.SetCameraPosition(CPoint(0, 0));
-	float w = g_graphicsContext.GetWidth();
-	float h = g_graphicsContext.GetHeight();
+	float w = static_cast<float>(g_graphicsContext.GetWidth());
+	float h = static_cast<float>(g_graphicsContext.GetHeight());
 	// Store the old gamma ramp
 	g_graphicsContext.Get3DDevice()->GetGammaRamp(&oldRamp);
 	float fade = 0.5f;
 	for (int i = 0; i < 256; i++)
 	{
-		newRamp.red[i] = (int)((float)oldRamp.red[i] * fade);
-		newRamp.green[i] = (int)((float)oldRamp.red[i] * fade);
-		newRamp.blue[i] = (int)((float)oldRamp.red[i] * fade);
+		newRamp.red[i] = static_cast<BYTE>(oldRamp.red[i] * fade);
+		newRamp.green[i] = static_cast<BYTE>(oldRamp.green[i] * fade);
+		newRamp.blue[i] = static_cast<BYTE>(oldRamp.blue[i] * fade);
 	}
 	g_graphicsContext.Get3DDevice()->SetGammaRamp(GAMMA_RAMP_FLAG, &newRamp);
-	//render splash image
+	// render splash image
 #ifndef HAS_XBOX_D3D
 	g_graphicsContext.Get3DDevice()->BeginScene();
 #endif
@@ -100,25 +100,26 @@ void CSplash::Process()
 		imagecustom->FreeResources();
 		delete imagecustom;
 	}
-	//show it on screen
+
+	// show it on screen
 #ifdef HAS_XBOX_D3D
 	g_graphicsContext.Get3DDevice()->BlockUntilVerticalBlank();
 #else
 	g_graphicsContext.Get3DDevice()->EndScene();
 #endif
-	g_graphicsContext.Get3DDevice()->Present( NULL, NULL, NULL, NULL );
+	g_graphicsContext.Get3DDevice()->Present(NULL, NULL, NULL, NULL);
 	g_graphicsContext.Unlock();
 
-	//fade in and wait untill the thread is stopped
+	// fade in and wait until the thread is stopped
 	while (!m_bStop)
 	{
 		if (fade <= 1.f)
 		{
 			for (int i = 0; i < 256; i++)
 			{
-				newRamp.red[i] = (int)((float)oldRamp.red[i] * fade);
-				newRamp.green[i] = (int)((float)oldRamp.green[i] * fade);
-				newRamp.blue[i] = (int)((float)oldRamp.blue[i] * fade);
+				newRamp.red[i] = static_cast<BYTE>(oldRamp.red[i] * fade);
+				newRamp.green[i] = static_cast<BYTE>(oldRamp.green[i] * fade);
+				newRamp.blue[i] = static_cast<BYTE>(oldRamp.blue[i] * fade);
 			}
 			g_graphicsContext.Lock();
 			Sleep(3);
@@ -132,24 +133,24 @@ void CSplash::Process()
 		}
 	}
 
-	// g_graphicsContext.Lock();
+/* 	g_graphicsContext.Lock();
 	// fade out
-	// for (float fadeout = fade - 0.01f; fadeout >= 0.f; fadeout -= 0.01f)
-	// {
-		// for (int i = 0; i < 256; i++)
-		// {
-			// newRamp.red[i] = (int)((float)oldRamp.red[i] * fadeout);
-			// newRamp.green[i] = (int)((float)oldRamp.green[i] * fadeout);
-			// newRamp.blue[i] = (int)((float)oldRamp.blue[i] * fadeout);
-		// }
-		// Sleep(3);
-		// g_graphicsContext.Get3DDevice()->SetGammaRamp(GAMMA_RAMP_FLAG, &newRamp);
-	// }
-	//restore original gamma ramp
-	//g_graphicsContext.Get3DDevice()->Clear(0, NULL, D3DCLEAR_TARGET, 0, 0, 0);
-	// g_graphicsContext.Get3DDevice()->SetGammaRamp(0, &oldRamp);
-	// g_graphicsContext.Get3DDevice()->Present( NULL, NULL, NULL, NULL );
-	// g_graphicsContext.Unlock();
+	for (float fadeout = fade - 0.01f; fadeout >= 0.f; fadeout -= 0.01f)
+	{
+		for (int i = 0; i < 256; i++)
+		{
+			newRamp.red[i] = static_cast<BYTE>(oldRamp.red[i] * fadeout);
+			newRamp.green[i] = static_cast<BYTE>(oldRamp.green[i] * fadeout);
+			newRamp.blue[i] = static_cast<BYTE>(oldRamp.blue[i] * fadeout);
+		}
+		Sleep(3);
+		g_graphicsContext.Get3DDevice()->SetGammaRamp(GAMMA_RAMP_FLAG, &newRamp);
+	}
+	// restore original gamma ramp
+	g_graphicsContext.Get3DDevice()->Clear(0, NULL, D3DCLEAR_TARGET, 0, 0, 0);
+	g_graphicsContext.Get3DDevice()->SetGammaRamp(0, &oldRamp);
+	g_graphicsContext.Get3DDevice()->Present(NULL, NULL, NULL, NULL);
+	g_graphicsContext.Unlock(); */
 }
 
 bool CSplash::Start()
@@ -166,15 +167,14 @@ bool CSplash::Start()
 	}
 	if (CFile::Exists("E:\\CACHE\\tmp.bin"))
 	{
-		CLog::Log(LOGDEBUG, "Splash disabled due to profile being setup.");
+		CLog::Log(LOGDEBUG, "Splash disabled because an update was recently performed.");
 		return false;
 	}
 	if (g_infoManager.GetBool(g_infoManager.TranslateString("skin.hassetting(randomtheme)")) == 1)
 	{
 		return false;
 	}
-	m_ThemeSplash = "Special://root/skins/"+g_guiSettings.GetString("lookandfeel.skin")+"/extras/themes/splashes/"+URIUtils::ReplaceExtension(g_guiSettings.GetString("lookandfeel.skintheme"), ".png");
-	// CLog::Log(LOGNOTICE, m_ThemeSplash.c_str());
+	m_ThemeSplash = "Special://root/skins/" + g_guiSettings.GetString("lookandfeel.skin") + "/extras/themes/splashes/" + URIUtils::ReplaceExtension(g_guiSettings.GetString("lookandfeel.skintheme"), ".png");
 	m_CustomSplash = "Special://root/custom_splash.png";
 	Create();
 	Sleep(1000);

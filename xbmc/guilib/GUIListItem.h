@@ -135,11 +135,17 @@ public:
   void SetSynopsis_Preview(const CStdString& strLabel);
   const CStdString& GetSynopsis_Preview() const;
   
+  void SetSynopsis_Screenshot(const CStdString& strLabel);
+  const CStdString& GetSynopsis_Screenshot() const;
+  
   void SetSynopsis_Fanart(const CStdString& strLabel);
   const CStdString& GetSynopsis_Fanart() const;
   
   void SetLabelSynopsis_PlayerCount(const CStdString& strLabel);
   const CStdString& GetLabelSynopsis_PlayerCount() const;
+  
+  void SetLabelLastPlayed(const CStdString& strLabel);
+  const CStdString& GetLabelLastPlayed() const;
 
   void SetSortLabel(const CStdString &label);
   const CStdString &GetSortLabel() const;
@@ -189,6 +195,19 @@ public:
   int        GetPropertyInt(const CStdString &strKey) const;
   double     GetPropertyDouble(const CStdString &strKey) const;
 
+ /*! \brief Set the current item number within it's container
+   Our container classes will set this member with the items position
+   in the container starting at 1.
+   \param position Position of the item in the container starting at 1.
+   */
+  void SetCurrentItem(unsigned int position);
+  /*! \brief Get the current item number within it's container
+   Retrieve the items position in a container, this is useful to show
+   for example numbering in front of entities in an arbitrary list of entities,
+   like songs of a playlist.
+   */
+  unsigned int GetCurrentItem() const;
+  
 protected:
   CStdString m_strLabel2;     // text of column2
   CStdString m_strThumbnailImage; // filename of thumbnail
@@ -214,11 +233,14 @@ protected:
   CStdString m_strSynopsisFanart;
   CStdString m_strSynopsisResources;
   CStdString m_strSynopsisPreview;
+  CStdString m_strSynopsisScreenshot;
   CStdString m_strSynopsisPlayerCount;
+  CStdString m_strGameLastPlayed;
 
   CGUIListItemLayout *m_layout;
   CGUIListItemLayout *m_focusedLayout;
   bool m_bSelected;     // item is selected or not
+  unsigned int m_currentItem; // current item number within container (starting at 1)
 
   struct icompare
   {

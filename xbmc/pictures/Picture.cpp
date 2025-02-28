@@ -20,6 +20,7 @@
 
 #include "pictures/Picture.h"
 #include "TextureManager.h"
+#include "Application.h"
 #include "settings/AdvancedSettings.h"
 #include "settings/GUISettings.h"
 #include "FileItem.h"
@@ -102,46 +103,47 @@ IDirect3DTexture8* CPicture::Load(const CStdString& file, int width, int height)
 
    MEMORYSTATUS stat;
    GlobalMemoryStatus(&stat);
-   DWORD dwMegFree = (DWORD)(stat.dwAvailPhys / (1024 * 1024));
-  if (dwMegFree >= 12)
+   DWORD dwMegFree = (DWORD)(stat.dwAvailPhys / 1024);
+  if (dwMegFree > (4 * 1024))
   {
 	//ImageLib is sooo slow for jpegs. Try our own decoder first. If it fails, fall back to ImageLib.
-	  if (URIUtils::GetExtension(file).Equals(".jpg") || URIUtils::GetExtension(file).Equals(".tbn"))
-	  {
-		CJpegIO jpegImage;
-		if (jpegImage.Open(file, width, height))
-		{
-		  if (jpegImage.OrgWidth() == 0 || jpegImage.OrgHeight() == 0)
-			return NULL;
+    if (URIUtils::GetExtension(file).Equals(".jpg") || URIUtils::GetExtension(file).Equals(".tbn"))
+    {
 
-		  memset(&m_info, 0, sizeof(ImageInfo));
-		  m_info.originalwidth = jpegImage.OrgWidth();
-		  m_info.originalheight = jpegImage.OrgHeight();
-		  m_info.width = jpegImage.Width();
-		  m_info.height = jpegImage.Height();
-		  LPDIRECT3DTEXTURE8 pTexture = NULL;
-		  g_graphicsContext.Get3DDevice()->CreateTexture(((m_info.width + 3) / 4) * 4, ((m_info.height + 3) / 4) * 4, 1, 0, D3DFMT_LIN_A8R8G8B8 , D3DPOOL_MANAGED, &pTexture);
-		  if (pTexture)
+	  CJpegIO jpegImage;
+	  if (jpegImage.Open(file, width, height))
+	  {
+  	    if (jpegImage.OrgWidth() == 0 || jpegImage.OrgHeight() == 0)
+		  return NULL;
+	    memset(&m_info, 0, sizeof(ImageInfo));
+	    m_info.originalwidth = jpegImage.OrgWidth();
+	    m_info.originalheight = jpegImage.OrgHeight();
+	    m_info.width = jpegImage.Width();
+	    m_info.height = jpegImage.Height();
+	    LPDIRECT3DTEXTURE8 pTexture = NULL;
+	    g_graphicsContext.Get3DDevice()->CreateTexture(((m_info.width + 3) / 4) * 4, ((m_info.height + 3) / 4) * 4, 1, 0, D3DFMT_LIN_A8R8G8B8 , D3DPOOL_MANAGED, &pTexture);
+	    if (pTexture)
+	    {
+		  D3DLOCKED_RECT lr;
+		  if ( D3D_OK == pTexture->LockRect( 0, &lr, NULL, 0 ))
 		  {
-			D3DLOCKED_RECT lr;
-			if ( D3D_OK == pTexture->LockRect( 0, &lr, NULL, 0 ))
-			{
-			  DWORD destPitch = lr.Pitch;
-			  BYTE *pixels = (BYTE *)lr.pBits;
-			  bool ret = jpegImage.Decode(pixels, destPitch, XB_FMT_A8R8G8B8);
-			  pTexture->UnlockRect( 0 );
-			  if (ret)
-				return pTexture;
-			  else
-				return NULL;
-			}
+			  
+		    DWORD destPitch = lr.Pitch;
+		    BYTE *pixels = (BYTE *)lr.pBits;
+		    bool ret = jpegImage.Decode(pixels, destPitch, XB_FMT_A8R8G8B8);
+		    pTexture->UnlockRect( 0 );
+		    if (ret)
+			  return pTexture;
+		    else
+			  return NULL;
 		  }
-		  else {
-			CLog::Log(LOGERROR, "%s - failed to create texture while loading image using JpegIO %s", __FUNCTION__, file.c_str());
-			return NULL;
-		  }
-		}
+	    }
+	    else {
+		  CLog::Log(LOGERROR, "%s - failed to create texture while loading image using JpegIO %s", __FUNCTION__, file.c_str());
+		  return NULL;
+	    }
 	  }
+    }
   }
   // CLog::Log(LOGERROR, "%s - loading image using ImageLib %s", __FUNCTION__, file.c_str());
   DllImageLib dll;
@@ -222,6 +224,12 @@ bool CPicture::CacheImage(const CStdString& sourceUrl, const CStdString& destFil
     ret = false;
     if (URIUtils::GetExtension(sourceUrl).Equals(".jpg") || URIUtils::GetExtension(sourceUrl).Equals(".tbn"))
       ret = jpegImage.CreateThumbnail(tempFile, destFile, width, height);
+    
+	// if (URIUtils::GetExtension(sourceUrl).Equals(".gif"))
+    // {
+		// ret = true;
+		// CopyFile(tempFile.c_str(),destFile.c_str(),FALSE);
+	// }
 
     if (!ret)
     {
@@ -257,6 +265,14 @@ bool CPicture::CacheThumb(const CStdString& sourceUrl, const CStdString& destFil
 bool CPicture::CacheFanart(const CStdString& sourceUrl, const CStdString& destFile)
 {
   int height = g_advancedSettings.m_fanartHeight;
+  // Assume 16:9 size
+  int width = height * 16 / 9;
+
+  return CacheImage(sourceUrl, destFile, width, height);
+}
+
+bool CPicture::CacheWallpaper(const CStdString& sourceUrl, const CStdString& destFile, const int& height)
+{
   // Assume 16:9 size
   int width = height * 16 / 9;
 
@@ -380,4 +396,3 @@ bool CPicture::CreateThumbnailFromSwizzledTexture(LPDIRECT3DTEXTURE8 &texture, i
   }
   return false;
 }
-

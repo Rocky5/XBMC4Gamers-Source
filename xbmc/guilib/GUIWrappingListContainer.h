@@ -40,6 +40,8 @@ public:
   virtual bool OnAction(const CAction &action);
   virtual bool OnMessage(CGUIMessage& message);
   virtual int GetSelectedItem() const;
+  
+  float AnalogScrollSpeed() const;
 
 protected:
   virtual void Scroll(int amount);

@@ -50,12 +50,17 @@ public:
 
   int GetTitleId(const CStdString& strFilenameAndPath);
   
+  bool SetXBEType(const CStdString& strFilenameAndPath, const CStdString& strFilenamePath);
+  CStdString GetXBEType(const CStdString& strFilenameAndPath);
+  
   bool SetLastPlayed(const CStdString& strFilenameAndPath);
   
-  CStdString ReplaceWithForwardSlash(const CStdString& strInput, CStdString& strtoReplace);
+  CStdString ReplaceWith(const CStdString& strInput, CStdString& strtoReplace, CStdString& strtoReplaceWith);
   
   bool SetTitleId(const CStdString& strFilenameAndPath, int idTitle);
   bool IncTimesPlayed(const CStdString& strFileName1);
+  bool StringToFileTime(const CStdString& str, FILETIME& ft);
+  CStdString RemoveTrailingTime(CStdString str);
   bool SetDescription(const CStdString& strFileName1, const CStdString& strDescription);
   bool GetXBEPathByTitleId(const int idTitle, CStdString& strPathAndFilename);
 
@@ -69,7 +74,7 @@ public:
 protected:
   virtual bool CreateTables();
   virtual bool UpdateOldVersion(int version);
-  virtual int GetMinVersion() const { return 6; };
+  virtual int GetMinVersion() const { return 7; };
 
   FILETIME TimeStampToLocalTime( unsigned __int64 timeStamp );
 };

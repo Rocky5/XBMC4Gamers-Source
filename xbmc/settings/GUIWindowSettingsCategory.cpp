@@ -532,23 +532,45 @@ void CGUIWindowSettingsCategory::CreateSettings()
       pControl->AddLabel(g_localizeStrings.Get(603), CDDARIP_QUALITY_EXTREME);
       pControl->SetValue(pSettingInt->GetData());
     }
-    else if (strSetting.Equals("lcd.type"))
-    {
-      CSettingInt *pSettingInt = (CSettingInt*)pSetting;
-      CGUISpinControlEx *pControl = (CGUISpinControlEx *)GetControl(GetSetting(strSetting)->GetID());
-      pControl->AddLabel(g_localizeStrings.Get(351), LCD_TYPE_NONE);
-      pControl->AddLabel("LCD - HD44780", LCD_TYPE_LCD_HD44780);
-      pControl->AddLabel("LCD - KS0073", LCD_TYPE_LCD_KS0073);
-      pControl->AddLabel("VFD", LCD_TYPE_VFD);
-      pControl->SetValue(pSettingInt->GetData());
-    }
     else if (strSetting.Equals("lcd.modchip"))
     {
       CSettingInt *pSettingInt = (CSettingInt*)pSetting;
       CGUISpinControlEx *pControl = (CGUISpinControlEx *)GetControl(GetSetting(strSetting)->GetID());
-      pControl->AddLabel("SmartXX", MODCHIP_SMARTXX);
+      pControl->AddLabel("None", MODCHIP_NONE);
+	  pControl->AddLabel("SmartXX (HD44780)", MODCHIP_SMARTXX_HD44780);
+	  pControl->AddLabel("SmartXX (KS0073)", MODCHIP_SMARTXX_KS0073);
+	  pControl->AddLabel("SmartXX (VFD HD44780)", MODCHIP_SMARTXX_VFD_HD44780);
+	  pControl->AddLabel("SmartXX (VFD KS0073)", MODCHIP_SMARTXX_VFD_KS0073);
       pControl->AddLabel("Xenium", MODCHIP_XENIUM);
-      pControl->AddLabel("Xecuter3", MODCHIP_XECUTER3);
+      pControl->AddLabel("Xecuter3 (HD44780)", MODCHIP_XECUTER3_HD44780);
+	  pControl->AddLabel("Xecuter3 (KS0073)", MODCHIP_XECUTER3_KS0073);
+	  pControl->AddLabel("Modxo (HD44780)", MODCHIP_MODXO_HD44780);
+  	  pControl->AddLabel("Modxo (LCDXXXX)", MODCHIP_MODXO_LCDXXXX);
+	  pControl->AddLabel("Modxo (SPI2PAR)", MODCHIP_MODXO_SPI2PAR);
+	  pControl->AddLabel("Aladdin (SPI2PAR)", MODCHIP_ALADDIN_SPI2PAR);
+	  pControl->AddLabel("SMBUS (HD44780)", MODCHIP_SMBUS_HD44780);
+      pControl->SetValue(pSettingInt->GetData());
+    }
+    else if (strSetting.Equals("lcd.i2caddress"))
+    {
+      CSettingInt *pSettingInt = (CSettingInt*)pSetting;
+      CGUISpinControlEx *pControl = (CGUISpinControlEx *)GetControl(GetSetting(strSetting)->GetID());
+      pControl->AddLabel("0x20", 0);
+	  pControl->AddLabel("0x21", 1);
+	  pControl->AddLabel("0x22", 2);
+	  pControl->AddLabel("0x23", 3);
+	  pControl->AddLabel("0x24", 4);
+	  pControl->AddLabel("0x25", 5);
+	  pControl->AddLabel("0x26", 6);
+	  pControl->AddLabel("0x27", 7);
+	  pControl->AddLabel("0x38", 8);
+	  pControl->AddLabel("0x39", 9);
+	  pControl->AddLabel("0x3a", 10);
+	  pControl->AddLabel("0x3b", 11);
+	  pControl->AddLabel("0x3c", 12);
+	  pControl->AddLabel("0x3d", 13);
+	  pControl->AddLabel("0x3e", 14);
+	  pControl->AddLabel("0x3f", 15);
       pControl->SetValue(pSettingInt->GetData());
     }
     else if (strSetting.Equals("harddisk.aamlevel"))
@@ -1181,7 +1203,7 @@ void CGUIWindowSettingsCategory::UpdateSettings()
     else if (strSetting.Equals("lcd.enableonpaused"))
     {
       CGUIControl *pControl = (CGUIControl *)GetControl(pSettingControl->GetID());
-      if (pControl) pControl->SetEnabled(g_guiSettings.GetInt("lcd.disableonplayback") != LED_PLAYBACK_OFF && g_guiSettings.GetInt("lcd.type") != LCD_TYPE_NONE);
+      if (pControl) pControl->SetEnabled(g_guiSettings.GetInt("lcd.disableonplayback") != LED_PLAYBACK_OFF && g_guiSettings.GetInt("lcd.modchip") != MODCHIP_NONE);
     }
     else if (strSetting.Equals("musiclibrary.scrapersettings"))
     {
@@ -1200,22 +1222,64 @@ void CGUIWindowSettingsCategory::UpdateSettings()
       CGUIControl *pControl = (CGUIControl *)GetControl(pSettingControl->GetID());
       if (pControl) pControl->SetEnabled(g_guiSettings.GetInt("system.leddisableonplayback") != LED_PLAYBACK_OFF && g_guiSettings.GetInt("system.ledcolour") != LED_COLOUR_OFF && g_guiSettings.GetInt("system.ledcolour") != LED_COLOUR_NO_CHANGE);
     }
-    else if (strSetting.Equals("lcd.modchip") || strSetting.Equals("lcd.backlight") || strSetting.Equals("lcd.disableonplayback"))
+    else if (strSetting.Equals("lcd.modchip") || strSetting.Equals("lcd.disableonplayback"))
     {
       CGUIControl *pControl = (CGUIControl *)GetControl(pSettingControl->GetID());
-      if (pControl) pControl->SetEnabled(g_guiSettings.GetInt("lcd.type") != LCD_TYPE_NONE);
+      if (pControl) pControl->SetEnabled(true);
     }
-    else if (strSetting.Equals("lcd.contrast"))
+	else if (strSetting.Equals("lcd.i2caddress"))
     {
-      CGUIControl *pControl = (CGUIControl *)GetControl(pSettingControl->GetID());
-      // X3 can't control the contrast via software graying out!
-      if(g_guiSettings.GetInt("lcd.type") != LCD_TYPE_NONE)
+	  CGUIControl *pControl = (CGUIControl *)GetControl(pSettingControl->GetID());
+	  if(g_guiSettings.GetInt("lcd.modchip") != MODCHIP_NONE)
       {
-        if (pControl) pControl->SetEnabled(g_guiSettings.GetInt("lcd.modchip") != MODCHIP_XECUTER3);
+        int iModchip = g_guiSettings.GetInt("lcd.modchip");
+        bool enabled = iModchip == MODCHIP_MODXO_HD44780 || iModchip == MODCHIP_MODXO_LCDXXXX || iModchip == MODCHIP_SMBUS_HD44780;
+        if (pControl) pControl->SetEnabled(enabled);
       }
       else 
       { 
         if (pControl) pControl->SetEnabled(false); 
+      }
+    }
+    else if (strSetting.Equals("lcd.backlight"))
+    {
+	  CGUIControl *pControl = (CGUIControl *)GetControl(pSettingControl->GetID());
+	  if(g_guiSettings.GetInt("lcd.modchip") != MODCHIP_NONE)
+      {
+		int iModchip = g_guiSettings.GetInt("lcd.modchip");
+		bool enabled = (iModchip == MODCHIP_SMARTXX_VFD_HD44780 || 
+			            iModchip == MODCHIP_SMARTXX_VFD_KS0073 || 
+			            iModchip == MODCHIP_XENIUM ||
+			            iModchip == MODCHIP_XECUTER3_HD44780 ||
+			            iModchip == MODCHIP_XECUTER3_KS0073 ||
+			            iModchip == MODCHIP_MODXO_SPI2PAR ||
+			            iModchip == MODCHIP_ALADDIN_SPI2PAR);
+        if (pControl) pControl->SetEnabled(enabled);
+      }
+      else 
+      { 
+        if (pControl) pControl->SetEnabled(false); 
+      }
+	}
+    else if (strSetting.Equals("lcd.contrast"))
+    {
+      CGUIControl *pControl = (CGUIControl *)GetControl(pSettingControl->GetID());
+      // X3 can't control the contrast via software graying out!
+      int iModchip = g_guiSettings.GetInt("lcd.modchip");
+      if (iModchip != MODCHIP_NONE)
+      {
+        bool enabled = (iModchip == MODCHIP_SMARTXX_HD44780 || 
+                        iModchip == MODCHIP_SMARTXX_KS0073 || 
+                        iModchip == MODCHIP_XENIUM ||
+                        iModchip == MODCHIP_MODXO_HD44780 ||
+                        iModchip == MODCHIP_MODXO_SPI2PAR ||
+                        iModchip == MODCHIP_ALADDIN_SPI2PAR ||
+                        iModchip == MODCHIP_SMBUS_HD44780);
+      if (pControl) pControl->SetEnabled(enabled);
+      }
+      else
+      {
+        if (pControl) pControl->SetEnabled(false);
       }
     }
     else if (strSetting.Equals("weather.pluginsettings"))
@@ -1224,6 +1288,11 @@ void CGUIWindowSettingsCategory::UpdateSettings()
       CStdString basepath = "special://home/system/plugins/weather/" + g_guiSettings.GetString("weather.plugin");
       CGUIControl *pControl = (CGUIControl *)GetControl(pSettingControl->GetID());
       if (pControl) pControl->SetEnabled(!g_guiSettings.GetString("weather.plugin").IsEmpty() && CScriptSettings::SettingsExist(basepath));
+    }
+    else if (strSetting.Equals("lookandfeel.soundsduringplayback"))
+    {
+      CGUIControl *pControl = (CGUIControl *)GetControl(pSettingControl->GetID());
+      if (pControl) pControl->SetEnabled(g_guiSettings.GetString("lookandfeel.soundskin") != "OFF");
     }
     else if (!strSetting.Equals("musiclibrary.enabled")
       && strSetting.Left(13).Equals("musiclibrary."))
@@ -1500,16 +1569,13 @@ void CGUIWindowSettingsCategory::OnSettingChanged(CBaseSettingControl *pSettingC
     g_guiSettings.m_replayGain.bAvoidClipping = g_guiSettings.GetBool("musicplayer.replaygainavoidclipping");
   }
 #ifdef HAS_LCD
-  else if (strSetting.Equals("lcd.type"))
-  {
-    g_lcd->Initialize();
-  }
   else if (strSetting.Equals("lcd.backlight"))
   {
     g_lcd->SetBackLight(((CSettingInt *)pSettingControl->GetSetting())->GetData());
   }
-  else if (strSetting.Equals("lcd.modchip"))
+  else if (strSetting.Equals("lcd.modchip") || strSetting.Equals("lcd.i2caddress"))
   {
+	g_lcd->Initialize();
     g_lcd->Stop();
     CLCDFactory factory;
     delete g_lcd;
@@ -1552,6 +1618,8 @@ void CGUIWindowSettingsCategory::OnSettingChanged(CBaseSettingControl *pSettingC
   {
     CSettingInt *pSetting = (CSettingInt*)pSettingControl->GetSetting();
     CFanController::Instance()->SetMinFanSpeed(pSetting->GetData());
+	CFanController::Instance()->Stop();
+    CFanController::Instance()->SetFanSpeed(pSetting->GetData());
   }
   else if (strSetting.Equals("system.fanspeedcontrol"))
   {
@@ -1564,6 +1632,13 @@ void CGUIWindowSettingsCategory::OnSettingChanged(CBaseSettingControl *pSettingC
     }
     else
       CFanController::Instance()->RestoreStartupSpeed();
+  }
+  else if (strSetting.Equals("system.enablepowersaving"))
+  {
+	if (g_guiSettings.GetBool("system.enablepowersaving") && CGUIDialogYesNo::ShowAndGetInput(33049,NULL,32021,NULL,24021,24022))
+		g_guiSettings.SetBool("system.enablepowersaving",true);
+	else
+		g_guiSettings.SetBool("system.enablepowersaving",false);
   }
   else if (strSetting.Equals("harddisk.aamlevel"))
   {
@@ -1653,7 +1728,6 @@ void CGUIWindowSettingsCategory::OnSettingChanged(CBaseSettingControl *pSettingC
         g_guiSettings.SetString("network.dns",strDefault);
       if (g_guiSettings.GetString("network.dns2").Equals("0.0.0.0"))
         g_guiSettings.SetString("network.dns2",strDefault);
-
     }
   }
     
@@ -1775,6 +1849,13 @@ void CGUIWindowSettingsCategory::OnSettingChanged(CBaseSettingControl *pSettingC
 
     g_audioManager.Enable(true);
     g_audioManager.Load();
+  }
+  else if (strSetting.Equals("lookandfeel.soundsduringplayback"))
+  {
+    if (g_guiSettings.GetBool("lookandfeel.soundsduringplayback"))
+      g_audioManager.Enable(true);
+    else
+      g_audioManager.Enable(!g_application.IsPlaying() || g_application.IsPaused());
   }
   else if (strSetting.Equals("lookandfeel.enablemouse"))
   {
@@ -1965,7 +2046,7 @@ void CGUIWindowSettingsCategory::OnSettingChanged(CBaseSettingControl *pSettingC
   {
 	if (g_guiSettings.GetBool("myprograms.gameautoregion"))
 	{
-	  	if (!CGUIDialogYesNo::ShowAndGetInput(g_localizeStrings.Get(33049), "", g_localizeStrings.Get(32004), "Enable?", "No", "Yes"))
+	  	if (!CGUIDialogYesNo::ShowAndGetInput(33049,NULL,32004,NULL,24021,24022))
 			g_guiSettings.SetBool("myprograms.gameautoregion",false);
 	}
   }
@@ -1976,37 +2057,23 @@ void CGUIWindowSettingsCategory::OnSettingChanged(CBaseSettingControl *pSettingC
 	else
 		g_guiSettings.SetBool("mygames.gamesynopsisinfo",false);
   }
-  // else if (strSetting.Equals("mygames.games128mbartwork"))
-  // {
-		// if (g_guiSettings.GetBool("mygames.games128mbartwork"))
-			// g_guiSettings.SetBool("mygames.games128mbartwork",true);
-		// else
-			// g_guiSettings.SetBool("mygames.games128mbartwork",false);
-  // }
-  // else if (strSetting.Equals("mygames.gamesynopsisinfo"))
-  // {
-	// if (g_guiSettings.GetBool("mygames.gamesynopsisinfo"))
-	// {
-		// CopyFile("P:\\Database\\MyPrograms6.db","P:\\Database\\MyPrograms-Default.db",FALSE);
-		// CFile::Delete("P:/Database/MyPrograms6.db");
-		// CopyFile("P:\\Database\\MyPrograms-Synopsis.db","P:\\Database\\MyPrograms6.db",FALSE);
-	// }
-	// else
-	// {
-		// CopyFile("P:\\Database\\MyPrograms6.db","P:\\Database\\MyPrograms-Synopsis.db",FALSE);
-		// CFile::Delete("P:/Database/MyPrograms6.db");
-		// CopyFile("P:\\Database\\MyPrograms-Default.db","P:\\Database\\MyPrograms6.db",FALSE);
-	// }
-  // }
-  // else if (strSetting.Equals("mygames.deletemyprogramsdb"))
-  // {
-	  // if (CGUIDialogYesNo::ShowAndGetInput(g_localizeStrings.Get(33049), "", g_localizeStrings.Get(32006), "Continue?", "No", "Yes"))
-		// {
-			// CFile::Delete("P:/Database/MyPrograms6.db");
-			// CFile::Delete("P:/Database/MyPrograms-Default.db");
-			// CFile::Delete("P:/Database/MyPrograms-Synopsis.db");
-		// }
-  // }
+  else if (strSetting.Equals("mygames.gamesaltsynpsisbutton"))
+  {
+	if (g_guiSettings.GetBool("mygames.gamesaltsynpsisbutton"))
+		g_guiSettings.SetBool("mygames.gamesaltsynpsisbutton",true);
+	else
+		g_guiSettings.SetBool("mygames.gamesaltsynpsisbutton",false);
+  }
+  else if (strSetting.Equals("mygames.games128mbartwork"))
+  { // set visibility based on ram amount...
+	MEMORYSTATUS stat;
+	GlobalMemoryStatus(&stat);
+    if ((stat.dwTotalPhys / (1024 * 1024)) == 64)
+    {
+      CGUIControl *pControl = (CGUIControl *)GetControl(pSettingControl->GetID());
+      if (pControl) pControl->SetEnabled(g_guiSettings.GetBool("mygames.games128mbartwork"));
+    }
+  }
   else if (strSetting.Left(22).Equals("MusicPlayer.ReplayGain"))
   { // Update our replaygain settings
     g_guiSettings.m_replayGain.iType = g_guiSettings.GetInt("musicplayer.replaygaintype");
@@ -2859,7 +2926,7 @@ void CGUIWindowSettingsCategory::FillInResolutions(CSetting *pSetting, bool play
   pControl->Clear();
   // Find the valid resolutions and add them as necessary
   vector<RESOLUTION> res;
-  g_graphicsContext.GetAllowedResolutions(res, false);
+  g_graphicsContext.GetAllowedResolutions(res, true);
 
   /* add the virtual resolutions */
   res.push_back(AUTORES);

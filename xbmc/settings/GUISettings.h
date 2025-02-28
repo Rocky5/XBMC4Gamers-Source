@@ -54,14 +54,26 @@
 #define VIDEO_WIDESCREEN 2
 
 // LCD settings
-#define LCD_TYPE_NONE        0
-#define LCD_TYPE_LCD_HD44780 1
-#define LCD_TYPE_LCD_KS0073  2
-#define LCD_TYPE_VFD         3
+#define LCD_TYPE_HD44780 0
+#define LCD_TYPE_KS0073  1
+#define LCD_TYPE_VFD     2
 
-#define MODCHIP_SMARTXX   0
-#define MODCHIP_XENIUM    1
-#define MODCHIP_XECUTER3  2
+#define MODCHIP_NONE                0
+#define MODCHIP_SMARTXX_HD44780     1
+#define MODCHIP_SMARTXX_KS0073      2
+#define MODCHIP_SMARTXX_VFD_HD44780 3
+#define MODCHIP_SMARTXX_VFD_KS0073  4
+#define MODCHIP_XENIUM              5
+#define MODCHIP_XECUTER3_HD44780    6
+#define MODCHIP_XECUTER3_KS0073     7
+#define MODCHIP_MODXO_HD44780       8
+#define MODCHIP_MODXO_LCDXXXX       9
+#define MODCHIP_MODXO_SPI2PAR       10
+#define MODCHIP_ALADDIN_SPI2PAR     11
+#define MODCHIP_SMBUS_HD44780       12
+
+#define PROTOCOL_SPI2PAR  0
+#define PROTOCOL_I2C      1
 
 // LED settings
 #define LED_COLOUR_NO_CHANGE 0

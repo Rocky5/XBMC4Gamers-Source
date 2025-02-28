@@ -42,11 +42,16 @@ public:
   CGUIButtonControl(int parentID, int controlID,
                     float posX, float posY, float width, float height,
                     const CTextureInfo& textureFocus, const CTextureInfo& textureNoFocus,
-                    const CLabelInfo &label);
+                    const CLabelInfo &label, bool wrapMultiline = false);
 
   virtual ~CGUIButtonControl(void);
   virtual CGUIButtonControl *Clone() const { return new CGUIButtonControl(*this); };
 
+  virtual float GetWidth() const;
+  virtual void SetMinWidth(float minWidth);
+  float m_minWidth;
+  float m_maxWidth;
+  
   virtual void Render();
   virtual bool OnAction(const CAction &action) ;
   virtual bool OnMessage(CGUIMessage& message);

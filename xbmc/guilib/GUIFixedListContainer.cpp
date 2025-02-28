@@ -58,11 +58,11 @@ bool CGUIFixedListContainer::OnAction(const CAction &action)
     {
       m_analogScrollCount += action.GetAmount() * action.GetAmount();
       bool handled = false;
-      while (m_analogScrollCount > 0.4)
+      while (m_analogScrollCount > AnalogScrollSpeed())
       {
         handled = true;
-        m_analogScrollCount -= 0.4f;
-          Scroll(-1);
+        m_analogScrollCount -= AnalogScrollSpeed();
+        Scroll(-1);
       }
       return handled;
     }
@@ -71,17 +71,22 @@ bool CGUIFixedListContainer::OnAction(const CAction &action)
     {
       m_analogScrollCount += action.GetAmount() * action.GetAmount();
       bool handled = false;
-      while (m_analogScrollCount > 0.4)
+      while (m_analogScrollCount > AnalogScrollSpeed())
       {
         handled = true;
-        m_analogScrollCount -= 0.4f;
-          Scroll(1);
+        m_analogScrollCount -= AnalogScrollSpeed();
+        Scroll(1);
       }
       return handled;
     }
     break;
   }
   return CGUIBaseContainer::OnAction(action);
+}
+
+float CGUIFixedListContainer::AnalogScrollSpeed() const
+{
+  return 4.0f / m_itemsPerPage;
 }
 
 bool CGUIFixedListContainer::MoveUp(bool wrapAround)

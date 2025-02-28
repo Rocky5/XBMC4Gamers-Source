@@ -67,7 +67,7 @@ void CLibrefmScrobbler::LoadCredentials()
 CStdString CLibrefmScrobbler::GetJournalFileName()
 {
   CStdString strFileName = g_settings.GetProfileUserDataFolder();
-  return URIUtils::AddFileToFolder(strFileName, "LibrefmScrobbler.xml");
+  return URIUtils::AddFileToFolder(strFileName, "");
 }
 
 void CLibrefmScrobbler::NotifyUser(int error)

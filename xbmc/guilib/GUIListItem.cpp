@@ -43,6 +43,7 @@ CGUIListItem::CGUIListItem(void)
   m_overlayIcon = ICON_OVERLAY_NONE;
   m_layout = NULL;
   m_focusedLayout = NULL;
+  m_currentItem = 1;
   
   m_strSynopsisAltName = "";
   m_strSynopsisOverview = "";
@@ -62,8 +63,10 @@ CGUIListItem::CGUIListItem(void)
   m_strSynopsisFanart = "";
   m_strSynopsisResources = "";
   m_strSynopsisPreview = "";
+  m_strSynopsisScreenshot = "";
   m_strSynopsisFanart = "";
   m_strSynopsisPlayerCount = "1";
+  m_strGameLastPlayed = "";
 }
 
 CGUIListItem::CGUIListItem(const CStdString& strLabel)
@@ -78,6 +81,7 @@ CGUIListItem::CGUIListItem(const CStdString& strLabel)
   m_overlayIcon = ICON_OVERLAY_NONE;
   m_layout = NULL;
   m_focusedLayout = NULL;
+  m_currentItem = 1;
   
   m_strSynopsisAltName = "";
   m_strSynopsisOverview = "";
@@ -97,13 +101,25 @@ CGUIListItem::CGUIListItem(const CStdString& strLabel)
   m_strSynopsisFanart = "";
   m_strSynopsisResources = "";
   m_strSynopsisPreview = "";
+  m_strSynopsisScreenshot = "";
   m_strSynopsisFanart = "";
   m_strSynopsisPlayerCount = "1";
+  m_strGameLastPlayed = "0";
 }
 
 CGUIListItem::~CGUIListItem(void)
 {
   FreeMemory();
+}
+
+void CGUIListItem::SetCurrentItem(unsigned int position)
+{
+  m_currentItem = position;
+}
+
+unsigned int CGUIListItem::GetCurrentItem() const
+{
+  return m_currentItem;
 }
 
 void CGUIListItem::SetLabel(const CStdString& strLabel)
@@ -357,6 +373,20 @@ const CStdString& CGUIListItem::GetSynopsis_Preview() const
   return m_strSynopsisPreview;
 }
 
+
+void CGUIListItem::SetSynopsis_Screenshot(const CStdString& strSynopsisScreenshot)
+{
+  if (m_strSynopsisScreenshot == strSynopsisScreenshot)
+    return;
+  m_strSynopsisScreenshot = strSynopsisScreenshot;
+  SetInvalid();
+}
+
+const CStdString& CGUIListItem::GetSynopsis_Screenshot() const
+{
+  return m_strSynopsisScreenshot;
+}
+
 void CGUIListItem::SetSynopsis_Fanart(const CStdString& strSynopsisFanart)
 {
   if (m_strSynopsisFanart == strSynopsisFanart)
@@ -381,6 +411,19 @@ void CGUIListItem::SetLabelSynopsis_PlayerCount(const CStdString& strSynopsisPla
 const CStdString& CGUIListItem::GetLabelSynopsis_PlayerCount() const
 {
   return m_strSynopsisPlayerCount;
+}
+
+void CGUIListItem::SetLabelLastPlayed(const CStdString& strGameLastPlayed)
+{
+  if (m_strGameLastPlayed == strGameLastPlayed)
+    return;
+  m_strGameLastPlayed = strGameLastPlayed;
+  SetInvalid();
+}
+
+const CStdString& CGUIListItem::GetLabelLastPlayed() const
+{
+  return m_strGameLastPlayed;
 }
 
 void CGUIListItem::SetLabel2(const CStdString& strLabel2)
@@ -518,8 +561,10 @@ const CGUIListItem& CGUIListItem::operator =(const CGUIListItem& item)
   m_strSynopsisFanart = item.m_strSynopsisFanart;
   m_strSynopsisResources = item.m_strSynopsisResources;
   m_strSynopsisPreview = item.m_strSynopsisPreview;
+  m_strSynopsisScreenshot = item.m_strSynopsisScreenshot;
   m_strSynopsisFanart = item.m_strSynopsisFanart;
   m_strSynopsisPlayerCount = item.m_strSynopsisPlayerCount;
+  m_strGameLastPlayed = item.m_strGameLastPlayed;
   
   FreeMemory();
   m_bSelected = item.m_bSelected;
@@ -559,8 +604,10 @@ void CGUIListItem::Archive(CArchive &ar)
     ar << m_strSynopsisFanart;
     ar << m_strSynopsisResources;
     ar << m_strSynopsisPreview;
+    ar << m_strSynopsisScreenshot;
     ar << m_strSynopsisFanart;
     ar << m_strSynopsisPlayerCount;
+    ar << m_strGameLastPlayed;
 	
     ar << m_strThumbnailImage;
     ar << m_strIcon;
@@ -598,8 +645,10 @@ void CGUIListItem::Archive(CArchive &ar)
     ar >> m_strSynopsisFanart;
     ar >> m_strSynopsisResources;
     ar >> m_strSynopsisPreview;
+    ar >> m_strSynopsisScreenshot;
     ar >> m_strSynopsisFanart;
     ar >> m_strSynopsisPlayerCount;
+    ar >> m_strGameLastPlayed;
 	
     ar >> m_strThumbnailImage;
     ar >> m_strIcon;
@@ -640,8 +689,10 @@ void CGUIListItem::Serialize(CVariant &value)
   value["strSynopsisFanart"] = m_strSynopsisFanart;
   value["strSynopsisResources"] = m_strSynopsisResources;
   value["strSynopsisPreview"] = m_strSynopsisPreview;
+  value["strSynopsisScreenshot"] = m_strSynopsisScreenshot;
   value["strSynopsisFanart"] = m_strSynopsisFanart;
   value["strSynopsisPlayerCount"] = m_strSynopsisPlayerCount;
+  value["strGameLastPlayed"] = m_strGameLastPlayed;
   
   value["sortLabel"] = CStdString(m_sortLabel);
   value["strThumbnailImage"] = m_strThumbnailImage;

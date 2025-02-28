@@ -274,7 +274,10 @@ static const ActionMapping windows[] =
         {"trainersettings"          , WINDOW_DIALOG_TRAINER_SETTINGS},
         {"gamesaves"                , WINDOW_GAMESAVES},
         {"startwindow"              , WINDOW_START},
-        {"startup"                  , WINDOW_STARTUP_ANIM}};
+        {"startup"                  , WINDOW_STARTUP_ANIM},
+        {"_Script_URLDownloader"    , WINDOW_URLDOWNLOADER},
+        {"Custom_Dialog_Options"    , WINDOW_CUSTOM_DIALOG_OPTIONS},
+        {"Custom_Synopsis"          , WINDOW_SYNOPSIS}};
 
 CButtonTranslator& CButtonTranslator::GetInstance()
 {

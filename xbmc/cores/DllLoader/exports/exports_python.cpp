@@ -218,7 +218,7 @@ int xbp_close(int fd)
 
 FILE* xbp__wfopen(const wchar_t *filename, const wchar_t *mode)
 {
-  CLog::Log(LOGERROR, "xbp__wfopen = untested");
+  // CLog::Log(LOGERROR, "xbp__wfopen = untested");
   wchar_t* p = wcsdup(filename);
   CORRECT_SEP_WSTR(p);
   FILE* res = _wfopen(p, mode);

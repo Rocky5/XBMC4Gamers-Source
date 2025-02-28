@@ -126,6 +126,8 @@ public:
   void Flush();
   CStdString GetTexturePath(const CStdString& textureName, bool directory = false);
   void GetBundledTexturesFromPath(const CStdString& texturePath, std::vector<CStdString> &items);
+  
+  void GetImageSize(const CStdString& key, int& width, int& height);
 
   void AddTexturePath(const CStdString &texturePath);    ///< Add a new path to the paths to check when loading media
   void SetTexturePath(const CStdString &texturePath);    ///< Set a single path as the path to check when loading media (clear then add)

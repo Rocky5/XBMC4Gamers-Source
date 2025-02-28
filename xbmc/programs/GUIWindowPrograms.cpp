@@ -63,9 +63,12 @@ CStdString patched_xbe_path;
 CStdString ws_xbe_path;
 CStdString up_xbe_path;
 CStdString xhd_xbe_path;
-CStdString hd_xbe_path;
+CStdString hd_480_xbe_path;
+CStdString hd_720_xbe_path;
 CStdString xresizer_xbe_path;
-int bProgressUpdateVisible = 0;
+CStdString altXBECheck;
+int foundExtraXBE = 0;
+bool UpdateSynopsisInfo = false;
 
 CGUIWindowPrograms::CGUIWindowPrograms(void)
 : CGUIMediaWindow(WINDOW_PROGRAMS, "MyPrograms.xml")
@@ -82,53 +85,46 @@ CGUIWindowPrograms::~CGUIWindowPrograms(void)
 
 bool CGUIWindowPrograms::OnMessage(CGUIMessage& message)
 {
-	switch ( message.GetMessage() )
+	switch (message.GetMessage())
 	{
-	case GUI_MSG_WINDOW_DEINIT:
-		{
+		case GUI_MSG_WINDOW_DEINIT:
 			if (m_thumbLoader.IsLoading())
-			m_thumbLoader.StopThread();
+				m_thumbLoader.StopThread();
 			m_database.Close();
-		}
-		break;
+			break;
 
-	case GUI_MSG_WINDOW_INIT:
-		{
+		case GUI_MSG_WINDOW_INIT:
 			// Disable autoregion if not stock kernels or M8+.
 			m_iRegionSet = 0;
 			m_dlgProgress = (CGUIDialogProgress*)g_windowManager.GetWindow(WINDOW_DIALOG_PROGRESS);
-			// is this the first time accessing this window?
+			
 			if (m_vecItems->GetPath() == "?" && message.GetStringParam().IsEmpty())
-			message.SetStringParam(g_settings.m_defaultProgramSource);
+				message.SetStringParam(g_settings.m_defaultProgramSource);
 
 			m_database.Open();
-
 			return CGUIMediaWindow::OnMessage(message);
-		}
-		break;
 
-	case GUI_MSG_CLICKED:
-		{
+		case GUI_MSG_CLICKED:
 			if (message.GetSenderId() == CONTROL_BTNSORTBY)
 			{
-				// need to update shortcuts manually
 				if (CGUIMediaWindow::OnMessage(message))
 				{
 					LABEL_MASKS labelMasks;
 					m_guiState->GetSortMethodLabelMasks(labelMasks);
 					CLabelFormatter formatter("", labelMasks.m_strLabel2File);
-					for (int i=0;i<m_vecItems->Size();++i)
+
+					for (int i = 0; i < m_vecItems->Size(); ++i)
 					{
 						CFileItemPtr item = m_vecItems->Get(i);
 						if (item->IsShortCut())
-						formatter.FormatLabel2(item.get());
+							formatter.FormatLabel2(item.get());
 					}
 					return true;
 				}
-				else
 				return false;
 			}
-			if (m_viewControl.HasControl(message.GetSenderId()))  // list/thumb control
+
+			if (m_viewControl.HasControl(message.GetSenderId()))
 			{
 				if (message.GetParam1() == ACTION_PLAYER_PLAY)
 				{
@@ -136,8 +132,7 @@ bool CGUIWindowPrograms::OnMessage(CGUIMessage& message)
 					return true;
 				}
 			}
-		}
-		break;
+			break;
 	}
 
 	return CGUIMediaWindow::OnMessage(message);
@@ -146,12 +141,14 @@ bool CGUIWindowPrograms::OnMessage(CGUIMessage& message)
 void CGUIWindowPrograms::GetContextButtons(int itemNumber, CContextButtons &buttons)
 {
 	if (itemNumber < 0 || itemNumber >= m_vecItems->Size())
-	return;
+		return;
+
 	CFileItemPtr item = m_vecItems->Get(itemNumber);
-	int KioskMode = g_infoManager.GetBool(g_infoManager.TranslateString("skin.hassetting(kioskmode)")) == 1;
-	if (item && !item->GetPropertyBOOL("pluginreplacecontextitems"))
+	bool KioskMode = g_infoManager.GetBool(g_infoManager.TranslateString("skin.hassetting(kioskmode)")) == 1;
+
+	if (item)
 	{
-		if ( m_vecItems->IsVirtualDirectoryRoot() )
+		if (m_vecItems->IsVirtualDirectoryRoot())
 		{
 			CGUIDialogContextMenu::GetContextButtons("programs", item, buttons);
 		}
@@ -159,106 +156,112 @@ void CGUIWindowPrograms::GetContextButtons(int itemNumber, CContextButtons &butt
 		{
 			if (item->IsXBE() || item->IsShortCut())
 			{
-				// if (!CFile::Exists("special://xbmc/system/scripts/XBMC4Gamers Extras/Synopsis/y_button_loader.py") && CFile::Exists("special://xbmc/system/scripts/XBMC4Gamers Extras/Synopsis/default.py"))
-				// {
-					// buttons.Add(CONTEXT_BUTTON_SYNOPSIS, "Synopsis");         // Synopsis
-				// }
-
-				URIUtils::GetParentPath(item->GetPath(), check_xbe_path);
-				check_xbe_path = CURL(check_xbe_path).GetWithoutUserDetails();
-				CURL::Decode(check_xbe_path);
-				
-				if (CFile::Exists(check_xbe_path+"default_orig.xbe"))
-				{
-					up_xbe_path = (check_xbe_path+"default_orig.xbe");
-					buttons.Add(CONTEXT_BUTTON_UNPATCHEDXBE, "Launch (Unpatched)");         // Unpatched Patched XBE
-				}
-				
-				if (CFile::Exists(check_xbe_path+"default720p.xbe"))
-				{
-					hd_xbe_path = (check_xbe_path+"default720p.xbe");
-					buttons.Add(CONTEXT_BUTTON_PATCHED720XBE, "Launch (720p)");         // 720p Patched XBE
-				}
-				
-				if (CFile::Exists(check_xbe_path+"default_p.xbe"))
-				{
-					patched_xbe_path = (check_xbe_path+"default_p.xbe");
-					buttons.Add(CONTEXT_BUTTON_PATCHEDXBE, "Launch (Patched)");         // Any Patched XBE
-				}
-				
-				if (CFile::Exists(check_xbe_path+"defaultws.xbe"))
-				{
-					ws_xbe_path = (check_xbe_path+"defaultws.xbe");
-					buttons.Add(CONTEXT_BUTTON_PATCHEDWSXBE, "Launch (Widescreen)");         // Widescreen Patched XBE
-				}
-				
-				if (CFile::Exists(check_xbe_path+"defaultxhd.xbe"))
-				{
-					xhd_xbe_path = (check_xbe_path+"defaultxhd.xbe");
-					buttons.Add(CONTEXT_BUTTON_PATCHEDXHDXBE, "Launch (XHD)");         // XHD Patched XBE
-				}
-				
-				if (CFile::Exists(check_xbe_path+"xresizer.xbe"))
-				{
-					xresizer_xbe_path = (check_xbe_path+"xresizer.xbe");
-					buttons.Add(CONTEXT_BUTTON_XRESIZERXBE, "Resize Screen");         // Resize window XBE used by homebrew
-				}
+				if (!g_guiSettings.GetBool("mygames.gamesaltsynpsisbutton"))
+					buttons.Add(CONTEXT_BUTTON_SYNOPSIS, g_localizeStrings.Get(32019));
 				
 				CStdString strLaunch = g_localizeStrings.Get(518); // Launch
 				if (g_guiSettings.GetBool("myprograms.gameautoregion"))
 				{
 					int iRegion = GetRegion(itemNumber);
 					if (iRegion == VIDEO_NTSCM)
-					strLaunch += " (NTSC-M)";
-					if (iRegion == VIDEO_NTSCJ)
-					strLaunch += " (NTSC-J)";
-					if (iRegion == VIDEO_PAL50)
-					strLaunch += " (PAL)";
-					if (iRegion == VIDEO_PAL60)
-					strLaunch += " (PAL-60)";
+						strLaunch += " (NTSC-M)";
+					else if (iRegion == VIDEO_NTSCJ)
+						strLaunch += " (NTSC-J)";
+					else if (iRegion == VIDEO_PAL50)
+						strLaunch += " (PAL)";
+					else if (iRegion == VIDEO_PAL60)
+						strLaunch += " (PAL-60)";
 				}
-				
 				buttons.Add(CONTEXT_BUTTON_LAUNCH, strLaunch);
-
-				DWORD dwTitleId = CUtil::GetXbeID(item->GetPath());
-				CStdString strTitleID;
-				CStdString strGameSavepath;
-				strTitleID.Format("%08X",dwTitleId);
-				URIUtils::AddFileToFolder("E:\\udata\\",strTitleID,strGameSavepath);
-				
-				if (CDirectory::Exists(strGameSavepath) && KioskMode)
-					buttons.Add(CONTEXT_BUTTON_GAMESAVES, 20322);         // Goto GameSaves
 
 				if (g_guiSettings.GetBool("myprograms.gameautoregion"))
 					buttons.Add(CONTEXT_BUTTON_LAUNCH_IN, 519); // launch in video mode
 
-				if (m_database.ItemHasTrainer(dwTitleId))
-					buttons.Add(CONTEXT_BUTTON_TRAINER_OPTIONS, 12015); // trainer options
-			}
-			
-			if (KioskMode && item->IsXBE() || item->IsShortCut())
-			{
-				if (g_passwordManager.IsMasterLockUnlocked(false) || g_settings.GetCurrentProfile().canWriteDatabases())
-				{
-					if (!g_guiSettings.GetBool("mygames.gamesynopsisinfo"))
-						buttons.Add(CONTEXT_BUTTON_RENAME, 16105); // rename
-					else
-						buttons.Add(CONTEXT_BUTTON_RENAME, 520); // edit xbe title
+				// Add new menu entry for custom xbe files
+				foundExtraXBE = 0, check_xbe_path = "", hd_480_xbe_path = "", hd_720_xbe_path = "", patched_xbe_path = "", ws_xbe_path = "", up_xbe_path = "", xhd_xbe_path = "", xresizer_xbe_path = "";
+				URIUtils::GetParentPath(item->GetPath(), check_xbe_path);
+				
+				if (CFile::Exists(check_xbe_path+"default_orig.xbe")) {   
+					// Unpatched Patched XBE
+					foundExtraXBE = 1;
+					up_xbe_path = (check_xbe_path+"default_orig.xbe");
+				}
+				if (CFile::Exists(check_xbe_path+"default480p.xbe")) {
+					// 720p Patched XBE
+					foundExtraXBE = 1;
+					hd_480_xbe_path = (check_xbe_path+"default480p.xbe");
+				}
+				if (CFile::Exists(check_xbe_path+"default720p.xbe")) {
+					// 720p Patched XBE
+					foundExtraXBE = 1;
+					hd_720_xbe_path = (check_xbe_path+"default720p.xbe");
+				}
+				if (CFile::Exists(check_xbe_path+"default_p.xbe")) {
+					// Any Patched XBE
+					foundExtraXBE = 1;
+					patched_xbe_path = (check_xbe_path+"default_p.xbe");
+				}
+				if (CFile::Exists(check_xbe_path+"defaultws.xbe")) {
+					// Widescreen Patched XBE
+					foundExtraXBE = 1;
+					ws_xbe_path = (check_xbe_path+"defaultws.xbe");
+				}
+				if (CFile::Exists(check_xbe_path+"defaultxhd.xbe")) {
+					// XHD Patched XBE
+					foundExtraXBE = 1;
+					xhd_xbe_path = (check_xbe_path+"defaultxhd.xbe");         
+				}
+				if (CFile::Exists(check_xbe_path+"xresizer.xbe")) {
+					// Resize window XBE used by homebrew
+					foundExtraXBE = 1;
+					xresizer_xbe_path = (check_xbe_path+"xresizer.xbe");
+				}
+				// Add new list if alternative xbes are found
+				if (foundExtraXBE) {
+					CStdString strLaunchExtraXBEs = g_localizeStrings.Get(32009);
+					altXBECheck = m_database.GetXBEType(item->GetPath());
+					if (altXBECheck == "default_orig.xbe")
+						strLaunchExtraXBEs = g_localizeStrings.Get(32010) + " " + g_localizeStrings.Get(305);
+					if (altXBECheck == "default480p.xbe")
+						strLaunchExtraXBEs = g_localizeStrings.Get(32011) + " " + g_localizeStrings.Get(305);
+					if (altXBECheck == "default720p.xbe")
+						strLaunchExtraXBEs = g_localizeStrings.Get(32012) + " " + g_localizeStrings.Get(305);
+					if (altXBECheck == "default_p.xbe")
+						strLaunchExtraXBEs = g_localizeStrings.Get(32013) + " " + g_localizeStrings.Get(305);
+					if (altXBECheck == "defaultws.xbe")
+						strLaunchExtraXBEs = g_localizeStrings.Get(32014) + " " + g_localizeStrings.Get(305);
+					if (altXBECheck == "defaultxhd.xbe")
+						strLaunchExtraXBEs = g_localizeStrings.Get(32015) + " " + g_localizeStrings.Get(305);
+					if (altXBECheck == "xresizer.xbe")
+						strLaunchExtraXBEs = g_localizeStrings.Get(32016) + " " + g_localizeStrings.Get(305);
+					
+					buttons.Add(CONTEXT_BUTTON_LAUNCH_ALTXBE, strLaunchExtraXBEs);
 				}
 				
-				buttons.Add(CONTEXT_BUTTON_SYNOPSISUPDATE, 32006);         // Refresh Synopsis Info
-				buttons.Add(CONTEXT_BUTTON_SYNOPSISUPDATEALL, 32007);         // Refresh All Synopsis Info
+				if (KioskMode && (item->IsXBE() || item->IsShortCut()))
+				{
+					buttons.Add(CONTEXT_BUTTON_EDIT_REFRESH, g_localizeStrings.Get(32017)); // Refresh synopsis or edit names
+				}
+				buttons.Add(CONTEXT_BUTTON_TRAINERS, g_localizeStrings.Get(32018)); // Refresh All Synopsis Info
+				
+				DWORD dwTitleId = CUtil::GetXbeID(item->GetPath());
+				CStdString strTitleID, strGameSavepath;
+				strTitleID.Format("%08X", dwTitleId);
+				URIUtils::AddFileToFolder("E:\\udata\\", strTitleID, strGameSavepath);
+				if (CDirectory::Exists(strGameSavepath) && KioskMode)
+					buttons.Add(CONTEXT_BUTTON_GAMESAVES, 20322); // Goto GameSaves
+				
 			}
-			
-			buttons.Add(CONTEXT_BUTTON_SCAN_TRAINERS, 12012); // scan trainers
-			
-			if (KioskMode)
-				buttons.Add(CONTEXT_BUTTON_GOTO_ROOT, 20128); // Go to Root
-		}  
+
+			// if (KioskMode)
+				// buttons.Add(CONTEXT_BUTTON_GOTO_ROOT, 20128); // Go to Root
+		}
 	}
+
 	CGUIMediaWindow::GetContextButtons(itemNumber, buttons);
-	if (item && !item->GetPropertyBOOL("pluginreplacecontextitems") && KioskMode)
-	buttons.Add(CONTEXT_BUTTON_SETTINGS, 5);      // Settings 
+
+	if (item && KioskMode)
+		buttons.Add(CONTEXT_BUTTON_SETTINGS, 5); // Settings
 }
 
 bool CGUIWindowPrograms::OnContextButton(int itemNumber, CONTEXT_BUTTON button)
@@ -273,9 +276,10 @@ bool CGUIWindowPrograms::OnContextButton(int itemNumber, CONTEXT_BUTTON button)
 			return true;
 		}
 	}
+
 	switch (button)
 	{
-	case CONTEXT_BUTTON_RENAME:
+		case CONTEXT_BUTTON_RENAME:
 		{
 			CStdString strDescription;
 			CShortcut cut;
@@ -285,7 +289,9 @@ bool CGUIWindowPrograms::OnContextButton(int itemNumber, CONTEXT_BUTTON button)
 				strDescription = cut.m_strLabel;
 			}
 			else
-			strDescription = item->GetLabel();
+			{
+				strDescription = item->GetLabel();
+			}
 
 			if (CGUIDialogKeyboard::ShowAndGetInput(strDescription, g_localizeStrings.Get(16008), false))
 			{
@@ -296,216 +302,319 @@ bool CGUIWindowPrograms::OnContextButton(int itemNumber, CONTEXT_BUTTON button)
 				}
 				else
 				{
-					// SetXBEDescription will truncate to 40 characters.
 					if (g_guiSettings.GetBool("mygames.gamesynopsisinfo"))
-						CUtil::SetXBEDescription(item->GetPath(),strDescription);
-					
-					m_database.SetDescription(item->GetPath(),strDescription);
+					{
+						CUtil::SetXBEDescription(item->GetPath(), strDescription);
+					}
+					m_database.SetDescription(item->GetPath(), strDescription);
 				}
 				Update(m_vecItems->GetPath());
 			}
 			return true;
 		}
 
-	case CONTEXT_BUTTON_TRAINER_OPTIONS:
+		case CONTEXT_BUTTON_TRAINER_OPTIONS:
 		{
 			DWORD dwTitleId = CUtil::GetXbeID(item->GetPath());
-			if (CGUIDialogTrainerSettings::ShowForTitle(dwTitleId,&m_database))
-			Update(m_vecItems->GetPath());
+			if (CGUIDialogTrainerSettings::ShowForTitle(dwTitleId, &m_database))
+			{
+				Update(m_vecItems->GetPath());
+			}
 			return true;
 		}
 
-	case CONTEXT_BUTTON_SCAN_TRAINERS:
+		case CONTEXT_BUTTON_SCAN_TRAINERS:
 		{
 			PopulateTrainersList();
 			Update(m_vecItems->GetPath());
 			return true;
 		}
 
-	case CONTEXT_BUTTON_SETTINGS:
-		g_windowManager.ActivateWindow(WINDOW_SETTINGS_MYPROGRAMS);
-		return true;
+		case CONTEXT_BUTTON_SETTINGS:
+			g_windowManager.ActivateWindow(WINDOW_SETTINGS_MYPROGRAMS);
+			return true;
 
-	case CONTEXT_BUTTON_GOTO_ROOT:
-		Update("");
-		return true;
+		case CONTEXT_BUTTON_GOTO_ROOT:
+			Update("");
+			return true;
 
-	case CONTEXT_BUTTON_LAUNCH:
-		OnClick(itemNumber);
-		return true;
-
-	case CONTEXT_BUTTON_SYNOPSIS:
+		case CONTEXT_BUTTON_LAUNCH:
+			OnClick(itemNumber);
+			return true;
+		
+		case CONTEXT_BUTTON_SYNOPSIS:
 		{
-			// CBuiltins::Execute("runscript(special://xbmc/system/scripts/XBMC4Gamers Extras/Synopsis/default.py)");
-			// CBuiltins::Execute("ActivateWindow(1101)");
+			CBuiltins::Execute("ActivateWindow(1101)");
 			return true;
 		}
-	case CONTEXT_BUTTON_SYNOPSISUPDATE:
+		
+		case CONTEXT_BUTTON_SYNOPSISUPDATE:
 		{
 			DWORD dwTitleId = CUtil::GetXbeID(item->GetPath());
 			m_database.UpdateProgramInfo(item.get(), dwTitleId);
 			Update(m_vecItems->GetPath());
 			return true;
 		}
-	case CONTEXT_BUTTON_SYNOPSISUPDATEALL:
+
+		case CONTEXT_BUTTON_SYNOPSISUPDATEALL:
 		{
-			CBuiltins::Execute("Skin.SetBool(UpdatingSynopsisInfo)");
+			UpdateSynopsisInfo = true;
 			Update(m_vecItems->GetPath());
 			return true;
 		}
-	case CONTEXT_BUTTON_UNPATCHEDXBE:
+
+		case CONTEXT_BUTTON_GAMESAVES:
 		{
-			CBuiltins::Execute("runxbe("+up_xbe_path+")");
+			CStdString strTitleID, strGameSavepath;
+			strTitleID.Format("%08X", CUtil::GetXbeID(item->GetPath()));
+			URIUtils::AddFileToFolder("E:\\udata\\", strTitleID, strGameSavepath);
+			g_windowManager.ActivateWindow(WINDOW_GAMESAVES, strGameSavepath);
 			return true;
 		}
-	case CONTEXT_BUTTON_PATCHED720XBE:
-		{
-			CBuiltins::Execute("runxbe("+hd_xbe_path+")");
+
+		case CONTEXT_BUTTON_LAUNCH_IN:
+			OnChooseVideoModeAndLaunch(itemNumber);
 			return true;
-		}
-	case CONTEXT_BUTTON_PATCHEDXBE:
-		{
-			CBuiltins::Execute("runxbe("+patched_xbe_path+")");
+
+		case CONTEXT_BUTTON_LAUNCH_ALTXBE:
+			OnChooseAltXBEAndLaunch(itemNumber);
 			return true;
-		}
-	case CONTEXT_BUTTON_PATCHEDWSXBE:
-		{
-			CBuiltins::Execute("runxbe("+ws_xbe_path+")");
+
+		case CONTEXT_BUTTON_TRAINERS:
+			OnChooseTrainersMenu(itemNumber);
 			return true;
-		}
-	case CONTEXT_BUTTON_PATCHEDXHDXBE:
-		{
-			CBuiltins::Execute("runxbe("+xhd_xbe_path+")");
+
+		case CONTEXT_BUTTON_EDIT_REFRESH:
+			OnChooseEditRefreshMenu(itemNumber);
 			return true;
-		}
-	case CONTEXT_BUTTON_XRESIZERXBE:
-		{
-			CBuiltins::Execute("runxbe("+xresizer_xbe_path+")");
-			return true;
-		}
-	case CONTEXT_BUTTON_GAMESAVES:
-		{
-			CStdString strTitleID;
-			CStdString strGameSavepath;
-			strTitleID.Format("%08X",CUtil::GetXbeID(item->GetPath()));
-			URIUtils::AddFileToFolder("E:\\udata\\",strTitleID,strGameSavepath);
-			g_windowManager.ActivateWindow(WINDOW_GAMESAVES,strGameSavepath);
-			return true;
-		}
-	case CONTEXT_BUTTON_LAUNCH_IN:
-		OnChooseVideoModeAndLaunch(itemNumber);
-		return true;
-	default:
-		break;
+
+		default:
+			break;
 	}
+
 	return CGUIMediaWindow::OnContextButton(itemNumber, button);
+}
+
+bool CGUIWindowPrograms::OnChooseEditRefreshMenu(int item)
+{
+	if (item < 0 || item >= m_vecItems->Size()) return false;
+
+	// Grab the context menu
+	CGUIDialogContextMenu* pMenu = (CGUIDialogContextMenu*)g_windowManager.GetWindow(WINDOW_DIALOG_CONTEXT_MENU);
+	if (!pMenu) return false;
+
+	pMenu->Initialize();
+
+	int btn_1 = -1, btn_2 = -1, btn_3 = -1;
+
+	if (!g_guiSettings.GetBool("mygames.gamesynopsisinfo"))
+		btn_1 = pMenu->AddButton(g_localizeStrings.Get(16105)); // rename
+	else
+		btn_1 = pMenu->AddButton(g_localizeStrings.Get(520)); // edit xbe title
+	btn_2 = pMenu->AddButton(g_localizeStrings.Get(32006)); // Refresh Synopsis Info
+	btn_3 = pMenu->AddButton(g_localizeStrings.Get(32007)); // Refresh All Synopsis Info
+	
+	// This will force centre it on the screen
+	pMenu->SetPosition(640 - (pMenu->GetWidth() / 2), 360 - (pMenu->GetHeight() / 2));
+	pMenu->DoModal();
+	int btnid = pMenu->GetButton();
+
+	if (btnid == btn_1 && btn_1 != -1) {
+		return OnContextButton(item, CONTEXT_BUTTON_RENAME);
+	}
+	if (btnid == btn_2 && btn_2 != -1) {
+		return OnContextButton(item, CONTEXT_BUTTON_SYNOPSISUPDATE);
+	}
+	if (btnid == btn_3 && btn_3 != -1) {
+		return OnContextButton(item, CONTEXT_BUTTON_SYNOPSISUPDATEALL);
+	}
+
+	return true;
+}
+
+bool CGUIWindowPrograms::OnChooseTrainersMenu(int item)
+{
+	if (item < 0 || item >= m_vecItems->Size()) return false;
+
+	// Grab the context menu
+	CGUIDialogContextMenu* pMenu = (CGUIDialogContextMenu*)g_windowManager.GetWindow(WINDOW_DIALOG_CONTEXT_MENU);
+	if (!pMenu) return false;
+
+	pMenu->Initialize();
+
+	int btn_1 = -1, btn_2 = -1;
+	
+	DWORD dwTitleId = CUtil::GetXbeID(m_vecItems->Get(item)->GetPath());
+	if (m_database.ItemHasTrainer(dwTitleId))
+		btn_1 = pMenu->AddButton(g_localizeStrings.Get(12015)); // trainer options
+
+	btn_2 = pMenu->AddButton(g_localizeStrings.Get(12012)); // scan trainers
+
+	// This will force centre it on the screen
+	pMenu->SetPosition(640 - (pMenu->GetWidth() / 2), 360 - (pMenu->GetHeight() / 2));
+	pMenu->DoModal();
+	int btnid = pMenu->GetButton();
+
+	if (btnid == btn_1 && btn_1 != -1) {
+		return OnContextButton(item, CONTEXT_BUTTON_TRAINER_OPTIONS);
+	}    
+	if (btnid == btn_2 && btn_2 != -1) {
+		return OnContextButton(item, CONTEXT_BUTTON_SCAN_TRAINERS);
+	}
+
+	return true;
+}
+
+
+bool CGUIWindowPrograms::OnChooseAltXBEAndLaunch(int item)
+{
+	if (item < 0 || item >= m_vecItems->Size()) return false;
+
+	// Grab the context menu
+	CGUIDialogContextMenu* pMenu = (CGUIDialogContextMenu*)g_windowManager.GetWindow(WINDOW_DIALOG_CONTEXT_MENU);
+	if (!pMenu) return false;
+
+	pMenu->Initialize();
+
+	struct MenuItem {
+		CStdString* path;
+		int localizationId;
+		int buttonId;
+	};
+
+	MenuItem menuItems[] = {
+		{&altXBECheck, 192, -1},
+		{&up_xbe_path, 32010, -1},
+		{&hd_480_xbe_path, 32011, -1},
+		{&hd_720_xbe_path, 32012, -1},
+		{&patched_xbe_path, 32013, -1},
+		{&ws_xbe_path, 32014, -1},
+		{&xhd_xbe_path, 32015, -1},
+		{&xresizer_xbe_path, 32016, -1}
+	};
+
+	int arraySize = sizeof(menuItems) / sizeof(menuItems[0]);
+
+	for (int i = 0; i < arraySize; ++i) {
+		if (!menuItems[i].path->IsEmpty()) {
+			menuItems[i].buttonId = pMenu->AddButton(g_localizeStrings.Get(menuItems[i].localizationId));
+		}
+	}
+
+	// This will force centre it on the screen
+	pMenu->SetPosition(640 - (pMenu->GetWidth() / 2), 360 - (pMenu->GetHeight() / 2));
+	pMenu->DoModal();
+	int btnid = pMenu->GetButton();
+	CStdString xbe_path = m_vecItems->Get(item)->GetPath();
+
+	for (int i = 0; i < arraySize; ++i) {
+		if (btnid == menuItems[i].buttonId) {
+			if (btnid == menuItems[0].buttonId) {
+				m_database.SetXBEType(xbe_path, "");
+			} else {
+				m_database.SetXBEType(xbe_path, *menuItems[i].path);
+			}
+			break;
+		}
+	}
+
+	return btnid > -1 ? false : true;
 }
 
 bool CGUIWindowPrograms::OnChooseVideoModeAndLaunch(int item)
 {
 	if (item < 0 || item >= m_vecItems->Size()) return false;
-	// calculate our position
-	// float posX = 200;
-	// float posY = 100;
-	// const CGUIControl *pList = GetControl(CONTROL_LIST);
-	// if (pList)
-	// {
-		// posX = pList->GetXPosition() + pList->GetWidth() / 2;
-		// posY = pList->GetYPosition() + pList->GetHeight() / 2;
-	// }
 
-	// grab the context menu
-	CGUIDialogContextMenu *pMenu = (CGUIDialogContextMenu *)g_windowManager.GetWindow(WINDOW_DIALOG_CONTEXT_MENU);
+	// Grab the context menu
+	CGUIDialogContextMenu* pMenu = (CGUIDialogContextMenu*)g_windowManager.GetWindow(WINDOW_DIALOG_CONTEXT_MENU);
 	if (!pMenu) return false;
 
 	pMenu->Initialize();
 
-	int btn_PAL;
-	int btn_NTSCM;
-	int btn_NTSCJ;
-	int btn_PAL60;
-	CStdString strPAL, strNTSCJ, strNTSCM, strPAL60;
-	strPAL = "PAL";
-	strNTSCM = "NTSC-M";
-	strNTSCJ = "NTSC-J";
-	strPAL60 = "PAL-60";
-	int iRegion = GetRegion(item,true);
+	struct MenuItem {
+		CStdString text;
+		int regionValue;
+		int buttonId;
+	};
 
-	if (iRegion == VIDEO_NTSCM)
-	strNTSCM += " (default)";
-	if (iRegion == VIDEO_NTSCJ)
-	strNTSCJ += " (default)";
-	if (iRegion == VIDEO_PAL50)
-	strPAL += " (default)";
+	int iRegion = GetRegion(item, true);
 
-	btn_PAL = pMenu->AddButton(strPAL);
-	btn_NTSCM = pMenu->AddButton(strNTSCM);
-	btn_NTSCJ = pMenu->AddButton(strNTSCJ);
-	btn_PAL60 = pMenu->AddButton(strPAL60);
+	MenuItem menuItems[] = {
+		{"PAL", VIDEO_PAL50, -1},
+		{"NTSC-M", VIDEO_NTSCM, -1},
+		{"NTSC-J", VIDEO_NTSCJ, -1},
+		{"PAL-60", VIDEO_PAL60, -1}
+	};
 
-    // this will force centre it on the screen
-    pMenu->SetPosition(640 - (pMenu->GetWidth() / 2), 360 - (pMenu->GetHeight() / 2));
+	if (iRegion == VIDEO_NTSCM) menuItems[1].text += " (default)";
+	if (iRegion == VIDEO_NTSCJ) menuItems[2].text += " (default)";
+	if (iRegion == VIDEO_PAL50) menuItems[0].text += " (default)";
+
+	int arraySize = sizeof(menuItems) / sizeof(menuItems[0]);
+
+	for (int i = 0; i < arraySize; ++i) {
+		menuItems[i].buttonId = pMenu->AddButton(menuItems[i].text);
+	}
+
+	// This will force centre it on the screen
+	pMenu->SetPosition(640 - (pMenu->GetWidth() / 2), 360 - (pMenu->GetHeight() / 2));
 	pMenu->DoModal();
 	int btnid = pMenu->GetButton();
 
-	if (btnid == btn_NTSCM)
-	{
-		m_iRegionSet = VIDEO_NTSCM;
-		m_database.SetRegion(m_vecItems->Get(item)->GetPath(),1);
-	}
-	if (btnid == btn_NTSCJ)
-	{
-		m_iRegionSet = VIDEO_NTSCJ;
-		m_database.SetRegion(m_vecItems->Get(item)->GetPath(),2);
-	}
-	if (btnid == btn_PAL)
-	{
-		m_iRegionSet = VIDEO_PAL50;
-		m_database.SetRegion(m_vecItems->Get(item)->GetPath(),4);
-	}
-	if (btnid == btn_PAL60)
-	{
-		m_iRegionSet = VIDEO_PAL60;
-		m_database.SetRegion(m_vecItems->Get(item)->GetPath(),8);
+	for (int i = 0; i < arraySize; ++i) {
+		if (btnid == menuItems[i].buttonId) {
+			m_iRegionSet = menuItems[i].regionValue;
+			int regionValue = 0;
+			switch (menuItems[i].regionValue) {
+				case VIDEO_PAL50: regionValue = 4; break;
+				case VIDEO_NTSCM: regionValue = 1; break;
+				case VIDEO_NTSCJ: regionValue = 2; break;
+				case VIDEO_PAL60: regionValue = 8; break;
+				default: break;
+			}
+			m_database.SetRegion(m_vecItems->Get(item)->GetPath(), regionValue);
+			break;
+		}
 	}
 
-	if (btnid > -1)
-	return OnClick(item);
-
-	return true;
+	return btnid > -1 ? OnClick(item) : true;
 }
 
 bool CGUIWindowPrograms::Update(const CStdString &strDirectory)
 {
 	if (m_thumbLoader.IsLoading())
-	m_thumbLoader.StopThread();
+		m_thumbLoader.StopThread();
 
 	if (!CGUIMediaWindow::Update(strDirectory))
-	return false;
+		return false;
 
 	m_thumbLoader.Load(*m_vecItems);
 	return true;
 }
 
+
 bool CGUIWindowPrograms::OnPlayMedia(int iItem)
 {
-	if ( iItem < 0 || iItem >= (int)m_vecItems->Size() ) return false;
+	if (iItem < 0 || iItem >= static_cast<int>(m_vecItems->Size()))
+		return false;
+
 	CFileItemPtr pItem = m_vecItems->Get(iItem);
 
 	if (pItem->IsDVD())
-	return MEDIA_DETECT::CAutorun::PlayDisc();
+		return MEDIA_DETECT::CAutorun::PlayDisc();
 
-	if (pItem->m_bIsFolder) return false;
+	if (pItem->m_bIsFolder)
+		return false;
 
 	if (!CFile::Exists(pItem->GetPath()) && g_guiSettings.GetBool("mygames.gamesfasterparsing"))
 	{
-		CGUIDialogOK *dialog = (CGUIDialogOK *)g_windowManager.GetWindow(WINDOW_DIALOG_OK);
+		CGUIDialogOK *dialog = static_cast<CGUIDialogOK*>(g_windowManager.GetWindow(WINDOW_DIALOG_OK));
 		if (dialog)
 		{
 			dialog->SetHeading(g_localizeStrings.Get(33049));
-			dialog->SetLine(0, "No default.xbe found for this item.");
-			dialog->SetLine(1, "Disable fast game parsing if this is a folder or you will have");
-			dialog->SetLine(2, "to fix this game.");
+			dialog->SetLine(0, "");
+			dialog->SetLine(1, "No default.xbe found for this item.");
+			dialog->SetLine(2, "Disable fast game parsing if this is a folder or you will have to fix this game.");
 			dialog->DoModal();
 		}
 		return false;
@@ -513,32 +622,28 @@ bool CGUIWindowPrograms::OnPlayMedia(int iItem)
 
 	// launch xbe...
 	char szPath[1024];
-	char szParameters[1024];
+	char szParameters[1024] = {0};
 
-	// m_database.IncTimesPlayed(pItem->GetPath()); // This is moved to util.cpp
-
-	int iRegion = m_iRegionSet?m_iRegionSet:GetRegion(iItem);
-
+	int iRegion = m_iRegionSet ? m_iRegionSet : GetRegion(iItem);
 	DWORD dwTitleId = 0;
+	
 	if (!pItem->IsOnDVD())
-	dwTitleId = m_database.GetTitleId(pItem->GetPath());
+		dwTitleId = m_database.GetTitleId(pItem->GetPath());
 	if (!dwTitleId)
-	dwTitleId = CUtil::GetXbeID(pItem->GetPath());
+		dwTitleId = CUtil::GetXbeID(pItem->GetPath());
+
 	CStdString strTrainer = m_database.GetActiveTrainer(dwTitleId);
-	if (strTrainer != "")
+	if (!strTrainer.IsEmpty())
 	{
 		CTrainer trainer;
 		if (trainer.Load(strTrainer))
 		{
-			m_database.GetTrainerOptions(strTrainer,dwTitleId,trainer.GetOptions(),trainer.GetNumberOfOptions());
+			m_database.GetTrainerOptions(strTrainer, dwTitleId, trainer.GetOptions(), trainer.GetNumberOfOptions());
 			CUtil::InstallTrainer(trainer);
 		}
 	}
 
 	m_database.Close();
-
-	memset(szParameters, 0, sizeof(szParameters));
-
 	strcpy(szPath, pItem->GetPath().c_str());
 
 	if (pItem->IsShortCut())
@@ -546,49 +651,50 @@ bool CGUIWindowPrograms::OnPlayMedia(int iItem)
 		CUtil::RunShortcut(pItem->GetPath().c_str());
 		return false;
 	}
-	
-	if (strlen(szParameters))
-	CUtil::RunXBE(szPath, szParameters,F_VIDEO(iRegion));
-	else
-	CUtil::RunXBE(szPath,NULL,F_VIDEO(iRegion));
+
+	CUtil::RunXBE(szPath, szParameters[0] ? szParameters : NULL, F_VIDEO(iRegion));
 	return true;
 }
 
 int CGUIWindowPrograms::GetRegion(int iItem, bool bReload)
 {
 	if (!g_guiSettings.GetBool("myprograms.gameautoregion"))
-	return 0;
+		return 0;
 
 	int iRegion;
+
+	CStdString itemPath = m_vecItems->Get(iItem)->GetPath();
+
 	if (bReload || m_vecItems->Get(iItem)->IsOnDVD())
 	{
 		CXBE xbe;
-		iRegion = xbe.ExtractGameRegion(m_vecItems->Get(iItem)->GetPath());
+		iRegion = xbe.ExtractGameRegion(itemPath);
 	}
 	else
 	{
 		m_database.Open();
-		iRegion = m_database.GetRegion(m_vecItems->Get(iItem)->GetPath());
+		iRegion = m_database.GetRegion(itemPath);
 		m_database.Close();
 	}
+
 	if (iRegion == -1)
 	{
 		if (g_guiSettings.GetBool("myprograms.gameautoregion"))
 		{
 			CXBE xbe;
-			iRegion = xbe.ExtractGameRegion(m_vecItems->Get(iItem)->GetPath());
+			iRegion = xbe.ExtractGameRegion(itemPath);
 			if (iRegion < 1 || iRegion > 7)
-			iRegion = 0;
-			m_database.SetRegion(m_vecItems->Get(iItem)->GetPath(),iRegion);
+				iRegion = 0;
+
+			m_database.SetRegion(itemPath, iRegion);
 		}
 		else
-		iRegion = 0;
+		{
+			iRegion = 0;
+		}
 	}
 
-	if (bReload)
-	return CXBE::FilterRegion(iRegion,true);
-	else
-	return CXBE::FilterRegion(iRegion);
+	return CXBE::FilterRegion(iRegion, bReload);
 }
 
 void CGUIWindowPrograms::PopulateTrainersList()
@@ -597,32 +703,37 @@ void CGUIWindowPrograms::PopulateTrainersList()
 	CFileItemList trainers;
 	CFileItemList archives;
 	CFileItemList inArchives;
-	// first, remove any dead items
+
 	std::vector<CStdString> vecTrainerPath;
 	m_database.GetAllTrainers(vecTrainerPath);
+
 	CGUIDialogProgress* m_dlgProgress = (CGUIDialogProgress*)g_windowManager.GetWindow(WINDOW_DIALOG_PROGRESS);
-	m_dlgProgress->SetLine(0,12023);
-	m_dlgProgress->SetLine(1,"");
-	m_dlgProgress->SetLine(2,"");
+	m_dlgProgress->SetLine(0, "");
+	m_dlgProgress->SetLine(1, 12023);
+	m_dlgProgress->SetLine(2, "");
 	m_dlgProgress->StartModal();
 	m_dlgProgress->SetHeading(12012);
 	m_dlgProgress->ShowProgressBar(true);
 	m_dlgProgress->Progress();
 
-	bool bBreak=false;
+	bool bBreak = false;
 	bool bDatabaseState = m_database.IsOpen();
 	if (!bDatabaseState)
-	m_database.Open();
+		m_database.Open();
 	m_database.BeginTransaction();
-	for (unsigned int i=0;i<vecTrainerPath.size();++i)
+
+	// Remove dead items
+	for (unsigned int i = 0; i < vecTrainerPath.size(); ++i)
 	{
-		m_dlgProgress->SetPercentage((int)((float)i/(float)vecTrainerPath.size()*100.f));
+		m_dlgProgress->SetPercentage((int)((float)i / vecTrainerPath.size() * 100.f));
 		CStdString strLine;
-		strLine.Format("%s %i / %i",g_localizeStrings.Get(12013).c_str(), i+1,vecTrainerPath.size());
-		m_dlgProgress->SetLine(1,strLine);
+		strLine.Format("%s %i / %i", g_localizeStrings.Get(12013).c_str(), i + 1, vecTrainerPath.size());
+		m_dlgProgress->SetLine(2, strLine);
 		m_dlgProgress->Progress();
-		if (!CFile::Exists(vecTrainerPath[i]) || vecTrainerPath[i].find(g_guiSettings.GetString("myprograms.trainerpath",false)) == -1)
-		m_database.RemoveTrainer(vecTrainerPath[i]);
+
+		if (!CFile::Exists(vecTrainerPath[i]) || vecTrainerPath[i].find(g_guiSettings.GetString("myprograms.trainerpath", false)) == -1)
+			m_database.RemoveTrainer(vecTrainerPath[i]);
+
 		if (m_dlgProgress->IsCanceled())
 		{
 			bBreak = true;
@@ -630,93 +741,102 @@ void CGUIWindowPrograms::PopulateTrainersList()
 			break;
 		}
 	}
+
 	if (!bBreak)
 	{
-		CLog::Log(LOGDEBUG,"trainerpath %s",g_guiSettings.GetString("myprograms.trainerpath",false).c_str());
-		directory.GetDirectory(g_guiSettings.GetString("myprograms.trainerpath").c_str(),trainers,".xbtf|.etm");
-		if (g_guiSettings.GetString("myprograms.trainerpath",false).IsEmpty())
+		CLog::Log(LOGDEBUG, "trainerpath %s", g_guiSettings.GetString("myprograms.trainerpath", false).c_str());
+		directory.GetDirectory(g_guiSettings.GetString("myprograms.trainerpath").c_str(), trainers, ".xbtf|.etm");
+		if (g_guiSettings.GetString("myprograms.trainerpath", false).IsEmpty())
 		{
 			m_database.RollbackTransaction();
 			m_dlgProgress->Close();
-
 			return;
 		}
 
-		directory.GetDirectory(g_guiSettings.GetString("myprograms.trainerpath").c_str(),archives,".rar|.zip",false); // TODO: ZIP SUPPORT
-		for( int i=0;i<archives.Size();++i)
+		directory.GetDirectory(g_guiSettings.GetString("myprograms.trainerpath").c_str(), archives, ".rar|.zip", false);
+
+		// Process archives
+		for (int i = 0; i < archives.Size(); ++i)
 		{
-			if (stricmp(URIUtils::GetExtension(archives[i]->GetPath()),".rar") == 0)
+			if (stricmp(URIUtils::GetExtension(archives[i]->GetPath()), ".rar") == 0)
 			{
-				g_RarManager.GetFilesInRar(inArchives,archives[i]->GetPath(),false);
+				g_RarManager.GetFilesInRar(inArchives, archives[i]->GetPath(), false);
 				CHDDirectory dir;
 				dir.SetMask(".xbtf|.etm");
-				for (int j=0;j<inArchives.Size();++j)
-				if (dir.IsAllowed(inArchives[j]->GetPath()))
+				for (int j = 0; j < inArchives.Size(); ++j)
 				{
-					CFileItemPtr item(new CFileItem(*inArchives[j]));
-					CStdString strPathInArchive = item->GetPath();
-					CStdString path;
-					URIUtils::CreateArchivePath(path, "rar", archives[i]->GetPath(), strPathInArchive,"");
-					item->SetPath(path);
-					trainers.Add(item);
+					if (dir.IsAllowed(inArchives[j]->GetPath()))
+					{
+						CFileItemPtr item(new CFileItem(*inArchives[j]));
+						CStdString strPathInArchive = item->GetPath();
+						CStdString path;
+						URIUtils::CreateArchivePath(path, "rar", archives[i]->GetPath(), strPathInArchive, "");
+						item->SetPath(path);
+						trainers.Add(item);
+					}
 				}
 			}
-			if (stricmp(URIUtils::GetExtension(archives[i]->GetPath()),".zip")==0)
+			else if (stricmp(URIUtils::GetExtension(archives[i]->GetPath()), ".zip") == 0)
 			{
-				// add trainers in zip
 				CStdString strZipPath;
-				URIUtils::CreateArchivePath(strZipPath,"zip",archives[i]->GetPath(),"");
+				URIUtils::CreateArchivePath(strZipPath, "zip", archives[i]->GetPath(), "");
 				CFileItemList zipTrainers;
-				directory.GetDirectory(strZipPath,zipTrainers,".etm|.xbtf");
-				for (int j=0;j<zipTrainers.Size();++j)
+				directory.GetDirectory(strZipPath, zipTrainers, ".etm|.xbtf");
+				for (int j = 0; j < zipTrainers.Size(); ++j)
 				{
 					CFileItemPtr item(new CFileItem(*zipTrainers[j]));
 					trainers.Add(item);
 				}
 			}
 		}
+
 		if (!m_dlgProgress)
-		m_dlgProgress = (CGUIDialogProgress*)g_windowManager.GetWindow(WINDOW_DIALOG_PROGRESS);
+			m_dlgProgress = (CGUIDialogProgress*)g_windowManager.GetWindow(WINDOW_DIALOG_PROGRESS);
 		m_dlgProgress->SetPercentage(0);
 		m_dlgProgress->ShowProgressBar(true);
 
-		CLog::Log(LOGDEBUG,"# trainers %i",trainers.Size());
-		m_dlgProgress->SetLine(1,"");
-		int j=0;
-		while (j < trainers.Size())
+		CLog::Log(LOGDEBUG, "# trainers %i", trainers.Size());
+		m_dlgProgress->SetLine(0, "");
+
+		// Remove folders from list
+		for (int j = 0; j < trainers.Size();)
 		{
 			if (trainers[j]->m_bIsFolder)
-			trainers.Remove(j);
+				trainers.Remove(j);
 			else
-			j++;
+				j++;
 		}
-		for (int i=0;i<trainers.Size();++i)
+
+		for (int i = 0; i < trainers.Size(); ++i)
 		{
-			CLog::Log(LOGDEBUG,"found trainer %s",trainers[i]->GetPath().c_str());
-			m_dlgProgress->SetPercentage((int)((float)(i)/trainers.Size()*100.f));
+			CLog::Log(LOGDEBUG, "found trainer %s", trainers[i]->GetPath().c_str());
+			m_dlgProgress->SetPercentage((int)((float)(i) / trainers.Size() * 100.f));
 			CStdString strLine;
-			strLine.Format("%s %i / %i",g_localizeStrings.Get(12013).c_str(), i+1,trainers.Size());
-			m_dlgProgress->SetLine(0,strLine);
-			m_dlgProgress->SetLine(2,"");
+			strLine.Format("%s %i / %i", g_localizeStrings.Get(12013).c_str(), i + 1, trainers.Size());
+			m_dlgProgress->SetLine(1, strLine);
+			m_dlgProgress->SetLine(2, "");
 			m_dlgProgress->Progress();
-			if (m_database.HasTrainer(trainers[i]->GetPath())) // skip existing trainers
-			continue;
+
+			if (m_database.HasTrainer(trainers[i]->GetPath()))
+				continue;
 
 			CTrainer trainer;
 			if (trainer.Load(trainers[i]->GetPath()))
 			{
-				m_dlgProgress->SetLine(1,trainer.GetName());
-				m_dlgProgress->SetLine(2,"");
+				m_dlgProgress->SetLine(2, trainer.GetName());
 				m_dlgProgress->Progress();
+
 				unsigned int iTitle1, iTitle2, iTitle3;
-				trainer.GetTitleIds(iTitle1,iTitle2,iTitle3);
+				trainer.GetTitleIds(iTitle1, iTitle2, iTitle3);
+
 				if (iTitle1)
-				m_database.AddTrainer(iTitle1,trainers[i]->GetPath());
+					m_database.AddTrainer(iTitle1, trainers[i]->GetPath());
 				if (iTitle2)
-				m_database.AddTrainer(iTitle2,trainers[i]->GetPath());
+					m_database.AddTrainer(iTitle2, trainers[i]->GetPath());
 				if (iTitle3)
-				m_database.AddTrainer(iTitle3,trainers[i]->GetPath());
+					m_database.AddTrainer(iTitle3, trainers[i]->GetPath());
 			}
+
 			if (m_dlgProgress->IsCanceled())
 			{
 				m_database.RollbackTransaction();
@@ -724,37 +844,22 @@ void CGUIWindowPrograms::PopulateTrainersList()
 			}
 		}
 	}
+
 	m_database.CommitTransaction();
 	m_dlgProgress->Close();
 
 	if (!bDatabaseState)
-	m_database.Close();
+		m_database.Close();
 	else
-	Update(m_vecItems->GetPath());
+		Update(m_vecItems->GetPath());
 }
 
 bool CGUIWindowPrograms::GetDirectory(const CStdString &strDirectory, CFileItemList &items)
 {
-	CStdString defaultXBE;
-	int bProgressUpdateVisible = g_infoManager.GetBool(g_infoManager.TranslateString("skin.HasSetting(UpdatingSynopsisInfo)"));
-	
-	bool bFlattened=false;
-	if (URIUtils::IsDVD(strDirectory))
-	{
-		CStdString strPath;
-		URIUtils::AddFileToFolder(strDirectory,"default.xbe",strPath);
-		if (CFile::Exists(strPath)) // flatten dvd
-		{
-			CFileItemPtr item(new CFileItem("default.xbe"));
-			item->SetPath(strPath);
-			items.Add(item);
-			items.SetPath(strDirectory);
-			bFlattened = true;
-		}
-	}
-	if (!bFlattened)
-	if (!CGUIMediaWindow::GetDirectory(strDirectory, items))
-	return false;
+	bool bFlattened = false;
+
+	if (!bFlattened && !CGUIMediaWindow::GetDirectory(strDirectory, items))
+		return false;
 
 	if (items.IsVirtualDirectoryRoot())
 	{
@@ -762,31 +867,26 @@ bool CGUIWindowPrograms::GetDirectory(const CStdString &strDirectory, CFileItemL
 		return true;
 	}
 
-	if (strDirectory.Equals("plugin://programs/"))
-	{
-		items.SetContent("plugins");
-		items.SetLabel(g_localizeStrings.Get(24001));
-	}
-
-	// flatten any folders
 	m_database.BeginTransaction();
-	DWORD dwTick=timeGetTime();
-	CBuiltins::Execute("Skin.SetString(disablecancel,true)");
 	bool bProgressVisible = false;
-	CStdString description;
+	CStdString description, defaultXBE;
 	m_dlgProgress->SetPercentage(0);
 	m_dlgProgress->ShowProgressBar(true);
+	CBuiltins::Execute("Skin.SetString(disablecancel,true)");
+
 	for (int i = 0; i < items.Size(); i++)
 	{
-		m_dlgProgress->SetPercentage((int)((float)(i)/items.Size()*100.f));
-		CStdString shortcutPath;
+		m_dlgProgress->SetPercentage((int)((float)(i) / items.Size() * 100.f));
 		CFileItemPtr item = items[i];
+		URIUtils::AddFileToFolder(item->GetPath(), "default.xbe", defaultXBE);
 
-		if ( !g_guiSettings.GetBool("mygames.gamesfasterparsing") )
+		if (!g_guiSettings.GetBool("mygames.gamesfasterparsing") || 
+			defaultXBE.find("\\Media\\") != CStdString::npos || 
+			defaultXBE.find("\\Movies\\") != CStdString::npos || 
+			defaultXBE.find("\\TV Shows\\") != CStdString::npos)
 		{
-			if (item->m_bIsFolder && !item->IsParentFolder() && !item->IsPlugin())
-			{ // folder item - let's check for a default.xbe file, and flatten if we have one
-				URIUtils::AddFileToFolder(item->GetPath(), "default.xbe", defaultXBE);
+			if (item->m_bIsFolder && !item->IsParentFolder())
+			{
 				if (CFile::Exists(defaultXBE))
 				{
 					item->SetPath(defaultXBE);
@@ -794,12 +894,11 @@ bool CGUIWindowPrograms::GetDirectory(const CStdString &strDirectory, CFileItemL
 				}
 			}
 			else if (item->IsShortCut())
-			{ // resolve the shortcut to set it's description etc.
-				// and save the old shortcut path (so we can reassign it later)
+			{
 				CShortcut cut;
 				if (cut.Create(item->GetPath()))
 				{
-					shortcutPath = item->GetPath();
+					CStdString shortcutPath = item->GetPath();
 					item->SetPath(cut.m_strPath);
 					item->SetThumbnailImage(cut.m_strThumb);
 
@@ -810,8 +909,8 @@ bool CGUIWindowPrograms::GetDirectory(const CStdString &strDirectory, CFileItemL
 					{
 						item->SetLabel(cut.m_strLabel);
 						__stat64 stat;
-						if (CFile::Stat(item->GetPath(),&stat) == 0)
-						item->m_dwSize = stat.st_size;
+						if (CFile::Stat(item->GetPath(), &stat) == 0)
+							item->m_dwSize = stat.st_size;
 
 						formatter.FormatLabel2(item.get());
 						item->SetLabelPreformated(true);
@@ -821,113 +920,109 @@ bool CGUIWindowPrograms::GetDirectory(const CStdString &strDirectory, CFileItemL
 		}
 		else
 		{
-			URIUtils::AddFileToFolder(item->GetPath(), "default.xbe", defaultXBE);
 			item->SetPath(defaultXBE);
 			item->m_bIsFolder = false;
 		}
 
 		if (item->IsXBE())
 		{
-			// check titleid and if not there add to database
-			DWORD dwTitleID = item->IsOnDVD() ? 0 : m_database.GetProgramInfo(item.get());
-			
-			// if no titleid is found in DB show progress dialog
+			DWORD dwTitleID = m_database.GetProgramInfo(item.get());
+
 			if (!dwTitleID)
 			{
 				if (!bProgressVisible)
 				{
 					m_dlgProgress->SetHeading(189);
-					m_dlgProgress->SetLine(0, 20120);
-					m_dlgProgress->SetLine(1,"");
-					m_dlgProgress->SetLine(2,"");
+					m_dlgProgress->SetLine(0, "");
+					m_dlgProgress->SetLine(1, 20120);
+					m_dlgProgress->SetLine(2, "");
 					m_dlgProgress->StartModal();
 					bProgressVisible = true;
 				}
-				
-				if (CUtil::GetXBEDescription(item->GetPath(), description) && (!item->IsLabelPreformated() && !item->GetLabel().IsEmpty()))
+
+				if (CUtil::GetXBEDescription(item->GetPath(), description) && !item->IsLabelPreformated() && !item->GetLabel().IsEmpty())
 				{
 					item->SetLabel(description);
 					if (bProgressVisible)
 					{
-						m_dlgProgress->SetLine(2,description);
+						m_dlgProgress->SetLine(2, description);
 						m_dlgProgress->Progress();
 					}
 				}
-				
+
 				dwTitleID = CUtil::GetXbeID(item->GetPath());
-				
-				if (!item->IsOnDVD())
-					m_database.AddProgramInfo(item.get(), dwTitleID);
+				m_database.AddProgramInfo(item.get(), dwTitleID);
 			}
-			
-			// if manually updating synopsis info show progress dialog
-			if (bProgressUpdateVisible == 1)
+
+			if (UpdateSynopsisInfo)
 			{
 				dwTitleID = CUtil::GetXbeID(item->GetPath());
 				m_dlgProgress->SetHeading(189);
-				m_dlgProgress->SetLine(0,g_localizeStrings.Get(32008));
-				m_dlgProgress->SetLine(1,"");
-				m_dlgProgress->SetLine(2,"");
+				m_dlgProgress->SetLine(0, "");
+				m_dlgProgress->SetLine(1, g_localizeStrings.Get(32008));
+				m_dlgProgress->SetLine(2, "");
 				m_dlgProgress->StartModal();
-				m_dlgProgress->SetLine(2,item->GetLabel());
+				m_dlgProgress->SetLine(2, item->GetLabel());
 				m_dlgProgress->Progress();
 				bProgressVisible = true;
 				m_database.UpdateProgramInfo(item.get(), dwTitleID);
 			}
 			else
 			{
-				// SetOverlayIcons()
 				if (m_database.ItemHasTrainer(dwTitleID))
 				{
-					if (m_database.GetActiveTrainer(dwTitleID) != "")
-					item->SetOverlayImage(CGUIListItem::ICON_OVERLAY_TRAINED);
+					if (!m_database.GetActiveTrainer(dwTitleID).IsEmpty())
+						item->SetOverlayImage(CGUIListItem::ICON_OVERLAY_TRAINED);
 					else
-					item->SetOverlayImage(CGUIListItem::ICON_OVERLAY_HAS_TRAINER);
+						item->SetOverlayImage(CGUIListItem::ICON_OVERLAY_HAS_TRAINER);
 				}
 			}
 		}
-		if (!shortcutPath.IsEmpty())
-		item->SetPath(shortcutPath);
 		if (bProgressVisible)
 			m_database.GetProgramInfo(item.get());
 	}
+
 	m_database.CommitTransaction();
-	// set the cached thumbs
+
 	items.SetThumbnailImage("");
 	items.SetCachedProgramThumbs();
 	items.SetCachedProgramThumb();
 	if (!items.HasThumbnail())
-	items.SetUserProgramThumb();
+		items.SetUserProgramThumb();
 
 	if (bProgressVisible)
+	{
 		m_dlgProgress->Close();
-		CBuiltins::Execute("Skin.Reset(UpdatingSynopsisInfo)");
+		UpdateSynopsisInfo = false;
 		CBuiltins::Execute("Skin.SetString(disablecancel,)");
+	}
 
 	return true;
 }
 
 CStdString CGUIWindowPrograms::GetStartFolder(const CStdString &dir)
 {
-	if (dir.Equals("Plugins") || dir.Equals("Addons"))
-	return "plugin://programs/";
-	
 	SetupShares();
 	VECSOURCES shares;
 	m_rootDir.GetSources(shares);
+
 	bool bIsSourceName = false;
 	int iIndex = CUtil::GetMatchingSource(dir, shares, bIsSourceName);
+
 	if (iIndex > -1)
 	{
 		if (iIndex < (int)shares.size() && shares[iIndex].m_iHasLock == 2)
 		{
 			CFileItem item(shares[iIndex]);
-			if (!g_passwordManager.IsItemUnlocked(&item,"programs"))
-			return "";
+			if (!g_passwordManager.IsItemUnlocked(&item, "programs"))
+				return "";
 		}
+
 		if (bIsSourceName)
-		return shares[iIndex].strPath;
+			return shares[iIndex].strPath;
+
 		return dir;
 	}
+
 	return CGUIMediaWindow::GetStartFolder(dir);
 }

@@ -95,6 +95,17 @@ CGUILargeTextureManager::~CGUILargeTextureManager()
   StopThread();
 }
 
+void CGUILargeTextureManager::GetImageSize(const CStdString& key, int& width, int& height)
+{
+    if (key.empty()) return;
+
+    size_t pos = key.Find('x');
+    if (pos != -1) {
+        width = atoi(key.Left(pos));
+        height = atoi(key.Mid(pos + 1));
+    }
+}
+
 // Process loop for this thread
 // Check and deallocate images that have been finished with.
 // And allocate new images that have been queued.
@@ -136,6 +147,71 @@ void CGUILargeTextureManager::Process()
       {
         width = g_advancedSettings.m_thumbSize;
         height = g_advancedSettings.m_thumbSize;
+      }
+      else if (loadPath.Find("Thumbnails\\Wallpapers") != -1 && !g_advancedSettings.m_wallpaperImage.empty())
+      {
+        GetImageSize(g_advancedSettings.m_wallpaperImage, width, height);
+      }
+      else if (URIUtils::GetFileName(loadPath).Equals("cd_small.jpg") && !g_advancedSettings.m_cdsmallImage.empty())
+      {
+        GetImageSize(g_advancedSettings.m_cdsmallImage, width, height);
+      }
+      else if (URIUtils::GetFileName(loadPath).Equals("fanart_thumb.jpg") && !g_advancedSettings.m_fanartthumbImage.empty())
+      {
+        GetImageSize(g_advancedSettings.m_fanartthumbImage, width, height);
+      }
+      else if (URIUtils::GetFileName(loadPath).Equals("fanart-blur.jpg") && !g_advancedSettings.m_fanartblurImage.empty())
+      {
+        GetImageSize(g_advancedSettings.m_fanartblurImage, width, height);
+      }
+      else if (URIUtils::GetFileName(loadPath).Equals("fog.jpg"))
+      {
+        GetImageSize(g_advancedSettings.m_fogImage, width, height);
+      }
+      else if (URIUtils::GetFileName(loadPath).Equals("poster.jpg") && !g_advancedSettings.m_posterImage.empty())
+      {
+        GetImageSize(g_advancedSettings.m_posterImage, width, height);
+      }
+      else if ((URIUtils::GetFileName(loadPath).Equals("poster_small.jpg") || URIUtils::GetFileName(loadPath).Equals("poster_small_blurred.jpg")) && !g_advancedSettings.m_postersmallImage.empty())
+      {
+        GetImageSize(g_advancedSettings.m_postersmallImage, width, height);
+      }
+      else if (URIUtils::GetFileName(loadPath).Equals("thumb.jpg") && !g_advancedSettings.m_thumbImage.empty())
+      {
+        GetImageSize(g_advancedSettings.m_thumbImage, width, height);
+      }
+      else if (URIUtils::GetFileName(loadPath).Equals("fanart.jpg") && !g_advancedSettings.m_fanartImage.empty())
+      {
+        GetImageSize(g_advancedSettings.m_fanartImage, width, height);
+      }
+      else if ((URIUtils::GetFileName(loadPath).Equals("alt_synopsis.jpg") || URIUtils::GetFileName(loadPath).Equals("synopsis.jpg")) && !g_advancedSettings.m_synopsisImage.empty())
+      {
+        GetImageSize(g_advancedSettings.m_synopsisImage, width, height);
+      }
+	  // PNG images
+      else if (URIUtils::GetFileName(loadPath).Equals("banner.png") && !g_advancedSettings.m_bannerImage.empty())
+      {
+        GetImageSize(g_advancedSettings.m_bannerImage, width, height);
+      }
+      else if (URIUtils::GetFileName(loadPath).Equals("cd.png") && !g_advancedSettings.m_cdImage.empty())
+      {
+        GetImageSize(g_advancedSettings.m_cdImage, width, height);
+      }
+      else if (URIUtils::GetFileName(loadPath).Equals("cdposter.png") && !g_advancedSettings.m_cdposterImage.empty())
+      {
+        GetImageSize(g_advancedSettings.m_cdposterImage, width, height);
+      }
+      else if (URIUtils::GetFileName(loadPath).Equals("dual3d.png") && !g_advancedSettings.m_dual3dImage.empty())
+      {
+        GetImageSize(g_advancedSettings.m_dual3dImage, width, height);
+      }
+      else if (URIUtils::GetFileName(loadPath).Equals("icon.png") && !g_advancedSettings.m_iconImage.empty())
+      {
+        GetImageSize(g_advancedSettings.m_iconImage, width, height);
+      }
+      else if (URIUtils::GetFileName(loadPath).Equals("opencase.png") && !g_advancedSettings.m_opencaseImage.empty())
+      {
+        GetImageSize(g_advancedSettings.m_opencaseImage, width, height);
       }
       texture = pic.Load(loadPath, width, height);
     }

@@ -257,6 +257,7 @@ void CGUIAudioManager::PlayPythonSound(const CStdString& strFileName)
 // xbmc
 bool CGUIAudioManager::Load()
 {
+  CStdString strLabel;
   m_actionSoundMap.clear();
   m_windowSoundMap.clear();
 
@@ -265,7 +266,7 @@ bool CGUIAudioManager::Load()
 
   if (g_guiSettings.GetString("lookandfeel.soundskin")=="SKINDEFAULT")
   {
-    m_strMediaDir="special://home/skins/" + g_guiSettings.GetString("lookandfeel.skin") + "/sounds";
+    m_strMediaDir="special://home/skins/" + g_guiSettings.GetString("lookandfeel.skin") + "/sounds/default";
     if ( ! CDirectory::Exists( m_strMediaDir ) )
     {
       m_strMediaDir = URIUtils::AddFileToFolder("special://xbmc/skins/", g_guiSettings.GetString("lookandfeel.skin"));
@@ -273,7 +274,7 @@ bool CGUIAudioManager::Load()
     }
   }
   else
-    m_strMediaDir = URIUtils::AddFileToFolder("special://xbmc/system/sounds/", g_guiSettings.GetString("lookandfeel.soundskin"));
+    m_strMediaDir = URIUtils::AddFileToFolder("special://xbmc/skins/", g_guiSettings.GetString("lookandfeel.skin") + "/sounds/" + g_guiSettings.GetString("lookandfeel.soundskin"));
 
   CStdString strSoundsXml = URIUtils::AddFileToFolder(m_strMediaDir, "sounds.xml");
 

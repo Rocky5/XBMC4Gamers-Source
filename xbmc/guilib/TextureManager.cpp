@@ -412,6 +412,17 @@ bool CGUITextureManager::HasTexture(const CStdString &textureName, CStdString *p
   return !fullPath.IsEmpty();
 }
 
+void CGUITextureManager::GetImageSize(const CStdString& key, int& width, int& height)
+{
+    if (key.empty()) return;
+
+    size_t pos = key.Find('x');
+    if (pos != -1) {
+        width = atoi(key.Left(pos));
+        height = atoi(key.Mid(pos + 1));
+    }
+}
+
 int CGUITextureManager::Load(const CStdString& strTextureName, bool checkBundleOnly /*= false */)
 {
   CStdString strPath;
@@ -573,6 +584,7 @@ int CGUITextureManager::Load(const CStdString& strTextureName, bool checkBundleO
   }
   else
   {
+    int width, height;
     // normal picture
     // convert from utf8
     CStdString texturePath;
@@ -580,16 +592,134 @@ int CGUITextureManager::Load(const CStdString& strTextureName, bool checkBundleO
 
     // if the file is a thumbnail, load with picture loader (fast jpeg decoder), and limit to our chosen thumbsize
     // as thumbnails could be slightly bigger on disk due to libjpeg scaling
+    CPicture pic;
     if (URIUtils::GetExtension(strPath).Equals(".tbn"))
     {
-      CPicture pic;
       pTexture = pic.Load(strPath, g_advancedSettings.m_thumbSize, g_advancedSettings.m_thumbSize);
+      info.Width = pic.GetWidth();
+      info.Height = pic.GetHeight();
+    }
+    else if (strPath.Find("Thumbnails\\Wallpapers") != -1 && !g_advancedSettings.m_wallpaperImage.empty())
+    {
+      GetImageSize(g_advancedSettings.m_wallpaperImage, width, height);
+      pTexture = pic.Load(strPath, width, height);
+      info.Width = pic.GetWidth();
+      info.Height = pic.GetHeight();
+    }
+    else if (URIUtils::GetFileName(strPath).Equals("cd_small.jpg") && !g_advancedSettings.m_cdsmallImage.empty())
+    {
+      GetImageSize(g_advancedSettings.m_cdsmallImage, width, height);
+      pTexture = pic.Load(strPath, width, height);
+      info.Width = pic.GetWidth();
+      info.Height = pic.GetHeight();
+    }
+    else if (URIUtils::GetFileName(strPath).Equals("fanart_thumb.jpg") && !g_advancedSettings.m_fanartthumbImage.empty())
+    {
+      GetImageSize(g_advancedSettings.m_fanartthumbImage, width, height);
+      pTexture = pic.Load(strPath, width, height);
+      info.Width = pic.GetWidth();
+      info.Height = pic.GetHeight();
+    }
+    else if (URIUtils::GetFileName(strPath).Equals("fanart-blur.jpg") && !g_advancedSettings.m_fanartblurImage.empty())
+    {
+      GetImageSize(g_advancedSettings.m_fanartblurImage, width, height);
+      pTexture = pic.Load(strPath, width, height);
+      info.Width = pic.GetWidth();
+      info.Height = pic.GetHeight();
+    }
+    else if (URIUtils::GetFileName(strPath).Equals("fog.jpg") && !g_advancedSettings.m_fogImage.empty())
+    {
+      GetImageSize(g_advancedSettings.m_fogImage, width, height);
+      pTexture = pic.Load(strPath, width, height);
+      info.Width = pic.GetWidth();
+      info.Height = pic.GetHeight();
+    }
+    else if (URIUtils::GetFileName(strPath).Equals("fog.jpg"))
+    {
+      pTexture = pic.Load(strPath, 8, 8);
+      info.Width = pic.GetWidth();
+      info.Height = pic.GetHeight();
+    }
+    else if (URIUtils::GetFileName(strPath).Equals("poster.jpg") && !g_advancedSettings.m_posterImage.empty())
+    {
+      GetImageSize(g_advancedSettings.m_posterImage, width, height);
+      pTexture = pic.Load(strPath, width, height);
+      info.Width = pic.GetWidth();
+      info.Height = pic.GetHeight();
+    }
+    else if ((URIUtils::GetFileName(strPath).Equals("poster_small.jpg") || URIUtils::GetFileName(strPath).Equals("poster_small_blurred.jpg")) && !g_advancedSettings.m_postersmallImage.empty())
+    {
+      GetImageSize(g_advancedSettings.m_postersmallImage, width, height);
+      pTexture = pic.Load(strPath, width, height);
+      info.Width = pic.GetWidth();
+      info.Height = pic.GetHeight();
+    }
+    else if (URIUtils::GetFileName(strPath).Equals("thumb.jpg") && !g_advancedSettings.m_thumbImage.empty())
+    {
+      GetImageSize(g_advancedSettings.m_thumbImage, width, height);
+      pTexture = pic.Load(strPath, width, height);
+      info.Width = pic.GetWidth();
+      info.Height = pic.GetHeight();
+    }
+    else if (URIUtils::GetFileName(strPath).Equals("fanart.jpg") && !g_advancedSettings.m_fanartImage.empty())
+    {
+      GetImageSize(g_advancedSettings.m_fanartImage, width, height);
+      pTexture = pic.Load(strPath, width, height);
+      info.Width = pic.GetWidth();
+      info.Height = pic.GetHeight();
+    }
+    else if ((URIUtils::GetFileName(strPath).Equals("alt_synopsis.jpg") || URIUtils::GetFileName(strPath).Equals("synopsis.jpg")) && !g_advancedSettings.m_synopsisImage.empty())
+    {
+      GetImageSize(g_advancedSettings.m_synopsisImage, width, height);
+      pTexture = pic.Load(strPath, width, height);
+      info.Width = pic.GetWidth();
+      info.Height = pic.GetHeight();
+    }
+	// PNG images
+    else if (URIUtils::GetFileName(strPath).Equals("banner.png") && !g_advancedSettings.m_bannerImage.empty())
+    {
+      GetImageSize(g_advancedSettings.m_bannerImage, width, height);
+      pTexture = pic.Load(strPath, width, height);
+      info.Width = pic.GetWidth();
+      info.Height = pic.GetHeight();
+    }
+    else if (URIUtils::GetFileName(strPath).Equals("cd.png") && !g_advancedSettings.m_cdImage.empty())
+    {
+      GetImageSize(g_advancedSettings.m_cdImage, width, height);
+      pTexture = pic.Load(strPath, width, height);
+      info.Width = pic.GetWidth();
+      info.Height = pic.GetHeight();
+    }
+    else if (URIUtils::GetFileName(strPath).Equals("cdposter.png") && !g_advancedSettings.m_cdposterImage.empty())
+    {
+      GetImageSize(g_advancedSettings.m_cdposterImage, width, height);
+      pTexture = pic.Load(strPath, width, height);
+      info.Width = pic.GetWidth();
+      info.Height = pic.GetHeight();
+    }
+    else if (URIUtils::GetFileName(strPath).Equals("dual3d.png") && !g_advancedSettings.m_dual3dImage.empty())
+    {
+      GetImageSize(g_advancedSettings.m_dual3dImage, width, height);
+      pTexture = pic.Load(strPath, width, height);
+      info.Width = pic.GetWidth();
+      info.Height = pic.GetHeight();
+    }
+    else if (URIUtils::GetFileName(strPath).Equals("icon.png") && !g_advancedSettings.m_iconImage.empty())
+    {
+      GetImageSize(g_advancedSettings.m_iconImage, width, height);
+      pTexture = pic.Load(strPath, width, height);
+      info.Width = pic.GetWidth();
+      info.Height = pic.GetHeight();
+    }
+    else if (URIUtils::GetFileName(strPath).Equals("opencase.png") && !g_advancedSettings.m_opencaseImage.empty())
+    {
+      GetImageSize(g_advancedSettings.m_opencaseImage, width, height);
+      pTexture = pic.Load(strPath, width, height);
       info.Width = pic.GetWidth();
       info.Height = pic.GetHeight();
     }
     else
     {
-
       HRESULT result = D3DXCreateTextureFromFileEx(g_graphicsContext.Get3DDevice(), _P(texturePath).c_str(),
                                        D3DX_DEFAULT, D3DX_DEFAULT, 1, 0, D3DFMT_LIN_A8R8G8B8, D3DPOOL_MANAGED,
                                        D3DX_FILTER_NONE , D3DX_FILTER_NONE, 0, &info, NULL, &pTexture);
@@ -622,7 +752,7 @@ int CGUITextureManager::Load(const CStdString& strTextureName, bool checkBundleO
 
       if (result != D3D_OK)
       {
-//       if (!strnicmp(strPath.c_str(), "special://home/skin/", 20) && !strnicmp(strPath.c_str(), "special://xbmc/skin/", 20))
+      // if (!strnicmp(strPath.c_str(), "special://home/skin/", 20) && !strnicmp(strPath.c_str(), "special://xbmc/skin/", 20))
           CLog::Log(LOGERROR, "%s - Texture manager unable to load file: %s", __FUNCTION__, strPath.c_str());
         return 0;
       }

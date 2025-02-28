@@ -59,8 +59,6 @@
 #include "lib/libPython/XBPython.h"
 #include "input/ButtonTranslator.h"
 #include "GUIAudioManager.h"
-#include "lib/libscrobbler/lastfmscrobbler.h"
-#include "lib/libscrobbler/librefmscrobbler.h"
 #include "GUIPassword.h"
 #include "ApplicationMessenger.h"
 #include "SectionLoader.h"
@@ -692,37 +690,41 @@ void CApplication::FatalErrorHandler(bool InitD3D, bool MapDrives, bool InitNetw
 
 LONG WINAPI CApplication::UnhandledExceptionFilter(struct _EXCEPTION_POINTERS *ExceptionInfo)
 {
-	PCSTR pExceptionString = "Unknown exception code";
+    PCSTR pExceptionString = "Unknown exception code";
 
 #define STRINGIFY_EXCEPTION(code) case code: pExceptionString = #code; break
 
-	switch (ExceptionInfo->ExceptionRecord->ExceptionCode)
-	{
-		STRINGIFY_EXCEPTION(EXCEPTION_ACCESS_VIOLATION);
-		STRINGIFY_EXCEPTION(EXCEPTION_ARRAY_BOUNDS_EXCEEDED);
-		STRINGIFY_EXCEPTION(EXCEPTION_BREAKPOINT);
-		STRINGIFY_EXCEPTION(EXCEPTION_FLT_DENORMAL_OPERAND);
-		STRINGIFY_EXCEPTION(EXCEPTION_FLT_DIVIDE_BY_ZERO);
-		STRINGIFY_EXCEPTION(EXCEPTION_FLT_INEXACT_RESULT);
-		STRINGIFY_EXCEPTION(EXCEPTION_FLT_INVALID_OPERATION);
-		STRINGIFY_EXCEPTION(EXCEPTION_FLT_OVERFLOW);
-		STRINGIFY_EXCEPTION(EXCEPTION_FLT_STACK_CHECK);
-		STRINGIFY_EXCEPTION(EXCEPTION_ILLEGAL_INSTRUCTION);
-		STRINGIFY_EXCEPTION(EXCEPTION_INT_DIVIDE_BY_ZERO);
-		STRINGIFY_EXCEPTION(EXCEPTION_INT_OVERFLOW);
-		STRINGIFY_EXCEPTION(EXCEPTION_INVALID_DISPOSITION);
-		STRINGIFY_EXCEPTION(EXCEPTION_NONCONTINUABLE_EXCEPTION);
-		STRINGIFY_EXCEPTION(EXCEPTION_SINGLE_STEP);
-	}
+    switch (ExceptionInfo->ExceptionRecord->ExceptionCode)
+    {
+        STRINGIFY_EXCEPTION(EXCEPTION_ACCESS_VIOLATION);
+        STRINGIFY_EXCEPTION(EXCEPTION_ARRAY_BOUNDS_EXCEEDED);
+        STRINGIFY_EXCEPTION(EXCEPTION_BREAKPOINT);
+        STRINGIFY_EXCEPTION(EXCEPTION_FLT_DENORMAL_OPERAND);
+        STRINGIFY_EXCEPTION(EXCEPTION_FLT_DIVIDE_BY_ZERO);
+        STRINGIFY_EXCEPTION(EXCEPTION_FLT_INEXACT_RESULT);
+        STRINGIFY_EXCEPTION(EXCEPTION_FLT_INVALID_OPERATION);
+        STRINGIFY_EXCEPTION(EXCEPTION_FLT_OVERFLOW);
+        STRINGIFY_EXCEPTION(EXCEPTION_FLT_STACK_CHECK);
+        STRINGIFY_EXCEPTION(EXCEPTION_ILLEGAL_INSTRUCTION);
+        STRINGIFY_EXCEPTION(EXCEPTION_INT_DIVIDE_BY_ZERO);
+        STRINGIFY_EXCEPTION(EXCEPTION_INT_OVERFLOW);
+        STRINGIFY_EXCEPTION(EXCEPTION_INVALID_DISPOSITION);
+        STRINGIFY_EXCEPTION(EXCEPTION_NONCONTINUABLE_EXCEPTION);
+        STRINGIFY_EXCEPTION(EXCEPTION_SINGLE_STEP);
+    }
 #undef STRINGIFY_EXCEPTION
 
-	g_LoadErrorStr.Format("%s (0x%08x)\n at 0x%08x",
-	pExceptionString, ExceptionInfo->ExceptionRecord->ExceptionCode,
-	ExceptionInfo->ExceptionRecord->ExceptionAddress);
+    g_LoadErrorStr.Format("%s (0x%08x)\n at 0x%08x",
+    pExceptionString, ExceptionInfo->ExceptionRecord->ExceptionCode,
+    ExceptionInfo->ExceptionRecord->ExceptionAddress);
+    CLog::Log(LOGFATAL, "%s", g_LoadErrorStr.c_str());
+    
+	if (ExceptionInfo->ExceptionRecord->ExceptionCode == EXCEPTION_ACCESS_VIOLATION)
+    {
+      HalReturnToFirmware(2);
+    }
 
-	CLog::Log(LOGFATAL, "%s", g_LoadErrorStr.c_str());
-
-	return ExceptionInfo->ExceptionRecord->ExceptionCode;
+    return EXCEPTION_EXECUTE_HANDLER;
 }
 
 #ifdef _XBOX
@@ -745,12 +747,16 @@ HRESULT CApplication::Create(HWND hWnd)
 	// if we have more than 64MB free
 	if( status.dwTotalPhys > 67108864 )
 	{
+		// https://gist.github.com/frehov/e5d98e2baa1da801deadb2823c325dd2
 		__asm
 		{
-			mov ecx, 0x2ff
+			pushad
+			mov ecx, 0x201 // MTRRphysMask0
 			rdmsr
-			mov al, 0x06
-			wrmsr
+			and eax, ~(1 << 26) // Unsetting this bit sets 128MB as WB, otherwise >64MB is WT
+			wrmsr // 0xFF8000800 vs. 0xFFC000800
+			wbinvd
+			popad
 		}
 		m_128MBHack = true;
 	}
@@ -885,7 +891,7 @@ HRESULT CApplication::Create(HWND hWnd)
 	ReadInput();
 #endif
 #ifdef HAS_GAMEPAD
-	//Check for LTHUMBCLICK+RTHUMBCLICK and BLACK+WHITE, no LTRIGGER+RTRIGGER
+	//Check for LTHUMBCLICK+RTHUMBCLICK and BLACK+WHITE, no LTRIGGER+RTRIGGER	
 	if (((m_DefaultGamepad.wButtons & (XINPUT_GAMEPAD_LEFT_THUMB + XINPUT_GAMEPAD_RIGHT_THUMB)) && !(m_DefaultGamepad.wButtons & (KEY_BUTTON_LEFT_TRIGGER+KEY_BUTTON_RIGHT_TRIGGER))) ||
 			((m_DefaultGamepad.bAnalogButtons[XINPUT_GAMEPAD_BLACK] && m_DefaultGamepad.bAnalogButtons[XINPUT_GAMEPAD_WHITE]) && !(m_DefaultGamepad.wButtons & KEY_BUTTON_LEFT_TRIGGER+KEY_BUTTON_RIGHT_TRIGGER)))
 	{
@@ -1376,11 +1382,9 @@ HRESULT CApplication::Initialize()
 		g_guiSettings.SetBool("videooutput.hd1080i", false);
 		RESOLUTION res = NTSC_4x3;
 		g_guiSettings.SetInt("videoscreen.resolution", res);
-		//set the gui resolution, if newRes is AUTORES newRes will be set to the highest available resolution
 		g_graphicsContext.SetVideoResolution(res, TRUE);
-		//set our lookandfeelres to the resolution set in graphiccontext
 		g_guiSettings.m_LookAndFeelResolution = res;
-	}
+	}	
 
 	if (CFile::Exists("Special://root/skins/profile/extras/disc artwork.zip"))
 	{
@@ -1389,7 +1393,7 @@ HRESULT CApplication::Initialize()
 
 	if (CFile::Exists("Special://root/updater/default.xbe"))
 	{
-		if (CGUIDialogYesNo::ShowAndGetInput(g_localizeStrings.Get(33049), "Updater found.", "Would you like to continue with the update?", "", "No", "Yes"))
+		if (CGUIDialogYesNo::ShowAndGetInput(g_localizeStrings.Get(33049), "", "I've found the update installer.[CR]Would you like to proceed with the update?", "", "No", "Yes"))
 		{
 			CUtil::RunXBE("Special://root/updater/default.xbe");
 		}
@@ -1399,29 +1403,6 @@ HRESULT CApplication::Initialize()
 	{
 		CopyFile("Special://root/updater/system/xbmc.log","Special://root/updater/xbmc-updater.log",FALSE);
 		CUtil::WipeDir("Special://root/updater");
-	}
-	
-	int iResolution = g_graphicsContext.GetVideoResolution();
-	if (g_settings.m_ResInfo[iResolution].iWidth == 1920)
-	{
-		CLog::Log(LOGNOTICE, "GUI format");
-		CGUIDialogOK *dialog = (CGUIDialogOK *)g_windowManager.GetWindow(WINDOW_DIALOG_OK);
-		if (dialog)
-		{
-			dialog->SetHeading("1080i Resolution Detected");
-			dialog->SetLine(0, "");
-			dialog->SetLine(1, "Due to the complexity of this dashboard 1080i must");
-			dialog->SetLine(2, "be disabled. I will disable it now.");
-			dialog->DoModal();
-		}
-		g_guiSettings.SetBool("videooutput.hd1080i", false);
-		RESOLUTION res = HDTV_720p;
-		g_guiSettings.SetInt("videoscreen.resolution", res);
-		//set the gui resolution, if newRes is AUTORES newRes will be set to the highest available resolution
-		g_graphicsContext.SetVideoResolution(res, TRUE);
-		//set our lookandfeelres to the resolution set in graphiccontext
-		g_guiSettings.m_LookAndFeelResolution = res;
-		// CUtil::BootToDash();
 	}
 
 	/* window id's 3000 - 3100 are reserved for python */
@@ -1842,7 +1823,7 @@ void CApplication::StartLEDControl(bool switchoff)
 void CApplication::DimLCDOnPlayback(bool dim)
 {
 #ifdef HAS_LCD
-	if(g_lcd && dim && (g_guiSettings.GetInt("lcd.disableonplayback") != LED_PLAYBACK_OFF) && (g_guiSettings.GetInt("lcd.type") != LCD_TYPE_NONE))
+	if(g_lcd && dim && (g_guiSettings.GetInt("lcd.disableonplayback") != LED_PLAYBACK_OFF) && (g_guiSettings.GetInt("lcd.modchip") != MODCHIP_NONE))
 	{
 		if ( (IsPlayingVideo()) && g_guiSettings.GetInt("lcd.disableonplayback") == LED_PLAYBACK_VIDEO)
 		g_lcd->SetBackLight(0);
@@ -1859,7 +1840,7 @@ void CApplication::DimLCDOnPlayback(bool dim)
 void CApplication::StartServices()
 {
 #ifdef HAS_XBOX_HARDWARE
-	if (g_advancedSettings.m_bPowerSave)
+	if (g_guiSettings.GetBool("system.enablepowersaving"))
 	{
 		CLog::Log(LOGNOTICE, "Using idle thread with HLT (power saving)");
 		StartIdleThread();
@@ -1883,12 +1864,14 @@ void CApplication::StartServices()
 	CLog::Log(LOGNOTICE, "DONE initializing playlistplayer");
 
 #ifdef HAS_LCD
+	CLog::Log(LOGNOTICE, "checking LCD");
 	CLCDFactory factory;
 	g_lcd = factory.Create();
 	if (g_lcd)
 	{
 		g_lcd->Initialize();
 	}
+	CLog::Log(LOGNOTICE, "DONE checking LCD");
 #endif
 
 #ifdef HAS_XBOX_HARDWARE
@@ -1939,7 +1922,7 @@ void CApplication::CheckDate()
 	if ((CurTime.wYear > 2099) || (CurTime.wYear < 2001) )        // XBOX MS Dashboard also uses min/max DateYear 2001/2099 !!
 	{
 		CLog::Log(LOGNOTICE, "- The Date is Wrong: Setting New Date!");
-		NewTime.wYear       = 2024; // 2020
+		NewTime.wYear       = 2025; // 2020
 		NewTime.wMonth      = 1;  // January
 		NewTime.wDayOfWeek  = 1;  // Monday
 		NewTime.wDay        = 1;  // Monday 01.01.2019!!
@@ -1950,7 +1933,7 @@ void CApplication::CheckDate()
 		SystemTimeToFileTime(&NewTime, &stNewTime);
 		SystemTimeToFileTime(&CurTime, &stCurTime);
 #ifdef HAS_XBOX_HARDWARE
-		NtSetSystemTime(&stNewTime, &stCurTime);    // Set a Default Year 2024!
+		NtSetSystemTime(&stNewTime, &stCurTime);    // Set a Default Year 2025!
 #endif
 		CLog::Log(LOGNOTICE, "- New Date is now: %i-%i-%i",NewTime.wDay, NewTime.wMonth, NewTime.wYear);
 	}
@@ -2114,10 +2097,11 @@ void CApplication::LoadSkin(const CStdString& strSkin)
 	g_audioManager.Load();
 
 	if (g_SkinInfo.HasSkinFile("DialogFullScreenInfo.xml"))
-	g_windowManager.Add(new CGUIDialogFullScreenInfo);
+		g_windowManager.Add(new CGUIDialogFullScreenInfo);
 	
 	if (g_SkinInfo.HasSkinFile("DialogOverlay.xml"))
 	{
+		g_windowManager.Remove(WINDOW_DIALOG_OVERLAY);
 		g_windowManager.Add(&m_guiDialogOverlay);
 		m_guiDialogOverlay.Show();
 	}
@@ -2298,13 +2282,12 @@ void CApplication::Render()
 		// dont show GUI when playing full screen video
 		if (g_graphicsContext.IsFullScreenVideo() && IsPlaying() && !IsPaused())
 		{
-			Sleep(50);
+			Sleep(100);
 			ResetScreenSaver();
 			g_infoManager.ResetCache();
 			return;
 		}
 #endif
-
 		g_ApplicationRenderer.Render();
 	}
 
@@ -2352,17 +2335,16 @@ void CApplication::Render()
 			m_guiPointer.Render();
 		}
 
-		// free memory  if we got less then 8 meg free ram
+		// Free memory if we have less than 8 MB of free RAM
 		MEMORYSTATUS stat;
-		GlobalMemoryStatus( &stat );
-		DWORD dwMegFree = (DWORD)(stat.dwAvailPhys / (1024 * 1024));
-		// Try free memory
-		if (dwMegFree == 22 || stat.dwAvailPhys == 14 || stat.dwAvailPhys == 8 )
+		GlobalMemoryStatus(&stat);
+		DWORD dwMegFree = static_cast<DWORD>(stat.dwAvailPhys / (1024 * 1024));
+		if (dwMegFree == 22 || dwMegFree == 16 || dwMegFree == 8)
 		{
 			// CLog::Log(LOGWARNING, "Flushing texture cache.");
 			g_TextureManager.Flush();
 		}
-
+ 
 		// reset image scaling and effect states
 		g_graphicsContext.SetRenderingResolution(g_graphicsContext.GetVideoResolution(), false);
 
@@ -2823,7 +2805,8 @@ void CApplication::Render()
 				{ // unpaused - set the playspeed back to normal
 					SetPlaySpeed(1);
 				}
-				g_audioManager.Enable(m_pPlayer->IsPaused());
+				if (!g_guiSettings.GetBool("lookandfeel.soundsduringplayback"))
+				  g_audioManager.Enable(m_pPlayer->IsPaused());
 				return true;
 			}
 			if (!m_pPlayer->IsPaused())
@@ -2883,7 +2866,8 @@ void CApplication::Render()
 				{
 					// unpause, and set the playspeed back to normal
 					m_pPlayer->Pause();
-					g_audioManager.Enable(m_pPlayer->IsPaused());
+					if (!g_guiSettings.GetBool("lookandfeel.soundsduringplayback"))
+					  g_audioManager.Enable(m_pPlayer->IsPaused());
 
 					g_application.SetPlaySpeed(1);
 					return true;
@@ -2981,7 +2965,7 @@ void CApplication::Render()
 #ifdef HAS_LCD
 		static lTickCount = 0;
 
-		if (!g_lcd || g_guiSettings.GetInt("lcd.type") == LCD_TYPE_NONE)
+		if (!g_lcd || g_guiSettings.GetInt("lcd.modchip") == MODCHIP_NONE)
 		return ;
 		long lTimeOut = 1000;
 		if ( m_iPlaySpeed != 1)
@@ -3011,7 +2995,7 @@ void CApplication::Render()
 		float frameTime = m_frameTime.GetElapsedSeconds();
 		m_frameTime.StartZero();
 		// never set a frametime less than 2 fps to avoid problems when debuggin and on breaks
-		if( frameTime > 0.5 ) frameTime = 0.5;
+		if( frameTime > 0.5f ) frameTime = 0.5f;
 
 		g_graphicsContext.Lock();
 		// check if there are notifications to display
@@ -3621,93 +3605,92 @@ void CApplication::Render()
 	{
 		try
 		{
-			g_windowManager.Delete(WINDOW_MUSIC_PLAYLIST);
-			g_windowManager.Delete(WINDOW_MUSIC_PLAYLIST_EDITOR);
-			g_windowManager.Delete(WINDOW_MUSIC_FILES);
-			g_windowManager.Delete(WINDOW_MUSIC_NAV);
-			g_windowManager.Delete(WINDOW_MUSIC_INFO);
-			g_windowManager.Delete(WINDOW_VIDEO_INFO);
-			g_windowManager.Delete(WINDOW_VIDEO_FILES);
-			g_windowManager.Delete(WINDOW_VIDEO_PLAYLIST);
-			g_windowManager.Delete(WINDOW_VIDEO_NAV);
-			g_windowManager.Delete(WINDOW_FILES);
-			g_windowManager.Delete(WINDOW_MUSIC_INFO);
-			g_windowManager.Delete(WINDOW_VIDEO_INFO);
-			g_windowManager.Delete(WINDOW_DIALOG_YES_NO);
-			g_windowManager.Delete(WINDOW_DIALOG_PROGRESS);
-			g_windowManager.Delete(WINDOW_DIALOG_NUMERIC);
-			g_windowManager.Delete(WINDOW_DIALOG_GAMEPAD);
-			g_windowManager.Delete(WINDOW_DIALOG_SUB_MENU);
-			g_windowManager.Delete(WINDOW_DIALOG_BUTTON_MENU);
-			g_windowManager.Delete(WINDOW_DIALOG_CONTEXT_MENU);
-			g_windowManager.Delete(WINDOW_DIALOG_MUSIC_SCAN);
-			g_windowManager.Delete(WINDOW_DIALOG_PLAYER_CONTROLS);
-			g_windowManager.Delete(WINDOW_DIALOG_MUSIC_OSD);
-			// g_windowManager.Delete(WINDOW_DIALOG_OVERLAY);
-			g_windowManager.Delete(WINDOW_DIALOG_VIS_SETTINGS);
-			g_windowManager.Delete(WINDOW_DIALOG_VIS_PRESET_LIST);
-			g_windowManager.Delete(WINDOW_DIALOG_SELECT);
-			g_windowManager.Delete(WINDOW_DIALOG_OK);
-			g_windowManager.Delete(WINDOW_DIALOG_FILESTACKING);
-			g_windowManager.Delete(WINDOW_DIALOG_KEYBOARD);
-			g_windowManager.Delete(WINDOW_FULLSCREEN_VIDEO);
-			g_windowManager.Delete(WINDOW_DIALOG_TRAINER_SETTINGS);
-			g_windowManager.Delete(WINDOW_DIALOG_PROFILE_SETTINGS);
-			g_windowManager.Delete(WINDOW_DIALOG_LOCK_SETTINGS);
-			g_windowManager.Delete(WINDOW_DIALOG_NETWORK_SETUP);
-			g_windowManager.Delete(WINDOW_DIALOG_MEDIA_SOURCE);
-			g_windowManager.Delete(WINDOW_DIALOG_VIDEO_OSD_SETTINGS);
-			g_windowManager.Delete(WINDOW_DIALOG_AUDIO_OSD_SETTINGS);
-			g_windowManager.Delete(WINDOW_DIALOG_VIDEO_BOOKMARKS);
-			g_windowManager.Delete(WINDOW_DIALOG_VIDEO_SCAN);
-			g_windowManager.Delete(WINDOW_DIALOG_CONTENT_SETTINGS);
-			g_windowManager.Delete(WINDOW_DIALOG_FAVOURITES);
-			g_windowManager.Delete(WINDOW_DIALOG_SONG_INFO);
-			g_windowManager.Delete(WINDOW_DIALOG_SMART_PLAYLIST_EDITOR);
-			g_windowManager.Delete(WINDOW_DIALOG_SMART_PLAYLIST_RULE);
-			g_windowManager.Delete(WINDOW_DIALOG_BUSY);
-			g_windowManager.Delete(WINDOW_DIALOG_PICTURE_INFO);
-			g_windowManager.Delete(WINDOW_DIALOG_PLUGIN_SETTINGS);
-			g_windowManager.Delete(WINDOW_DIALOG_SLIDER);
-			g_windowManager.Delete(WINDOW_DIALOG_TEXT_VIEWER);
+			// g_windowManager.Delete(WINDOW_MUSIC_PLAYLIST);
+			// g_windowManager.Delete(WINDOW_MUSIC_PLAYLIST_EDITOR);
+			// g_windowManager.Delete(WINDOW_MUSIC_FILES);
+			// g_windowManager.Delete(WINDOW_MUSIC_NAV);
+			// g_windowManager.Delete(WINDOW_MUSIC_INFO);
+			// g_windowManager.Delete(WINDOW_VIDEO_INFO);
+			// g_windowManager.Delete(WINDOW_VIDEO_FILES);
+			// g_windowManager.Delete(WINDOW_VIDEO_PLAYLIST);
+			// g_windowManager.Delete(WINDOW_VIDEO_NAV);
+			// g_windowManager.Delete(WINDOW_FILES);
+			// g_windowManager.Delete(WINDOW_MUSIC_INFO);
+			// g_windowManager.Delete(WINDOW_VIDEO_INFO);
+			// g_windowManager.Delete(WINDOW_DIALOG_YES_NO);
+			// g_windowManager.Delete(WINDOW_DIALOG_PROGRESS);
+			// g_windowManager.Delete(WINDOW_DIALOG_NUMERIC);
+			// g_windowManager.Delete(WINDOW_DIALOG_GAMEPAD);
+			// g_windowManager.Delete(WINDOW_DIALOG_SUB_MENU);
+			// g_windowManager.Delete(WINDOW_DIALOG_BUTTON_MENU);
+			// g_windowManager.Delete(WINDOW_DIALOG_CONTEXT_MENU);
+			// g_windowManager.Delete(WINDOW_DIALOG_MUSIC_SCAN);
+			// g_windowManager.Delete(WINDOW_DIALOG_PLAYER_CONTROLS);
+			// g_windowManager.Delete(WINDOW_DIALOG_MUSIC_OSD);
+			// g_windowManager.Delete(WINDOW_DIALOG_VIS_SETTINGS);
+			// g_windowManager.Delete(WINDOW_DIALOG_VIS_PRESET_LIST);
+			// g_windowManager.Delete(WINDOW_DIALOG_SELECT);
+			// g_windowManager.Delete(WINDOW_DIALOG_OK);
+			// g_windowManager.Delete(WINDOW_DIALOG_FILESTACKING);
+			// g_windowManager.Delete(WINDOW_DIALOG_KEYBOARD);
+			// g_windowManager.Delete(WINDOW_FULLSCREEN_VIDEO);
+			// g_windowManager.Delete(WINDOW_DIALOG_TRAINER_SETTINGS);
+			// g_windowManager.Delete(WINDOW_DIALOG_PROFILE_SETTINGS);
+			// g_windowManager.Delete(WINDOW_DIALOG_LOCK_SETTINGS);
+			// g_windowManager.Delete(WINDOW_DIALOG_NETWORK_SETUP);
+			// g_windowManager.Delete(WINDOW_DIALOG_MEDIA_SOURCE);
+			// g_windowManager.Delete(WINDOW_DIALOG_VIDEO_OSD_SETTINGS);
+			// g_windowManager.Delete(WINDOW_DIALOG_AUDIO_OSD_SETTINGS);
+			// g_windowManager.Delete(WINDOW_DIALOG_VIDEO_BOOKMARKS);
+			// g_windowManager.Delete(WINDOW_DIALOG_VIDEO_SCAN);
+			// g_windowManager.Delete(WINDOW_DIALOG_CONTENT_SETTINGS);
+			// g_windowManager.Delete(WINDOW_DIALOG_FAVOURITES);
+			// g_windowManager.Delete(WINDOW_DIALOG_SONG_INFO);
+			// g_windowManager.Delete(WINDOW_DIALOG_SMART_PLAYLIST_EDITOR);
+			// g_windowManager.Delete(WINDOW_DIALOG_SMART_PLAYLIST_RULE);
+			// g_windowManager.Delete(WINDOW_DIALOG_BUSY);
+			// g_windowManager.Delete(WINDOW_DIALOG_PICTURE_INFO);
+			// g_windowManager.Delete(WINDOW_DIALOG_PLUGIN_SETTINGS);
+			// g_windowManager.Delete(WINDOW_DIALOG_SLIDER);
+			// g_windowManager.Delete(WINDOW_DIALOG_TEXT_VIEWER);
 
-			g_windowManager.Delete(WINDOW_STARTUP_ANIM);
-			g_windowManager.Delete(WINDOW_LOGIN_SCREEN);
-			g_windowManager.Delete(WINDOW_VISUALISATION);
-			g_windowManager.Delete(WINDOW_SETTINGS_MENU);
-			g_windowManager.Delete(WINDOW_SETTINGS_PROFILES);
-			g_windowManager.Delete(WINDOW_SETTINGS_MYPICTURES);  // all the settings categories
-			g_windowManager.Delete(WINDOW_SCREEN_CALIBRATION);
-			g_windowManager.Delete(WINDOW_SYSTEM_INFORMATION);
-			g_windowManager.Delete(WINDOW_SCREENSAVER);
-			g_windowManager.Delete(WINDOW_OSD);
-			g_windowManager.Delete(WINDOW_MUSIC_OVERLAY);
-			g_windowManager.Delete(WINDOW_VIDEO_OVERLAY);
-			g_windowManager.Delete(WINDOW_SCRIPTS_INFO);
-			g_windowManager.Delete(WINDOW_SLIDESHOW);
+			// g_windowManager.Delete(WINDOW_STARTUP_ANIM);
+			// g_windowManager.Delete(WINDOW_LOGIN_SCREEN);
+			// g_windowManager.Delete(WINDOW_VISUALISATION);
+			// g_windowManager.Delete(WINDOW_SETTINGS_MENU);
+			// g_windowManager.Delete(WINDOW_SETTINGS_PROFILES);
+			// g_windowManager.Delete(WINDOW_SETTINGS_MYPICTURES);  // all the settings categories
+			// g_windowManager.Delete(WINDOW_SCREEN_CALIBRATION);
+			// g_windowManager.Delete(WINDOW_SYSTEM_INFORMATION);
+			// g_windowManager.Delete(WINDOW_SCREENSAVER);
+			// g_windowManager.Delete(WINDOW_OSD);
+			// g_windowManager.Delete(WINDOW_MUSIC_OVERLAY);
+			// g_windowManager.Delete(WINDOW_VIDEO_OVERLAY);
+			// g_windowManager.Delete(WINDOW_SCRIPTS_INFO);
+			// g_windowManager.Delete(WINDOW_SLIDESHOW);
 
-			g_windowManager.Delete(WINDOW_HOME);
-			g_windowManager.Delete(WINDOW_PROGRAMS);
-			g_windowManager.Delete(WINDOW_PICTURES);
-			g_windowManager.Delete(WINDOW_SCRIPTS);
-			g_windowManager.Delete(WINDOW_GAMESAVES);
-			g_windowManager.Delete(WINDOW_WEATHER);
+			// g_windowManager.Delete(WINDOW_HOME);
+			// g_windowManager.Delete(WINDOW_PROGRAMS);
+			// g_windowManager.Delete(WINDOW_PICTURES);
+			// g_windowManager.Delete(WINDOW_SCRIPTS);
+			// g_windowManager.Delete(WINDOW_GAMESAVES);
+			// g_windowManager.Delete(WINDOW_WEATHER);
 
-			g_windowManager.Delete(WINDOW_SETTINGS_MYPICTURES);
-			g_windowManager.Remove(WINDOW_SETTINGS_MYPROGRAMS);
-			g_windowManager.Remove(WINDOW_SETTINGS_MYWEATHER);
-			g_windowManager.Remove(WINDOW_SETTINGS_MYMUSIC);
-			g_windowManager.Remove(WINDOW_SETTINGS_SYSTEM);
-			g_windowManager.Remove(WINDOW_SETTINGS_MYVIDEOS);
-			g_windowManager.Remove(WINDOW_SETTINGS_NETWORK);
-			g_windowManager.Remove(WINDOW_SETTINGS_APPEARANCE);
-			g_windowManager.Remove(WINDOW_DIALOG_KAI_TOAST);
+			// g_windowManager.Delete(WINDOW_SETTINGS_MYPICTURES);
+			// g_windowManager.Remove(WINDOW_SETTINGS_MYPROGRAMS);
+			// g_windowManager.Remove(WINDOW_SETTINGS_MYWEATHER);
+			// g_windowManager.Remove(WINDOW_SETTINGS_MYMUSIC);
+			// g_windowManager.Remove(WINDOW_SETTINGS_SYSTEM);
+			// g_windowManager.Remove(WINDOW_SETTINGS_MYVIDEOS);
+			// g_windowManager.Remove(WINDOW_SETTINGS_NETWORK);
+			// g_windowManager.Remove(WINDOW_SETTINGS_APPEARANCE);
+			// g_windowManager.Remove(WINDOW_DIALOG_KAI_TOAST);
 
-			g_windowManager.Remove(WINDOW_DIALOG_SEEK_BAR);
-			g_windowManager.Remove(WINDOW_DIALOG_VOLUME_BAR);
+			// g_windowManager.Remove(WINDOW_DIALOG_SEEK_BAR);
+			// g_windowManager.Remove(WINDOW_DIALOG_VOLUME_BAR);
 
 			CLog::Log(LOGNOTICE, "unload sections");
-			CSectionLoader::UnloadAll();
+			// CSectionLoader::UnloadAll();
 			// reset our d3d params before we destroy
 			g_graphicsContext.SetD3DDevice(NULL);
 			g_graphicsContext.SetD3DParameters(NULL);
@@ -3725,18 +3708,16 @@ void CApplication::Render()
 			g_charsetConverter.clear();
 			g_directoryCache.Clear();
 			CButtonTranslator::GetInstance().Clear();
-			CLastfmScrobbler::RemoveInstance();
-			CLibrefmScrobbler::RemoveInstance();
 			CLastFmManager::RemoveInstance();
 #ifdef HAS_EVENT_SERVER
 			CEventServer::RemoveInstance();
 #endif
-			g_infoManager.Clear();
-			DllLoaderContainer::Clear();
-			g_playlistPlayer.Clear();
-			g_settings.Clear();
-			g_guiSettings.Clear();
-			g_advancedSettings.Clear();
+			// g_infoManager.Clear();
+			// DllLoaderContainer::Clear();
+			// g_playlistPlayer.Clear();
+			// g_settings.Clear();
+			// g_guiSettings.Clear();
+			// g_advancedSettings.Clear();
 #endif
 
 #ifdef _CRTDBG_MAP_ALLOC
@@ -4231,7 +4212,8 @@ void CApplication::Render()
 			}
 #endif
 
-			g_audioManager.Enable(false);
+			if (!g_guiSettings.GetBool("lookandfeel.soundsduringplayback"))
+			  g_audioManager.Enable(false);
 		}
 		m_bPlaybackStarting = false;
 		if(bResult)
@@ -4266,12 +4248,6 @@ void CApplication::Render()
 		// Let's tell the outside world as well
 		if (m_pXbmcHttp && g_settings.m_HttpApiBroadcastLevel>=1)
 		m_applicationMessenger.HttpApi("broadcastlevel; OnPlayBackEnded;1");
-
-		// if (IsPlayingAudio())
-		// {
-		// CLastfmScrobbler::GetInstance()->SubmitQueue();
-		// CLibrefmScrobbler::GetInstance()->SubmitQueue();
-		// }
 
 		CLog::Log(LOGDEBUG, "%s - Playback has finished", __FUNCTION__);
 
@@ -4310,12 +4286,6 @@ void CApplication::Render()
 
 		CLog::Log(LOGDEBUG, "Player has asked for the next item");
 
-		// if(IsPlayingAudio())
-		// {
-		// CLastfmScrobbler::GetInstance()->SubmitQueue();
-		// CLibrefmScrobbler::GetInstance()->SubmitQueue();
-		// }
-
 		CGUIMessage msg(GUI_MSG_QUEUE_NEXT_ITEM, 0, 0);
 		g_windowManager.SendThreadMessage(msg);
 	}
@@ -4332,12 +4302,6 @@ void CApplication::Render()
 		// Let's tell the outside world as well
 		if (m_pXbmcHttp && g_settings.m_HttpApiBroadcastLevel>=1)
 		m_applicationMessenger.HttpApi("broadcastlevel; OnPlayBackStopped;1");
-
-		// if (IsPlayingAudio())
-		// {
-		// CLastfmScrobbler::GetInstance()->SubmitQueue();
-		// CLibrefmScrobbler::GetInstance()->SubmitQueue();
-		// }
 
 		CLog::Log(LOGDEBUG, "%s - Playback was stopped", __FUNCTION__);
 
@@ -5120,13 +5084,6 @@ void CApplication::Render()
 						m_pCdgParser->Start(m_itemCurrentFile->GetPath());
 					}
 #endif
-					// Let scrobbler know about the track
-					// const CMusicInfoTag* tag=g_infoManager.GetCurrentSongTag();
-					// if (tag)
-					// {
-					// CLastfmScrobbler::GetInstance()->AddSong(*tag, CLastFmManager::GetInstance()->IsRadioEnabled());
-					// CLibrefmScrobbler::GetInstance()->AddSong(*tag, CLastFmManager::GetInstance()->IsRadioEnabled());
-					// }
 				}
 				
 				return true;
@@ -5383,12 +5340,6 @@ void CApplication::Render()
 
 		// Store our file state for use on close()
 		UpdateFileState();
-
-		// if (IsPlayingAudio())
-		// {
-		// CLastfmScrobbler::GetInstance()->UpdateStatus();
-		// CLibrefmScrobbler::GetInstance()->UpdateStatus();
-		// }
 
 		// Check if we need to activate the screensaver (if enabled).
 		if (g_guiSettings.GetString("screensaver.mode") != "None")
@@ -5931,6 +5882,13 @@ void CApplication::Render()
 	{
 #ifdef HAS_GAMEPAD
 		ReadInput();
+
+		if (m_DefaultGamepad.bPressedAnalogButtons[XINPUT_GAMEPAD_BLACK])
+		{
+			CLog::Log(LOGINFO, "Key combination detected for disabling HTL (Power Saving)");
+			g_guiSettings.SetBool("system.enablepowersaving",false);
+		}
+		
 		if (m_DefaultGamepad.bAnalogButtons[XINPUT_GAMEPAD_X] && m_DefaultGamepad.bAnalogButtons[XINPUT_GAMEPAD_Y])
 		{
 			g_advancedSettings.m_logLevel = LOG_LEVEL_DEBUG_FREEMEM;

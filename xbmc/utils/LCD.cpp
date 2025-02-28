@@ -26,11 +26,11 @@
 
 using namespace std;
 
-void ILCD::StringToLCDCharSet(CStdString& strText)
+void ILCD::StringToLCDCharSet(unsigned int type, CStdString& strText)
 {
 
   //0 = HD44780, 1=KS0073
-  unsigned int iLCDContr = g_guiSettings.GetInt("lcd.type") == LCD_TYPE_LCD_KS0073 ? 1 : 0;
+  unsigned int iLCDContr = (type & ~LCD_TYPE_VFD) == LCD_TYPE_KS0073 ? 1 : 0;
   //the timeline is using blocks
   //a block is used at address 0xA0, smallBlocks at address 0xAC-0xAF
 

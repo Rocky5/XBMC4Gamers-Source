@@ -69,10 +69,10 @@ bool CGUIListContainer::OnAction(const CAction &action)
     {
       m_analogScrollCount += action.GetAmount() * action.GetAmount();
       bool handled = false;
-      while (m_analogScrollCount > 0.4)
+      while (m_analogScrollCount > AnalogScrollSpeed())
       {
         handled = true;
-        m_analogScrollCount -= 0.4f;
+        m_analogScrollCount -= AnalogScrollSpeed();
         if (m_offset > 0 && m_cursor <= m_itemsPerPage / 2)
         {
           Scroll(-1);
@@ -89,10 +89,10 @@ bool CGUIListContainer::OnAction(const CAction &action)
     {
       m_analogScrollCount += action.GetAmount() * action.GetAmount();
       bool handled = false;
-      while (m_analogScrollCount > 0.4)
+      while (m_analogScrollCount > AnalogScrollSpeed())
       {
         handled = true;
-        m_analogScrollCount -= 0.4f;
+        m_analogScrollCount -= AnalogScrollSpeed();
         if (m_offset + m_itemsPerPage < (int)m_items.size() && m_cursor >= m_itemsPerPage / 2)
         {
           Scroll(1);
@@ -107,6 +107,11 @@ bool CGUIListContainer::OnAction(const CAction &action)
     break;
   }
   return CGUIBaseContainer::OnAction(action);
+}
+
+float CGUIListContainer::AnalogScrollSpeed() const
+{
+  return 4.0f / m_itemsPerPage;
 }
 
 bool CGUIListContainer::OnMessage(CGUIMessage& message)

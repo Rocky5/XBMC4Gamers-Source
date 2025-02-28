@@ -199,6 +199,7 @@ bool CGUIControlFactory::GetDimension(const TiXmlNode *pRootNode, const char* st
     if (!min) min = 1;
     return true;
   }
+  // else if (0 == strnicmp("auto", pNode->FirstChild()->Value(), 4))
   return g_SkinInfo.ResolveConstant(pNode->FirstChild()->Value(), value);
 }
 
@@ -677,7 +678,7 @@ CGUIControl* CGUIControlFactory::Create(int parentID, const FRECT &rect, TiXmlEl
 
   vector<CAnimation> animations;
 
-  bool bScrollLabel = false;
+  CGUIControl::GUISCROLLVALUE scrollValue = CGUIControl::FOCUS;
   bool bPulse = true;
   unsigned int timePerImage = 0;
   unsigned int fadeTime = 0;
@@ -725,54 +726,175 @@ CGUIControl* CGUIControlFactory::Create(int parentID, const FRECT &rect, TiXmlEl
   // such as buttons etc.  For labels/fadelabels/images it does not matter
 
   CStdString pos;
+  CStdString perc;
+  
+  // Define screen size
+  float screenWidth = rect.right - rect.left;
+  float screenHeight = rect.bottom - rect.top;
+
+  // Calculate left position
   if (GetFloat(pControlNode, "left", posX))
   {
-    GetFloat(pControlNode, "left", posX); // Kodi uses these now, so I liked the idea lol
-	XMLUtils::GetString(pControlNode, "left", pos);
-	if (pos.Right(1) == "r")
-		posX = (rect.right - rect.left) - posX;
+    GetFloat(pControlNode, "left", posX);
+    GetFloat(pControlNode, "width", width);
+    
+    XMLUtils::GetString(pControlNode, "left", perc);
+    if (perc[perc.size() - 1] == '%')
+    {
+    perc = perc.substr(0, perc.size() - 1);
+    float percValue = static_cast<float>(strtod(perc.c_str(), NULL));
+    posX = (percValue * screenWidth) / 100.0f;
+    }
+
+    // Compatibility with older method
+    XMLUtils::GetString(pControlNode, "left", pos);
+    if (pos.Right(1) == "r")
+    posX = screenWidth - posX;
   }
- 
+
+  // Calculate right position
   if (GetFloat(pControlNode, "right", posX))
   {
-    GetFloat(pControlNode, "right", posX); // Kodi uses these now, so I liked the idea lol
-	XMLUtils::GetString(pControlNode, "right", pos);
-	posX = (rect.right - rect.left) - posX;
+    GetFloat(pControlNode, "right", posX);
+    GetFloat(pControlNode, "width", width);
+
+    posX = screenWidth - posX - width;
+    
+    XMLUtils::GetString(pControlNode, "right", perc);
+    if (perc[perc.size() - 1] == '%')
+    {
+    perc = perc.substr(0, perc.size() - 1);
+    float percValue = static_cast<float>(strtod(perc.c_str(), NULL));
+    posX = screenWidth - ((percValue * screenWidth) / 100.0f) - width;
+    }
   }
 
+  // Calculate top position
+  if (GetFloat(pControlNode, "top", posY))
+  {
+    GetFloat(pControlNode, "top", posY);
+    GetFloat(pControlNode, "height", height);
+    
+    XMLUtils::GetString(pControlNode, "top", perc);
+    if (perc[perc.size() - 1] == '%')
+    {
+    perc = perc.substr(0, perc.size() - 1);
+    float percValue = static_cast<float>(strtod(perc.c_str(), NULL));
+    posY = ((percValue * screenHeight) / 100.0f);
+    }
+
+    // Compatibility with older method
+    XMLUtils::GetString(pControlNode, "top", pos);
+    if (pos.Right(1) == "r")
+    posY = screenHeight - posY;
+  }
+
+  // Calculate bottom position
+  if (GetFloat(pControlNode, "bottom", posY))
+  {
+    GetFloat(pControlNode, "bottom", posY);
+    GetFloat(pControlNode, "height", height);
+
+    posY = screenHeight - posY - height;
+    
+    XMLUtils::GetString(pControlNode, "bottom", perc);
+    if (perc[perc.size() - 1] == '%')
+    {
+    perc = perc.substr(0, perc.size() - 1);
+    float percValue = static_cast<float>(strtod(perc.c_str(), NULL));
+    posY = screenHeight - ((percValue * screenHeight) / 100.0f) - height;
+    }
+  }
+
+  // Calculate center-left position
+  if (GetFloat(pControlNode, "centerleft", posX))
+  {
+    GetFloat(pControlNode, "centerleft", posX);
+    GetFloat(pControlNode, "width", width);
+    
+    posX = posX - (width / 2);
+
+    XMLUtils::GetString(pControlNode, "centerleft", perc);
+    if (perc[perc.size() - 1] == '%')
+    {
+    perc = perc.substr(0, perc.size() - 1);
+    float percValue = static_cast<float>(strtod(perc.c_str(), NULL));
+    posX = (percValue * screenWidth) / 100.0f - (width / 2);
+    }
+  }
+
+  // Calculate center-right position
+  if (GetFloat(pControlNode, "centerright", posX))
+  {
+    GetFloat(pControlNode, "centerright", posX);
+    GetFloat(pControlNode, "width", width);
+    
+    posX = screenWidth - posX - (width / 2);
+    
+    XMLUtils::GetString(pControlNode, "centerright", perc);
+    if (perc[perc.size() - 1] == '%')
+    {
+    perc = perc.substr(0, perc.size() - 1);
+    float percValue = static_cast<float>(strtod(perc.c_str(), NULL));
+    posX = screenWidth - ((percValue * screenWidth) / 100.0f) - (width / 2);
+    }
+  }
+
+  // Calculate center-top position
+  if (GetFloat(pControlNode, "centertop", posY))
+  {
+    GetFloat(pControlNode, "centertop", posY);
+    GetFloat(pControlNode, "height", height);
+    
+    posY = posY - (height / 2);
+    
+    XMLUtils::GetString(pControlNode, "centertop", perc);
+    if (perc[perc.size() - 1] == '%')
+    {
+    perc = perc.substr(0, perc.size() - 1);
+    float percValue = static_cast<float>(strtod(perc.c_str(), NULL));
+    posY = ((percValue * screenHeight) / 100.0f) - (height / 2);
+    }
+  }
+
+  // Calculate center-bottom position
+  if (GetFloat(pControlNode, "centerbottom", posY))
+  {
+    GetFloat(pControlNode, "centerbottom", posY);
+    GetFloat(pControlNode, "height", height);
+    
+    posY = screenHeight - posY - (height / 2);
+    
+    XMLUtils::GetString(pControlNode, "centerbottom", perc);
+    if (perc[perc.size() - 1] == '%')
+    {
+    perc = perc.substr(0, perc.size() - 1);
+    float percValue = static_cast<float>(strtod(perc.c_str(), NULL));
+    posY = screenHeight - ((percValue * screenHeight) / 100.0f) - (height / 2);
+    }
+  }
+
+  // Compatibility version for posx
   if (GetFloat(pControlNode, "posx", posX))
   {
-	GetFloat(pControlNode, "posx", posX);
-	XMLUtils::GetString(pControlNode, "posx", pos);
-	if (pos.Right(1) == "r")
-		posX = (rect.right - rect.left) - posX;
+    GetFloat(pControlNode, "posx", posX);
+    
+    // Convert these from relative coords
+    XMLUtils::GetString(pControlNode, "posx", pos);
+    if (pos.Right(1) == "r")
+      posX = screenWidth - posX;
   }
-  
-  if (GetFloat(pControlNode, "top", posY)) // Kodi uses these now, so I liked the idea lol
-  {
-    GetFloat(pControlNode, "top", posY); 
-	XMLUtils::GetString(pControlNode, "top", pos);
-	if (pos.Right(1) == "r")
-		posY = (rect.bottom - rect.top) - posY;
-  }
-  
-  if (GetFloat(pControlNode, "bottom", posY)) // Kodi uses these now, so I liked the idea lol
-  {
-    GetFloat(pControlNode, "bottom", posY); 
-	XMLUtils::GetString(pControlNode, "bottom", pos);
-	posY = (rect.bottom - rect.top) - posY;
-  }
-  
+
+  // Compatibility version for posy
   if (GetFloat(pControlNode, "posy", posY))
   {
-	GetFloat(pControlNode, "posy", posY);
+    GetFloat(pControlNode, "posy", posY);
+    
     // Convert these from relative coords
-	XMLUtils::GetString(pControlNode, "posy", pos);
-	if (pos.Right(1) == "r")
-		posY = (rect.bottom - rect.top) - posY;
-  }
-
-
+    XMLUtils::GetString(pControlNode, "posy", pos);
+    if (pos.Right(1) == "r")
+      posY = screenHeight - posY;
+  }  
 
   GetDimension(pControlNode, "width", width, minWidth);
   GetDimension(pControlNode, "height", height, minHeight);
@@ -879,7 +1001,7 @@ CGUIControl* CGUIControlFactory::Create(int parentID, const FRECT &rect, TiXmlEl
   GetFloat(pControlNode, "spinposx", spinPosX);
   GetFloat(pControlNode, "spinposy", spinPosY);
   GetFloat(pControlNode, "spinleft", spinPosX);
-  GetFloat(pControlNode, "spinright", spinPosY);
+  GetFloat(pControlNode, "spintop", spinPosY);
 
   GetFloat(pControlNode, "markwidth", checkWidth);
   GetFloat(pControlNode, "markheight", checkHeight);
@@ -968,7 +1090,11 @@ CGUIControl* CGUIControlFactory::Create(int parentID, const FRECT &rect, TiXmlEl
   XMLUtils::GetBoolean(pControlNode, "wraparound", bWrapAround);
   XMLUtils::GetBoolean(pControlNode, "smoothscrolling", bSmoothScrolling);
   GetAspectRatio(pControlNode, "aspectratio", aspect);
-  XMLUtils::GetBoolean(pControlNode, "scroll", bScrollLabel);
+  
+  bool alwaysScroll;
+  if (XMLUtils::GetBoolean(pControlNode, "scroll", alwaysScroll))
+    scrollValue = alwaysScroll ? CGUIControl::ALWAYS : CGUIControl::NEVER;
+  
   XMLUtils::GetBoolean(pControlNode,"pulseonselect", bPulse);
 
   GetInfoTexture(pControlNode, "imagepath", texture, texturePath, parentID);
@@ -1089,7 +1215,7 @@ CGUIControl* CGUIControlFactory::Create(int parentID, const FRECT &rect, TiXmlEl
     const CGUIInfoLabel &content = (infoLabels.size()) ? infoLabels[0] : CGUIInfoLabel("");
     if (insideContainer)
     { // inside lists we use CGUIListLabel
-      control = new CGUIListLabel(parentID, id, posX, posY, width, height, labelInfo, content, bScrollLabel);
+      control = new CGUIListLabel(parentID, id, posX, posY, width, height, labelInfo, content, scrollValue);
     }
     else
     {
@@ -1097,7 +1223,7 @@ CGUIControl* CGUIControlFactory::Create(int parentID, const FRECT &rect, TiXmlEl
         parentID, id, posX, posY, width, height,
         labelInfo, wrapMultiLine, bHasPath);
       ((CGUILabelControl *)control)->SetInfo(content);
-      ((CGUILabelControl *)control)->SetWidthControl(minWidth, bScrollLabel);
+      ((CGUILabelControl *)control)->SetWidthControl(minWidth, (scrollValue == CGUIControl::ALWAYS) ? true : false);
     }
   }
   else if (type == CGUIControl::GUICONTROL_EDIT)
@@ -1147,10 +1273,11 @@ CGUIControl* CGUIControlFactory::Create(int parentID, const FRECT &rect, TiXmlEl
     control = new CGUIButtonControl(
       parentID, id, posX, posY, width, height,
       textureFocus, textureNoFocus,
-      labelInfo);
+      labelInfo, wrapMultiLine);
 
     ((CGUIButtonControl *)control)->SetLabel(strLabel);
     ((CGUIButtonControl *)control)->SetLabel2(strLabel2);
+	((CGUIButtonControl *)control)->SetMinWidth(minWidth);
     ((CGUIButtonControl *)control)->SetClickActions(clickActions);
     ((CGUIButtonControl *)control)->SetFocusActions(focusActions);
     ((CGUIButtonControl *)control)->SetUnFocusActions(unfocusActions);
@@ -1409,6 +1536,8 @@ void CGUIControlFactory::ScaleElement(TiXmlElement *element, RESOLUTION fileRes,
       if (name == "posx" ||
           name == "left" ||
           name == "right" ||
+          name == "centerleft" ||
+          name == "centerright" ||
           name == "width" ||
           name == "textoffsetx" ||
           name == "textwidth" ||
@@ -1430,6 +1559,8 @@ void CGUIControlFactory::ScaleElement(TiXmlElement *element, RESOLUTION fileRes,
       else if (name == "posy" ||
           name == "top" ||
           name == "bottom" ||
+          name == "centerleft" ||
+          name == "centerright" ||
           name == "height" ||
           name == "textoffsety" ||
           name == "spinheight" ||

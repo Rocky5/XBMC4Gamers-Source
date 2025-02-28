@@ -1,34 +1,11 @@
 @Echo off
-goto getadminwrites >NUL
 
-pause
 :start
-@ECHO OFF
 CD "%~dp0"
-rem CLS
-COLOR 2F
-TITLE XBMC4Gamers edits
-rem ----PURPOSE----
-rem - Create a working XBMC build with a single click
-rem -------------------------------------------------------------
-rem Usage: built.bat [noprompt] [nocompress] [noclean] [build1-4]
-rem -------------------------------------------------------------
-rem Config
-rem If you get an error that Visual studio was not found, SET your path for VSNET main executable.
-rem ONLY needed if you have a very old bios, SET the path for xbepatch. Not needed otherwise.
-rem -------------------------------------------------------------
-rem CONFIG START
-
-SET XBE_PATCH=tools\xbepatch\xbepatch.exe
-
-SET COMPRESS_FILE=XBMC4XBOX.zip
-SET COMPRESS=C:\Program Files\7-zip\7z.exe
-SET COMPRESS_OPTS=a %COMPRESS_FILE%
-
-SET Silent=0
-SET SkipCompression=0
-SET Clean=1
-SET Compile=1
+CALL:STARTTIME
+CLS
+COLOR 0A
+TITLE Clean Gamers ( XBMC4Gamers Edits )
 
 IF "%VS71COMNTOOLS%"=="" (
   SET NET="%ProgramFiles%\Microsoft Visual Studio .NET 2003\Common7\IDE\devenv.com"
@@ -41,166 +18,68 @@ IF NOT EXIST %NET% (
   GOTO:EOF
 )
 
-:GETPARAMS
-  set IN=%1
-  IF "%IN%" EQU "noprompt" (
-    SET Silent=1
-  ) ELSE IF "%IN%" EQU "nocompress" (
-    SET SkipCompression=1
-  ) ELSE IF "%IN%" EQU "noclean" (
-    SET Clean=0
-  ) ELSE IF "%IN:~0,5%" EQU "build" (
-    SET XBMC_COMPILE_ANSWER=%IN:~5,1%
-    SET Silent=1
-  ) ELSE IF "%IN%" EQU "" (
-    GOTO ENDPARAMS
-  )
-  SHIFT
-  GOTO GETPARAMS
-:ENDPARAMS
-
-IF %Silent% EQU 0 (
-  CALL:MENU
-)
-
-SET "DEST=BUILD XBMC4Gamers"
-
-IF %XBMC_COMPILE_ANSWER% EQU 1 (
-  SET VS_PATH=.
-  SET VS_SOL=xbmc.sln
-  SET VS_CONF=Release
-  SET VS_BIN=default.xbe
-)
-
-IF %XBMC_COMPILE_ANSWER% EQU 2 (
-  SET VS_PATH=.
-  SET VS_SOL=xbmc.sln
-  SET VS_CONF=Release_LTCG
-  SET VS_BIN=default.xbe
-)
-
-IF %XBMC_COMPILE_ANSWER% EQU 3 (
-  SET VS_PATH=.
-  SET VS_SOL=xbmc.sln
-  SET VS_CONF=Debug
-  SET VS_BIN=default.xbe
-)
-
-IF %XBMC_COMPILE_ANSWER% EQU 4 (
-  SET DEST=BUILD_WIN32
-  SET VS_PATH=tools\Win32
-  SET VS_SOL=XBMC_PC.sln
-  SET VS_CONF=Release
-  SET VS_BIN=XBMC_PC.exe
-)
-
-IF %XBMC_COMPILE_ANSWER% EQU "" GOTO:EOF
-
-IF %Silent% EQU 0 (
-  IF EXIST %VS_PATH%\%VS_CONF%\%VS_BIN% (
-    CALL:BIN_EXISTS
-  )
-)
-
-IF %Compile% EQU 1 (
-  CALL:COMPILE
-)
-
-CALL:MAKE_BUILD %DEST%
-
+ECHO Wait while cleaning the builds.
 ECHO ------------------------------------------------------------
-ECHO Build Succeeded!
-IF %SkipCompression%==0 (
-  CALL:COMPRESS %DEST%
-)
 
-IF %Silent% EQU 0 (
-  CALL:VIEWLOG
-)
+SET VS_PATH=.
+SET VS_SOL=xbmc.sln
+SET VS_CONF=Release
+CALL:COMPILE
+
+SET VS_SOL=xbmc.sln
+SET VS_CONF=Release_LTCG
+CALL:COMPILE
+
+CALL:MAKE_BUILD
 
 pause
 GOTO:EOF
-
-:MENU
-  ECHO    ВВВВВВВББББББББААААААА
-  ECHO  ВлллллллллллллллллллллллВВВВВВБББББАААААА     пппВмм
-  ECHO олллллллллллллллллллллллллллллллллллллллллВВВВБББАА  ппм
-  ECHO ВлллллллллллллллллллллллллллллллллллллллллллллллллллВА  н
-  ECHO ВлллллллллллллллллллплллллллллллллллллллллллллллллллллА В
-  ECHO БллллллллллллллллллнАлллллллллллллллллллллллллллллллллл о
-  ECHO АллллллВБА  плп           плллп    пВп    плллп   АВллл о
-  ECHO  ллллллллллн   млллн Влллм олн мВлм   мллм ол  мллллллл о
-  ECHO  Влллллллллл  лллллн лллллн л оллллн оллллн н олллллллл В
-  ECHO  Блллллллллн олллллн лллллн л лллллн лллллн   ВлллллллВ н
-  ECHO  АВлллллллп   пллллн плллп он лллллн лллллн А плллллллн н
-  ECHO   БлллВБА мллм АБВллм     млВмллллллмлллллВ лм   АВлллно
-  ECHO   АВлллллллллллллллллллллллллллллллллллллллллллллллллл В
-  ECHO    Блллллпппплпплппллпллпллллпплпплппплпплпплппллллллл н
-  ECHO    АВлллл но л пл л л лнмоллл лл пл л лнол пл пмлллллБ н
-  ECHO     Блллл но л пл пмл л м ллл пл пл л лнол пл л лллллАо
-  ECHO     АВллллллллллллллллллллллллллллллллллллллллллллллВ
-  ECHO      БАммммммммммммммммммммммммммммммммммммм  АБВВВВ
-  ECHO      АВллллллллллллллллллллллллллллллллллллллВААБВп
-  ECHO       БВлллллллллллллллллллллллллллллВлВВпппп
-  ECHO        ВВллллллллллллллллллВлВВпппп
-  ECHO         пВллллВлВВВпппппп
-  ECHO ------------------------------------------------------------
-  ECHO XBMC prepare menu
-  ECHO ------------------------------------------------------------
-  ECHO [1] Build XBMC XBE      ( for XBOX use )
-  ECHO [2] Build LTCG XBMC XBE ( for XBOX use )
-  ECHO [3] Build DEBUG XBE     ( for XBOX use )
-  ECHO [4] Build XBMC_WIN32    ( for Windows use)
-  ECHO ------------------------------------------------------------
-  SET XBMC_COMPILE_ANSWER=1
-  ::SET /P XBMC_COMPILE_ANSWER=Please enter the number you want to build [1/2/3/4]:
-  GOTO:EOF
-
-:BIN_EXISTS
-  ECHO ------------------------------------------------------------
-  ECHO Found a previous Compiled binary - %VS_PATH%\%VS_CONF%\%VS_BIN% !
-  ECHO [1] a NEW binary will be compiled for the BUILD 
-  ECHO [2] existing binary will be updated (quick mode compile) for the BUILD
-  ECHO [3] existing binary will be used for the BUILD 
-  ECHO ------------------------------------------------------------
-  SET XBMC_COMPILE_ANSWER=2
-  ::SET /P XBMC_COMPILE_ANSWER=Compile a new binary? [1/2/3]:
-  IF /I %XBMC_COMPILE_ANSWER% EQU 1 SET Clean=1
-  IF /I %XBMC_COMPILE_ANSWER% EQU 2 SET Clean=0
-  IF /I %XBMC_COMPILE_ANSWER% EQU 3 SET Compile=0
-  GOTO:EOF
   
 :COMPILE
-  ECHO Wait while preparing the build.
+  del /q "xbmc\lib\libPython\XBPyErrorPath.h" 2>NUL
+  ECHO Cleaning Solution...
+  %NET% %VS_PATH%\%VS_SOL% /clean %VS_CONF%
+  DEL %VS_PATH%\%VS_CONF%\xbmc.map 2>NUL
+  GOTO:EOF
+
+:MAKE_BUILD
+  ECHO Done!
   ECHO ------------------------------------------------------------
-  Echo CStdString strOutPutPathHeaderFile("E:/TDATA/Rocky5 needs these Logs/XBMC4Gamers/");>"xbmc\lib\libPython\XBPyErrorPath.h"
+  
+  CALL:STOPTIME
 
-    ECHO Cleaning Solution...
-    %NET% %VS_PATH%\%VS_SOL% /clean %VS_CONF%
-    DEL %VS_PATH%\%VS_CONF%\xbmc.map 2>NUL
+  GOTO:EOF
 
-    EXIT
+:STARTTIME
+  for /F "tokens=1-4 delims=:,." %%a in ("%time%") do (
+    set startHour=%%a
+    set startMinute=%%b
+    set startSecond=%%c
+    set startMillisecond=%%d
+  )
+  GOTO:EOF
 
-:getadminwrites
-REM  --> Check for permissions
-    IF "%PROCESSOR_ARCHITECTURE%" EQU "amd64" (
->nul 2>&1 "%SYSTEMROOT%\SysWOW64\cacls.exe" "%SYSTEMROOT%\SysWOW64\config\system"
-) ELSE (
->nul 2>&1 "%SYSTEMROOT%\system32\cacls.exe" "%SYSTEMROOT%\system32\config\system"
-)
-REM --> If error flag set, we do not have admin.
-if '%errorlevel%' NEQ '0' (
-    echo Requesting administrative privileges...
-    goto UACPrompt
-) else ( goto gotAdmin )
-:UACPrompt
-    echo Set UAC = CreateObject^("Shell.Application"^) > "%temp%\getadmin.vbs"
-    set params = %*:"=""
-    echo UAC.ShellExecute "cmd.exe", "/c ""%~s0"" %params%", "", "runas", 1 >> "%temp%\getadmin.vbs"
-    "%temp%\getadmin.vbs"
-    del "%temp%\getadmin.vbs"
-    exit /B
-:gotAdmin
-    pushd "%CD%"
-    CD /D "%~dp0"
-   goto start
+:STOPTIME
+  for /F "tokens=1-4 delims=:,." %%a in ("%time%") do (
+    set endHour=%%a
+    set endMinute=%%b
+    set endSecond=%%c
+    set endMillisecond=%%d
+  )
+
+  set /A startTotal=(startHour * 360000) + (startMinute * 6000) + (startSecond * 100) + startMillisecond
+  set /A endTotal=(endHour * 360000) + (endMinute * 6000) + (endSecond * 100) + endMillisecond
+
+  if %endTotal% LSS %startTotal% (
+    set /A endTotal+=8640000  REM 24 hours in milliseconds
+  )
+
+  set /A elapsed=endTotal - startTotal
+
+  REM Convert elapsed time to hours, minutes, seconds
+  set /A hours=elapsed / 360000
+  set /A minutes=(elapsed %% 360000) / 6000
+  set /A seconds=(elapsed %% 6000) / 100
+
+  TITLE Clean Gamers ( XBMC4Gamers Edits ) Build Time: %minutes% Mins %seconds% Secs
+  GOTO:EOF

@@ -107,6 +107,26 @@ CAdvancedSettings::CAdvancedSettings()
   m_videoPatch = true;
   m_cachePath = "Z:\\";
   m_displayRemoteCodes = false;
+  
+  // resources images
+  m_bannerImage = "";
+  m_cdImage = "";
+  m_cdposterImage = "";
+  m_cdsmallImage = "";
+  m_dual3dImage = "";
+  m_fanartImage = "";
+  m_fanartblurImage = "";
+  m_fanartthumbImage = "";
+  m_fogImage = "";
+  m_iconImage = "";
+  m_opencaseImage = "";
+  m_posterImage = "";
+  m_postersmallImage = "";
+  m_synopsisImage = "";
+  m_thumbImage = "";
+  
+  // wallpapers
+  m_wallpaperImage = "";
 
   m_videoCleanDateTimeRegExp = "(.*[^ _\\,\\.\\(\\)\\[\\]\\-])[ _\\.\\(\\)\\[\\]\\-]+(19[0-9][0-9]|20[0-1][0-9])([ _\\,\\.\\(\\)\\[\\]\\-]|[^0-9]$)";
 
@@ -463,6 +483,39 @@ bool CAdvancedSettings::Load()
   XMLUtils::GetBoolean(pRootElement, "removekernelpatch", m_videoPatch);
   XMLUtils::GetBoolean(pRootElement, "disablemodchipdetection", m_DisableModChipDetection);
   XMLUtils::GetBoolean(pRootElement, "powersave", m_bPowerSave);
+  
+  pElement = pRootElement->FirstChildElement("images");
+  if (pElement)
+  { 
+    // Get wallpaper value
+    XMLUtils::GetString(pElement, "wallpaper", m_wallpaperImage);
+	
+	MEMORYSTATUS status;
+	GlobalMemoryStatus( &status );
+	if (status.dwTotalPhys > 67108864)
+		XMLUtils::GetString(pElement, "wallpaper_128mb", m_wallpaperImage);
+
+    // Get <_resources> values
+    pElement = pElement->FirstChildElement("_resources");
+    if (pElement)
+	{
+        XMLUtils::GetString(pElement, "banner", m_bannerImage);
+        XMLUtils::GetString(pElement, "cd", m_cdImage);
+        XMLUtils::GetString(pElement, "cd_small", m_cdsmallImage);
+        XMLUtils::GetString(pElement, "cdposter", m_cdposterImage);
+        XMLUtils::GetString(pElement, "dual3d", m_dual3dImage);
+        XMLUtils::GetString(pElement, "fanart", m_fanartImage);
+        XMLUtils::GetString(pElement, "fanart_blur", m_fanartblurImage);
+        XMLUtils::GetString(pElement, "fanart_thumb", m_fanartthumbImage);
+        XMLUtils::GetString(pElement, "fog", m_fogImage);
+        XMLUtils::GetString(pElement, "icon", m_iconImage);
+        XMLUtils::GetString(pElement, "opencase", m_opencaseImage);
+        XMLUtils::GetString(pElement, "poster", m_posterImage);
+        XMLUtils::GetString(pElement, "poster_small", m_postersmallImage);
+        XMLUtils::GetString(pElement, "synopsis", m_synopsisImage);
+        XMLUtils::GetString(pElement, "thumb", m_thumbImage);
+    }
+  }
 
   XMLUtils::GetInt(pRootElement, "songinfoduration", m_songInfoDuration, 0, INT_MAX);
   XMLUtils::GetInt(pRootElement, "busydialogdelay", m_busyDialogDelay, 0, 5000);

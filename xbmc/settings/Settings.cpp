@@ -1348,7 +1348,7 @@ void CSettings::LoadProfiles(const CStdString& profilesFile)
  
   if (m_vecProfiles.empty())
   { // add the master user
-    CProfile profile("special://masterprofile/", "Manage Profiles");
+    CProfile profile("special://masterprofile/", "Add User");
     m_vecProfiles.push_back(profile);
   }
 

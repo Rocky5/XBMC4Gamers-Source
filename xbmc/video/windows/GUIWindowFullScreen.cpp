@@ -573,7 +573,8 @@ bool CGUIWindowFullScreen::OnMessage(CGUIMessage& message)
         (g_guiSettings.GetInt("harddisk.remoteplayspindown") || g_guiSettings.GetInt("harddisk.spindowntime"))
       )
       {
-        g_audioManager.Enable(false);
+        if (!g_guiSettings.GetBool("lookandfeel.soundsduringplayback"))
+          g_audioManager.Enable(false);
       }
 
       // setup the brightness, contrast and resolution
@@ -650,6 +651,8 @@ bool CGUIWindowFullScreen::OnMessage(CGUIMessage& message)
         m_subsLayout = NULL;
       }
 
+      if (g_guiSettings.GetBool("lookandfeel.soundsduringplayback"))
+        g_audioManager.Enable(true);
       return true;
     }
   case GUI_MSG_SETFOCUS:

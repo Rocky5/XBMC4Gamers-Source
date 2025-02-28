@@ -35,6 +35,8 @@ public:
   bool GetImage(const CStdString &path, CTexture &texture, int &orientation, bool firstRequest);
   void ReleaseImage(const CStdString &path, bool immediately = false);
 
+  void GetImageSize(const CStdString& key, int& width, int& height);
+
   void CleanupUnusedImages();
 
 protected:
