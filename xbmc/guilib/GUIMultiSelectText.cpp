@@ -154,34 +154,141 @@ void CGUIMultiSelectTextControl::UpdateInfo(const CGUIListItem *item)
 
 bool CGUIMultiSelectTextControl::OnAction(const CAction &action)
 {
-  if (action.GetID() == ACTION_SELECT_ITEM)
-  {
-    // item is clicked - see if we have a clickaction
-    CStdString clickAction;
-    unsigned int selected = 0;
-    for (unsigned int i = 0; i < m_items.size(); i++)
-    {
-      if (m_items[i].m_selectable)
-      {
-        if (m_selectedItem == selected)
-          clickAction = m_items[i].m_clickAction;
-        selected++;
-      }
-    }
-    if (!clickAction.IsEmpty())
-    { // have a click action -> perform it
-      CGUIMessage message(GUI_MSG_EXECUTE, m_controlID, m_parentID);
-      message.SetStringParam(clickAction);
-      g_windowManager.SendMessage(message);
-    }
-    else
-    { // no click action, just send a message to the window
-      CGUIMessage msg(GUI_MSG_CLICKED, m_controlID, m_parentID, m_selectedItem);
-      SendWindowMessage(msg);
-    }
-    return true;
-  }
-  return CGUIControl::OnAction(action);
+	unsigned int selectedItem = 0;
+	if (action.GetID() == ACTION_SELECT_ITEM)
+	{
+		unsigned int selectableCount = 0;
+		CStdString clickAction;
+		for (unsigned int i = 0; i < m_items.size(); i++)
+		{
+			if (m_items[i].m_selectable)
+			{
+				if (selectableCount == m_selectedItem)
+				{
+					selectedItem = i;
+					clickAction = m_items[i].m_clickAction;
+					break;
+				}
+				++selectableCount;
+			}
+		}
+		if (clickAction.IsEmpty())
+		{
+			CLog::Log(LOGERROR, "No stored action found for selected item %u", m_selectedItem);
+			CGUIMessage msg(GUI_MSG_CLICKED, m_controlID, m_parentID, m_selectedItem);
+			SendWindowMessage(msg);
+			return false;
+		}
+		CLog::Log(LOGDEBUG, "Executing stored action for selection %u: %s", m_selectedItem, clickAction.c_str());
+		std::vector<CStdString> parsedActions;
+		parseActions(clickAction, parsedActions);
+		for (size_t i = 0; i < parsedActions.size(); i++)
+		{
+			UpdateText(m_info.GetLabel(m_parentID));
+			getClickActionCurrent(i, m_items[selectedItem].m_clickAction, parsedActions[i]);
+			CLog::Log(LOGDEBUG, "Executing action: %s", parsedActions[i].c_str());
+			// have a click action -> perform it
+			CGUIMessage message(GUI_MSG_EXECUTE, m_controlID, m_parentID);
+			message.SetStringParam(parsedActions[i]);
+			g_windowManager.SendMessage(message);
+			Sleep(10);
+		}
+		return true;
+	}
+	return CGUIControl::OnAction(action);
+}
+
+void CGUIMultiSelectTextControl::UpdateText(const CStdString &text)
+{
+	if (text == m_oldText)
+		return;
+	m_items.clear();
+	// parse our text into clickable blocks
+	// format is [ONCLICK <action>] [/ONCLICK] or [ONCLICK <action>, <action>, <action>, <action>, <action> etc...] [/ONCLICK]
+	size_t startClickable = 0;
+	size_t startUnclickable = 0;
+	int buttonIndex = 0;
+	while ((startClickable = text.Find("[ONCLICK", startClickable)) != CStdString::npos)
+	{
+		size_t endAction = text.Find(']', startClickable + 8);
+		size_t endClickable = text.Find("[/ONCLICK]", startClickable + 8);
+		if (endAction != CStdString::npos && endClickable != CStdString::npos)
+		{
+			CStdString actionsBlock = text.Mid(startClickable + 8, endAction - startClickable - 8);
+			std::vector<CStdString> parsedActions;
+			parseActions(actionsBlock, parsedActions);
+			CStdString formattedActions;
+			for (size_t i = 0; i < parsedActions.size(); i++)
+			{
+				if (!formattedActions.IsEmpty())
+					formattedActions += ", ";
+				formattedActions += parsedActions[i];
+			}
+			CLog::Log(LOGDEBUG, "Storing action for button index %d: %s", buttonIndex, formattedActions.c_str());
+			AddString(text.Mid(endAction + 1, endClickable - endAction - 1), true, formattedActions);
+			startUnclickable = endClickable + 10;
+			size_t nextClickable = text.Find("[ONCLICK", startUnclickable);
+			if (nextClickable != CStdString::npos && nextClickable > startUnclickable)
+			{
+				CStdString labelText = text.Mid(startUnclickable, nextClickable - startUnclickable);
+				if (!labelText.IsEmpty())
+					AddString(labelText, false);
+			}
+			startClickable = nextClickable;
+			buttonIndex++;
+		}
+		else
+		{
+			CLog::Log(LOGERROR, "Invalid multiselect string at position %zu", startClickable);
+			break;
+		}
+	}
+	m_oldText = text;
+	PositionButtons();
+}
+
+void CGUIMultiSelectTextControl::getClickActionCurrent(int action, CStdString clickAction, CStdString &clickActionNew)
+{
+	std::vector<CStdString> parsedActions;
+	parseActions(clickAction, parsedActions);
+	if ((size_t)action >= parsedActions.size())
+	{
+		clickActionNew = "";
+		return;
+	}
+	clickActionNew = parsedActions[action];
+}
+
+void CGUIMultiSelectTextControl::cleanAction(CStdString& action)
+{
+	action = action.Trim();
+	if (action.Left(1) == "\"" && action.Right(1) == "\"")
+		action = action.Mid(1, action.size() - 2);
+}
+
+void CGUIMultiSelectTextControl::parseActions(const CStdString &actionsBlock, std::vector<CStdString> &parsedActions)
+{
+	size_t pos = 0;
+	int openParens = 0;
+	CStdString currentAction;
+	while (pos < actionsBlock.size())
+	{
+		char ch = actionsBlock[pos];
+		if (ch == '(') openParens++;
+		else if (ch == ')') openParens--;
+		else if (ch == ',' && openParens == 0)
+		{
+			cleanAction(currentAction);
+			if (!currentAction.IsEmpty()) parsedActions.push_back(currentAction);
+			currentAction = "";
+			pos++;
+			continue;
+		}
+		currentAction += ch;
+		pos++;
+	}
+	cleanAction(currentAction);
+	if (!currentAction.IsEmpty()) parsedActions.push_back(currentAction);
 }
 
 void CGUIMultiSelectTextControl::OnLeft()
@@ -273,52 +380,6 @@ int CGUIMultiSelectTextControl::GetItemFromPoint(const CPoint &point) const
     posX += string.m_length;
   }
   return -1;
-}
-
-void CGUIMultiSelectTextControl::UpdateText(const CStdString &text)
-{
-  if (text == m_oldText)
-    return;
-
-  m_items.clear();
-
-  // parse our text into clickable blocks
-  // format is [ONCLICK <action>] [/ONCLICK]
-  size_t startClickable = text.Find("[ONCLICK");
-  size_t startUnclickable = 0;
-
-  // add the first unclickable block
-  if (startClickable != CStdString::npos)
-    AddString(text.Mid(startUnclickable, startClickable - startUnclickable), false);
-  else
-    AddString(text.Mid(startUnclickable), false);
-  while (startClickable != CStdString::npos)
-  {
-    // grep out the action and the end of the string
-    size_t endAction = text.Find(']', startClickable + 8);
-    size_t endClickable = text.Find("[/ONCLICK]", startClickable + 8);
-    if (endAction != CStdString::npos && endClickable != CStdString::npos)
-    { // success - add the string, and move the start of our next unclickable portion along
-      AddString(text.Mid(endAction + 1, endClickable - endAction - 1), true, text.Mid(startClickable + 8, endAction - startClickable - 8));
-      startUnclickable = endClickable + 10;
-    }
-    else
-    {
-      CLog::Log(LOGERROR, "Invalid multiselect string %s", text.c_str());
-      break;
-    }
-    startClickable = text.Find("[ONCLICK", startUnclickable);
-    // add the unclickable portion
-    if (startClickable != CStdString::npos)
-      AddString(text.Mid(startUnclickable, startClickable - startUnclickable), false);
-    else
-      AddString(text.Mid(startUnclickable), false);
-  }
-
-  m_oldText = text;
-
-  // finally, position our buttons
-  PositionButtons();
 }
 
 void CGUIMultiSelectTextControl::AddString(const CStdString &text, bool selectable, const CStdString &clickAction)

@@ -33,6 +33,7 @@ public:
   virtual bool OnMessage(CGUIMessage& message);
   virtual bool OnAction(const CAction &action);
 
+  bool OnPlayAndQueueMedia(const CFileItemPtr &item);
   void PlayMovie(const CFileItem *item);
   int  GetResumeItemOffset(const CFileItem *item);
 

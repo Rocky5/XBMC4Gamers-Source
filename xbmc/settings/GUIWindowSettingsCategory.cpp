@@ -258,7 +258,7 @@ bool CGUIWindowSettingsCategory::OnMessage(CGUIMessage &message)
 		}
 		else
 		{
-			g_guiSettings.SetString("lookandfeel.soundskin","SKINDEFAULT");
+			g_guiSettings.SetString("lookandfeel.soundskin","default");
 		}
 		CStdString fontTheme(URIUtils::ReplaceExtension(m_strNewSkinTheme, ""));
 		if (CFile::Exists("special://skin/fonts/" + soundTheme + ".ttf"))
@@ -653,6 +653,15 @@ void CGUIWindowSettingsCategory::CreateSettings()
       CBaseSettingControl *control = GetSetting(pSetting->GetSetting());
       control->SetDelayed();
     }
+    else if (strSetting.Equals("network.text"))
+    {
+	  CGUIControl *pControl = (CGUIControl *)GetControl(GetSetting(strSetting)->GetID());
+	  if (pControl)
+	  {
+		  pControl->SetVisible(g_settings.UsingLoginScreen() && g_settings.GetCurrentProfile().getName() != "Add User");
+		  pControl->SetEnabled(!g_settings.UsingLoginScreen());
+	  }
+	}
     else if (strSetting.Equals("network.assignment"))
     {
       CSettingInt *pSettingInt = (CSettingInt*)pSetting;
@@ -661,6 +670,10 @@ void CGUIWindowSettingsCategory::CreateSettings()
       pControl->AddLabel(g_localizeStrings.Get(716), NETWORK_DHCP);
       pControl->AddLabel(g_localizeStrings.Get(717), NETWORK_STATIC);
       pControl->SetValue(pSettingInt->GetData());
+	  // This is disabled if login screen is enabled as I disabled the network reinit on load/deload of a profile.
+	  // So network settings are used from the Add User profile. This fixes issues where FTP stops working if you log in or out.
+	  // If login screen is disabled it acts like normal for the loaded profile.
+      pControl->SetEnabled((g_settings.UsingLoginScreen() && g_settings.GetCurrentProfile().getName() == "Add User") || (!g_settings.UsingLoginScreen() && g_settings.GetCurrentProfile().getName() != "Add User"));
     }
     else if (strSetting.Equals("network.httpproxyport"))
     {
@@ -986,6 +999,11 @@ void CGUIWindowSettingsCategory::UpdateSettings()
       CGUIControl *pControl = (CGUIControl *)GetControl(pSettingControl->GetID());
       if (pControl) pControl->SetEnabled(g_guiSettings.GetInt("harddisk.remoteplayspindown") != SPIN_DOWN_NONE);
     }
+    else if (strSetting.Equals("discord.xbdstatsip") || strSetting.Equals("discord.xbdstatsport") || strSetting.Equals("discord.xbdstatsforcenames") || strSetting.Equals("discord.xbdstatsclose"))
+    {
+      CGUIControl *pControl = (CGUIControl *)GetControl(pSettingControl->GetID());
+      pControl->SetEnabled(g_guiSettings.GetBool("discord.xbdstats"));
+    }
     else if (strSetting.Equals("services.ftpserveruser") || strSetting.Equals("services.ftpserverpassword") || strSetting.Equals("services.ftpautofatx"))
     {
       CGUIControl *pControl = (CGUIControl *)GetControl(pSettingControl->GetID());
@@ -1200,6 +1218,11 @@ void CGUIWindowSettingsCategory::UpdateSettings()
       CGUIControl *pControl = (CGUIControl *)GetControl(pSettingControl->GetID());
       if (pControl) pControl->SetEnabled(g_guiSettings.GetBool("myprograms.usedashpath"));
     }
+	else if (strSetting.Equals("mygames.gamesfasterparsingignorelistdir") || strSetting.Equals("mygames.gamesfasterparsingignorelistname"))
+	{
+	  CGUIControl *pControl = (CGUIControl *)GetControl(pSettingControl->GetID());
+	  if (pControl) pControl->SetEnabled(g_guiSettings.GetBool("mygames.gamesfasterparsing"));
+	}
     else if (strSetting.Equals("lcd.enableonpaused"))
     {
       CGUIControl *pControl = (CGUIControl *)GetControl(pSettingControl->GetID());
@@ -1716,7 +1739,6 @@ void CGUIWindowSettingsCategory::OnSettingChanged(CBaseSettingControl *pSettingC
       }
     }
   }
-  
   else if (strSetting.Equals("network.ipaddress"))
   {
     if (g_guiSettings.GetInt("network.assignment") == NETWORK_STATIC)
@@ -1843,7 +1865,7 @@ void CGUIWindowSettingsCategory::OnSettingChanged(CBaseSettingControl *pSettingC
     if (pControl->GetValue()==0)
       g_guiSettings.SetString("lookandfeel.soundskin", "OFF");
     else if (pControl->GetValue()==1)
-      g_guiSettings.SetString("lookandfeel.soundskin", "SKINDEFAULT");
+      g_guiSettings.SetString("lookandfeel.soundskin", "default");
     else
       g_guiSettings.SetString("lookandfeel.soundskin", pControl->GetCurrentLabel());
 
@@ -1918,7 +1940,7 @@ void CGUIWindowSettingsCategory::OnSettingChanged(CBaseSettingControl *pSettingC
     CStdString strSkinTheme;
 
     if (pControl->GetValue() == 0) // Use default theme
-      strSkinTheme = "SKINDEFAULT";
+      strSkinTheme = "default";
     else
       strSkinTheme = pControl->GetCurrentLabel() + ".xpr";
 
@@ -1941,7 +1963,7 @@ void CGUIWindowSettingsCategory::OnSettingChanged(CBaseSettingControl *pSettingC
     CStdString strSkinColor;
 
     if (pControl->GetValue() == 0) // Use default colors
-      strSkinColor = "SKINDEFAULT";
+      strSkinColor = "default";
     else
       strSkinColor = pControl->GetCurrentLabel() + ".xml";
 
@@ -2073,6 +2095,16 @@ void CGUIWindowSettingsCategory::OnSettingChanged(CBaseSettingControl *pSettingC
       CGUIControl *pControl = (CGUIControl *)GetControl(pSettingControl->GetID());
       if (pControl) pControl->SetEnabled(g_guiSettings.GetBool("mygames.games128mbartwork"));
     }
+  }
+  else if (strSetting.Equals("mygames.gamesfasterparsingignorelistdir"))
+  {
+	g_guiSettings.SetString("mygames.gamesfasterparsingignorelistdir", g_guiSettings.GetString("mygames.gamesfasterparsingignorelistdir"));
+	g_settings.Save();
+  }
+  else if (strSetting.Equals("mygames.gamesfasterparsingignorelistname"))
+  {
+	g_guiSettings.SetString("mygames.gamesfasterparsingignorelistname", g_guiSettings.GetString("mygames.gamesfasterparsingignorelistname"));
+	g_settings.Save();
   }
   else if (strSetting.Left(22).Equals("MusicPlayer.ReplayGain"))
   { // Update our replaygain settings
@@ -2676,7 +2708,7 @@ void CGUIWindowSettingsCategory::FillInSoundSkins(CSetting *pSetting)
   pControl->AddLabel(g_localizeStrings.Get(474), iSoundSkin++); // Off
   pControl->AddLabel(g_localizeStrings.Get(15109), iSoundSkin++); // Skin Default
 
-  if (g_guiSettings.GetString("lookandfeel.soundskin")=="SKINDEFAULT")
+  if (g_guiSettings.GetString("lookandfeel.soundskin")=="default")
     iCurrentSoundSkin=1;
 
   sort(vecSoundSkins.begin(), vecSoundSkins.end(), sortstringbyname());
@@ -3176,7 +3208,7 @@ void CGUIWindowSettingsCategory::FillInSkinThemes(CSetting *pSetting)
   // Clear and add. the Default Label
   pControl->Clear();
   pControl->SetShowRange(true);
-  pControl->AddLabel(g_localizeStrings.Get(15109), 0); // "SKINDEFAULT"! The standart Textures.xpr will be used!
+  pControl->AddLabel(g_localizeStrings.Get(15109), 0); // "default"! The standart Textures.xpr will be used!
 
   // find all *.xpr in this path
   CStdString strDefaultTheme = pSettingString->GetData();
@@ -3215,7 +3247,7 @@ void CGUIWindowSettingsCategory::FillInSkinColors(CSetting *pSetting)
   // Clear and add. the Default Label
   pControl->Clear();
   pControl->SetShowRange(true);
-  pControl->AddLabel(g_localizeStrings.Get(15109), 0); // "SKINDEFAULT"! The standard defaults.xml will be used!
+  pControl->AddLabel(g_localizeStrings.Get(15109), 0); // "default"! The standard defaults.xml will be used!
 
   // Search for colors in the Current skin!
   vector<CStdString> vecColors;

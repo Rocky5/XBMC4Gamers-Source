@@ -223,9 +223,7 @@ void CGUIWindowManager::Remove(int id)
   }
   else
   {
-    CLog::Log(LOGWARNING, "Attempted to remove window %u "
-                          "from the window manager when it didn't exist",
-              id);
+    CLog::Log(LOGWARNING, "Attempted to remove window %u from the window manager when it didn't exist", id);
   }
 }
 

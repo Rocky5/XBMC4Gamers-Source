@@ -51,7 +51,7 @@ class CSysInfo : public CInfoLoader
     char MD5_Sign[32 + 1];
 
     bool GetDVDInfo(CStdString& strDVDModel, CStdString& strDVDFirmware);
-    bool GetHDDInfo(CStdString& strHDDModel, CStdString& strHDDSerial,CStdString& strHDDFirmware,CStdString& strHDDpw,CStdString& strHDDLockState);
+    bool GetHDDInfo(CStdString& strHDDModel, CStdString& strHDDSerial, CStdString& strHDDFirmware, CStdString& strHDDSupportedUDMASMode, CStdString& strHDDUDMAMode, CStdString& strHDDpw, CStdString& strHDDLockState);
     bool GetRefurbInfo(CStdString& rfi_FirstBootTime, CStdString& rfi_PowerCycleCount);
 
     bool CreateBiosBackup();
@@ -109,7 +109,7 @@ class CSysInfo : public CInfoLoader
     CStdString m_systemtotaluptime;
     CStdString m_systemuptime;
 
-    CStdString m_HDDModel, m_HDDSerial,m_HDDFirmware,m_HDDpw,m_HDDLockState;
+    CStdString m_HDDModel, m_HDDSerial, m_HDDFirmware, m_HDDSupportedUDMASMode, m_HDDUDMAMode, m_HDDpw,m_HDDLockState;
     CStdString m_DVDModel, m_DVDFirmware;
 
     bool m_bInternetState;

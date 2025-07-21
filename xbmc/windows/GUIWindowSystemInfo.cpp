@@ -80,6 +80,8 @@ void CGUIWindowSystemInfo::FrameMove()
     SetControlLabel(i++, "%s %s", 13154, SYSTEM_HDD_MODEL);
     SetControlLabel(i++, "%s %s", 13155, SYSTEM_HDD_SERIAL);
     SetControlLabel(i++, "%s %s", 13156, SYSTEM_HDD_FIRMWARE);
+    SetControlLabel(i++, "%s %s", 13175, SYSTEM_HDD_UDMA_MODE);
+    SetControlLabel(i++, "%s %s", 13176, SYSTEM_HDD_SUPPORTED_UDMA_MODE);
     SetControlLabel(i++, "%s %s", 13157, SYSTEM_HDD_PASSWORD);
     SetControlLabel(i++, "%s %s", 13158, SYSTEM_HDD_LOCKSTATE);
     SetControlLabel(i++, "%s %s", 13150, SYSTEM_HDD_LOCKKEY);
@@ -167,7 +169,7 @@ void CGUIWindowSystemInfo::FrameMove()
   }
   SET_CONTROL_LABEL(50, g_infoManager.GetTime(TIME_FORMAT_HH_MM_SS) + " | " + g_infoManager.GetDate());
   SET_CONTROL_LABEL(51, g_localizeStrings.Get(144)+" "+g_infoManager.GetVersion());
-  SET_CONTROL_LABEL(52, "XBE (Compiled: "+g_infoManager.GetLabel(SYSTEM_BUILD_DATE)+")");
+  SET_CONTROL_LABEL(52, "XBMC4Gamers Source Compiled: "+g_infoManager.GetLabel(SYSTEM_BUILD_DATE));
   // SET_CONTROL_LABEL(52, "XBMC4Xbox "+g_infoManager.GetLabel(SYSTEM_BUILD_VERSION)+" (Compiled: "+g_infoManager.GetLabel(SYSTEM_BUILD_DATE)+")");
   SET_CONTROL_LABEL(53, g_infoManager.GetLabel(SYSTEM_MPLAYER_VERSION));
   CGUIWindow::FrameMove();

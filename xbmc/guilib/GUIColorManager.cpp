@@ -59,7 +59,7 @@ void CGUIColorManager::Load(const CStdString &colorFile)
     LoadXML(xmlDoc);
 
   // now the color map requested
-  if (colorFile.CompareNoCase("SKINDEFAULT") == 0)
+  if (colorFile.CompareNoCase("default") == 0)
     return; // nothing to do
 
   URIUtils::AddFileToFolder(basePath, colorFile, path);

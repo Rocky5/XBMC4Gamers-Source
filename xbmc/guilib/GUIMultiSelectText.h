@@ -40,6 +40,9 @@ public:
   virtual void Render();
 
   virtual bool OnAction(const CAction &action);
+  virtual void getClickActionCurrent(int action, CStdString clickAction, CStdString &clickActionNew);
+  virtual void cleanAction(CStdString& action);
+  virtual void parseActions(const CStdString &actionsBlock, std::vector<CStdString> &parsedActions);
   virtual void OnLeft();
   virtual void OnRight();
   virtual bool HitTest(const CPoint &point) const;

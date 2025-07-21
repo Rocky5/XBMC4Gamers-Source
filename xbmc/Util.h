@@ -99,9 +99,13 @@ public:
   static void RunXBE(const char* szPath, char* szParameters = NULL, F_VIDEO ForceVideo=VIDEO_NULL, F_COUNTRY ForceCountry=COUNTRY_NULL, CUSTOM_LAUNCH_DATA* pData=NULL);
   static void LaunchXbe(const char* szPath, const char* szXbe, const char* szParameters, F_VIDEO ForceVideo=VIDEO_NULL, F_COUNTRY ForceCountry=COUNTRY_NULL, CUSTOM_LAUNCH_DATA* pData=NULL);
   
-  static void UpdateXBELastPlayed(const char* szPath1);
-  static CStdString UpdateXBEPath(const char* szPath1);
-  static bool MediaPlayHack(const char* szPath1, const CStdString& folderPath);
+  static CStdString UpdateLastPlayedAndXBEPath(const CStdString& xbePath, const CStdString& folderPath);
+  static bool MediaPlayHack(const CStdString& xbePath, const CStdString& folderPath);
+  static bool PlayIntro();
+  static void SendToXBDStats(const CStdString& xbePath);
+  
+  
+  static CStdString GetWallpaperSettings();
   
   static void GetHomePath(CStdString& strPath);
   static bool ExcludeFileOrFolder(const CStdString& strFileOrFolder, const CStdStringArray& regexps);

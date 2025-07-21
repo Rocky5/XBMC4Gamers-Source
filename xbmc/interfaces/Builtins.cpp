@@ -51,6 +51,9 @@
 #include "pictures/Picture.h"
 #include "ViewDatabase.h"
 #include "GUIInfoManager.h"
+#include "GUILargeTextureManager.h"
+#include "GUIAudioManager.h"
+#include "ProgramDatabase.h"
 
 #include "FileSystem/PluginDirectory.h"
 #include "FileSystem/RarManager.h"
@@ -172,22 +175,31 @@ const BUILT_IN commands[] = {
   { "Control.Message",            true,   "Send a given message to a control within a given window" },
   { "SendClick",                  true,   "Send a click message from the given control to the given window" },
   { "LoadProfile",                true,   "Load the specified profile (note; if locks are active it won't work)" },
-  { "SetProperty",                true,   "Sets a window property for the current focused window/dialog (key,value)" },
-  { "ClearProperty",              true,   "Clears a window property for the current focused window/dialog (key,value)" },
+  { "SetProperty",                true,   "Sets a window property for the current focused window/dialog (key,value,id)" },
+  { "ClearProperty",              true,   "Clears a window property for the current focused window/dialog (key,value,id)" },
   { "PlayWith",                   true,   "Play the selected item with the specified core" },
   { "WakeOnLan",                  true,   "Sends the wake-up packet to the broadcast address for the specified MAC address" },
   { "toggledebug",                false,  "Enables/disables debug mode" },
+  // New functions
   { "FFPatchXBE",                 false,  "Flicker filter patch xbe" },
+  { "ActivateWindowAndFocus",     true,   "Activate the specified window and sets focus to the specified id" },
+  { "ReplaceWindowAndFocus",      true,   "Replaces the current window with the new one and sets focus to the specified id" },
   { "FlushTextureCache",          false,  "Flushes the texture cache, freeing some memory" },
   { "ReloadAdvancedSettings",     false,  "Reload advancedsettings.xml" },
   { "EnableDebugMode",            false,  "Enable Debug mode" },
   { "DisableDebugMode",           false,  "Disable Debug mode" },
   { "CacheThumbnail",             false,  "Cache the passed image" },
-  { "SetWallpaper",         	  false,  "Select an image for your wallpaper" },
-  { "CleanWallpaper",         	  false,  "Delete the cached wallpapers" },
+  { "SetWallpaper",               false,  "Select an image for your wallpaper" },
+  { "CleanWallpaper",             false,  "Delete the cached wallpapers" },
   { "Screenshot",                 false,  "Takes a Screenshot in png format" },
   { "CleanViewsDB",               false,  "Clear views from the view databases" },
-  { "RandomSelect",               false,  "Randomly select an item from a list" }
+  { "RandomSelect",               false,  "Randomly select an item from a list" },
+  { "ToggleLogin",                false,  "Toggle login screen" },
+  { "ReloadUserWindows",          false,  "Reload the custom and _scripts windows" },
+  { "EnableNavSounds",            false,  "Enable the navigation sounds" },
+  { "NavSoundsDuringPlayBack",    false,  "Enable the navigation sounds during media playback" },
+  { "DisableNavSounds",           false,  "Disable the navigation sounds" },
+  { "YButtonFullOverview",        false,  "For opening the information window using a button" }
 };
 
 bool CBuiltins::HasCommand(const CStdString& execString)
@@ -229,98 +241,244 @@ int CBuiltins::Execute(const CStdString& execString)
   {
     CFileItem item(params[0]);
     item.SetPath(params[0]);
-	CStdString szNewPath;
-	CStdString szBuiltin = "true";
-	CUtil::RunFFPatchedXBE(params[0].c_str(), szNewPath, szBuiltin);
+    CStdString szNewPath;
+    CStdString szBuiltin = "true";
+    CUtil::RunFFPatchedXBE(params[0].c_str(), szNewPath, szBuiltin);
+  }
+  else if (execute.Equals("YButtonFullOverview"))
+  {
+    CStdString itemPath = g_infoManager.GetLabel(g_infoManager.TranslateString(params[0].c_str()));
+    CFileItemPtr item(new CFileItem(params[0]));
+    item->SetPath(itemPath);
+
+    CProgramDatabase m_database;
+    if (!m_database.Open())
+    {
+        CLog::Log(LOGERROR, "Failed to initialize database!");
+    }
+
+    m_database.GetFullOverview(item.get());
+    CStdString setProperty;
+    setProperty.Format(_T("Synopsis_Overview_Full_Alt,\"%s\""), item->GetProperty("Synopsis_Overview_Full").c_str());
+    Execute("SetProperty(" + setProperty + ")");
+    
+    Execute("ActivateWindow(1101)");
+  }
+  else if (execute.Equals("EnableNavSounds"))
+  {
+    g_audioManager.Enable(true);
+    g_guiSettings.SetBool("lookandfeel.soundsduringplayback",false);
+  }
+  else if (execute.Equals("NavSoundsDuringPlayback"))
+  {
+    g_audioManager.Enable(true);
+    g_guiSettings.SetBool("lookandfeel.soundsduringplayback",true);
+  }
+  else if (execute.Equals("DisableNavSounds"))
+  {
+    g_audioManager.Enable(false);
+    g_guiSettings.SetBool("lookandfeel.soundsduringplayback",false);
+  }
+  else if (execute.Equals("ReloadUserWindows"))
+  {
+    g_application.LoadUserWindows();
+  }
+  else if (execute.Equals("ToggleLogin"))
+  {
+    g_settings.ToggleLoginScreen();
+    g_settings.SaveProfiles(PROFILES_FILE);
   }
   else if (execute.Equals("RandomSelect"))
   {
-    if (!g_application.IsPlayingVideo() && !g_application.IsPlayingAudio())
+    if (!g_application.IsPlayingAudio())
     {
-      CStdString setfocusString;
-	  unsigned int seed = CUtil::InitRandomSeedint();
-	  srand(static_cast<unsigned int>(seed));
-      int viewID = atoi(g_infoManager.GetLabel(g_infoManager.TranslateString("Container.Viewmode")).Mid(4));
-      int numItems = atoi(g_infoManager.GetLabel(g_infoManager.TranslateString("Container.numItems")));
-      int randomIndex = rand() % numItems;
+      CGUIWindow *window = g_windowManager.GetWindow(g_windowManager.GetFocusedWindow());
+      CGUIControl *control = window->GetFocusedControl();
 
-      setfocusString.Format(_T("%d,%d"), viewID, randomIndex);
-      Execute("SetFocus(" + setfocusString + ")");
+      if (window)
+      {
+        if (control)
+        {
+          unsigned int seed = CUtil::InitRandomSeedint();
+          int viewID = control->GetID();
+          CStdString Container;
+          Container.Format("Container(%d).numItems", viewID);
 
-      // CLog::Log(LOGDEBUG, "Seed: %llu\n", seed);
-      // CLog::Log(LOGDEBUG, "Current view ID: %d", viewID);
-      // CLog::Log(LOGDEBUG, "Number of items: %d", numItems);
-      // CLog::Log(LOGDEBUG, "Lucky item: %d", randomIndex);
-      // CLog::Log(LOGDEBUG, "Executed SetFocus with combined string: SetFocus(%s)", setfocusString.c_str());
+          int numItems = atoi(g_infoManager.GetLabel(g_infoManager.TranslateString(Container)));
+          
+          if (numItems > 0)
+          {
+            int randomIndex = rand() % numItems;
+
+            CStdString setfocusString;
+            setfocusString.Format(_T("%d,%d"), viewID, randomIndex);
+            Execute("SetFocus(" + setfocusString + ")");
+          }
+        }
+      }
     }
     else
       Execute("ActivateWindow(114)");
   }
   else if (execute.Equals("CleanViewsDB"))
   {
-	CViewDatabase viewDatabase; 
-	if (viewDatabase.Open())
-	{
-		viewDatabase.ClearViewStates(10001);
-	}
-	viewDatabase.Close();
+    CViewDatabase viewDatabase; 
+    if (viewDatabase.Open())
+    {
+        viewDatabase.ClearViewStates(10001);
+    }
+    viewDatabase.Close();
   }
   else if (execute.Equals("flushtexturecache"))
   {
-    g_TextureManager.Flush(); // prob not needed but I added it here anyway
-	// CLog::Log(LOGNOTICE, "Flushed Texture Cache");
+    // prob not needed but I added it here anyway
+    g_largeTextureManager.CleanupUnusedImages();
+    g_TextureManager.Flush();
+    // CLog::Log(LOGNOTICE, "Flushed Texture Cache");
   }
   else if (execute.Equals("CacheThumbnail"))
   {
-	CStdString strUserThumb = params[0];
-	CStdString strThumb = params[1];
+    CStdString strUserThumb = params[0];
+    CStdString strThumb = params[1];
     CPicture::CacheThumb(strUserThumb, strThumb);
   }
   else if (execute.Equals("CleanWallpaper"))
   {
-	CStdString strWallpaper = "P:\\Thumbnails\\Wallpapers\\wallpaper.jpg";
-	CStdString strWallpaperSmall = "P:\\Thumbnails\\Wallpapers\\wallpaper_small.jpg";
-	CFile::Delete(strWallpaper);
-	CFile::Delete(strWallpaperSmall);
+    CStdString folderPath = CSpecialProtocol::TranslatePath("Special://profile/Thumbnails/Wallpapers");
+    CUtil::WipeDir(folderPath);
+    CreateDirectory(folderPath, NULL);
   }
   else if (execute.Equals("SetWallpaper"))
   {
-	CreateDirectory("P:\\Thumbnails\\Wallpapers", NULL);
-	CStdString strWallpaper = "P:\\Thumbnails\\Wallpapers\\wallpaper.jpg";
-	CStdString strWallpaperSmall = "P:\\Thumbnails\\Wallpapers\\wallpaper_small.jpg";
-	g_settings.ResetSkinSetting(params[0]);
-	CStdString value, strMask = ".png|.jpg|.jpeg|.bmp|.tbn";
-	VECSOURCES localShares; g_mediaManager.GetLocalDrives(localShares);
-	int skinString, height = 480;
-	if (params.size() > 0)
+    int skinString, width = 720, height = 405, quality = 100;
+	
+    MEMORYSTATUS status;
+    GlobalMemoryStatus(&status);
+    if (status.dwTotalPhys > 67108864)
 	{
-	  if (CGUIDialogFileBrowser::ShowAndGetFile(localShares, strMask, g_localizeStrings.Get(1030), value, true))
-	  {
-		skinString = g_settings.TranslateSkinString(params[0]);
-		if (params.size() > 1)
-			height = atoi(params[1].c_str());
-		
-		if (CPicture::CacheWallpaper(value, strWallpaper, height))
-			g_settings.SetSkinString(skinString, strWallpaper);
-		
-		CPicture::CacheWallpaper(value, strWallpaperSmall, 128);
-	  }
+		width = 953;
+		height = 536;
 	}
-  }
-  else if (execute.Equals("ReloadAdvancedSettings"))
-  {
-    if (!g_advancedSettings.Load())
-		g_advancedSettings.Load();
+
+    CStdString strWallpaper, strWallpaperPath = CSpecialProtocol::TranslatePath("Special://profile/Thumbnails/Wallpapers");
+    CStdString strWallpaper_login = CSpecialProtocol::TranslatePath("Special://profile/Thumbnails/Wallpapers/login.jpg");
+    CStdString strWallpaper_login_Small = CSpecialProtocol::TranslatePath("Special://profile/Thumbnails/Wallpapers/login_small.jpg");
+    CStdString value, strMask = ".png|.jpg|.jpeg|.bmp|.tbn|.gif";
+    
+    // Set filename to a random seed then resize the images and set the skinstring.
+    unsigned int randomSeed = CUtil::InitRandomSeedint();
+    CStdString filename;
+    filename.Format("%u", randomSeed);
+    
+    VECSOURCES localShares; g_mediaManager.GetLocalDrives(localShares);
+    
+    if (params.size() > 0)
+    {
+      // Get skin setting name (Background_Image)
+      skinString = g_settings.TranslateSkinString(params[0]);
+	  // Get params 1 and 2 and if they are larger than 1 use them else fallback to defaults.
+      if (params.size() > 2 && !params[1].empty() && !params[2].empty())
+      {
+        int paramWidth  = atoi(params[1].c_str());
+        int paramHeight = atoi(params[2].c_str());
+
+		// Only use the values if they are larger than 7 as 7 or lower will result in no image and crash the dash, setting the render size to match lower than 7 works but I don't want to do that.
+        if (paramWidth > 7 && paramHeight > 7)
+        {
+          width  = paramWidth;
+          height = paramHeight;
+        }
+      }
+	  // Quality setting, must be above 0 or it uses the default value of 100
+      if (params.size() > 3 && !params[3].empty() && atoi(params[3].c_str()) > 0)
+        quality = atoi(params[3].c_str());
+
+      if (params.size() < 5)
+      {
+        if (CGUIDialogFileBrowser::ShowAndGetFile(localShares, strMask, g_localizeStrings.Get(1030), value, true))
+          value = value;
+      }
+      else
+      {
+        if (params[4].c_str() != NULL)
+          value = params[4].c_str();
+      }
+
+      if (g_infoManager.GetBool(g_infoManager.TranslateString("skin.hassetting(hex_entry)")))
+      {
+        value = "";
+        if (CGUIDialogKeyboard::ShowAndGetInput(value, g_localizeStrings.Get(1029), true))
+        {
+          Execute("CleanWallpaper");
+          g_settings.SetSkinString(skinString, value);
+          Sleep(300);
+          Execute("Skin.Reset(Background_Image)");
+        }
+      }
+      else
+      {
+        if (!value.empty())
+        {
+          // Cleanup before new images
+          Execute("CleanWallpaper");
+          if (URIUtils::GetExtension(value).CompareNoCase(".gif") == 0)
+          {
+            filename += ".gif";
+            URIUtils::AddFileToFolder(strWallpaperPath, filename, strWallpaper);
+            g_settings.SetSkinString(skinString, strWallpaper);
+            CopyFile(value.c_str(), strWallpaper.c_str(), FALSE);
+            
+            // CLog::Log(LOGDEBUG, "Copied %s and set as wallpaper", strWallpaper.c_str());
+          }
+          else
+          {
+            filename += ".jpg";
+            URIUtils::AddFileToFolder(strWallpaperPath, filename, strWallpaper);
+            CPicture::ConvertFile(value, strWallpaper, 0.0f, width, height, quality, false);
+            g_settings.SetSkinString(skinString, strWallpaper);
+            CopyFile(strWallpaper.c_str(), strWallpaper_login.c_str(),FALSE);
+
+            // Debug info
+            CLog::Log(LOGDEBUG, "params size: %d", params.size());
+            CLog::Log(LOGDEBUG, "params 0: %s", params[0].c_str());
+            CLog::Log(LOGDEBUG, "params 1: %d", width);
+            CLog::Log(LOGDEBUG, "params 2: %d", height);
+            CLog::Log(LOGDEBUG, "params 3: %d", quality);
+            if (params.size() >= 5 && !params[4].empty())
+              CLog::Log(LOGDEBUG, "params 4: %s", params[4].c_str());
+            else
+              CLog::Log(LOGDEBUG, "value: %s", value.c_str());
+
+            // Resize the smaller image to quarter the size of the large one, this is only used on the login screen for transition.
+            int checkHeight = height / 4;
+            int checkWidth = width / 4;
+            if (checkHeight < 8)
+              height = 8;
+			else
+              height = checkHeight;
+
+			if (checkWidth < 8)
+		      width  = 8;
+		    else
+		      width  = checkWidth;
+
+            CPicture::ConvertFile(value, strWallpaper_login_Small, 0.0f, width, height, quality, false);
+            Sleep(300);
+            Execute("Skin.Reset(Background_Custom_Color)");
+          }
+        }
+      }
+    }
   }
   else if (execute.Equals("EnableDebugMode"))
   {
-	g_guiSettings.SetBool("debug.showloginfo", 1);
-	g_advancedSettings.SetDebugMode(1);
+    g_guiSettings.SetBool("debug.showloginfo", 1);
+    g_advancedSettings.SetDebugMode(1);
   }
   else if (execute.Equals("DisableDebugMode"))
   {
-	g_guiSettings.SetBool("debug.showloginfo", 0);
-	g_advancedSettings.SetDebugMode(0);
+    g_guiSettings.SetBool("debug.showloginfo", 0);
+    g_advancedSettings.SetDebugMode(0);
   }
   else if (execute.Equals("ReloadAdvancedSettings"))
   {
@@ -392,7 +550,23 @@ int CBuiltins::Execute(const CStdString& execString)
   }
   else if (execute.Equals("screenshot"))
   {
-    Execute("RunScript(Special://scripts/XBMC4Gamers/Utilities/Screenshot.py)");
+    g_graphicsContext.Lock();
+    
+    CStdString width;
+    CStdString height;
+    
+    width.Format("%i", g_settings.m_ResInfo[g_graphicsContext.GetVideoResolution()].iWidth);
+    height.Format("%i", g_settings.m_ResInfo[g_graphicsContext.GetVideoResolution()].iHeight);
+    
+    CreateDirectory("Q:\\system\\screenshots", NULL);
+
+    CStdString file = CUtil::GetNextFilename("Q:\\system\\screenshots\\screenshot%03d.png", 999);
+    CStdString params[6] = {file,"true","0",width,height,"100"};
+    
+    CXbmcHttp httpApi;
+    httpApi.xbmcTakeScreenshot(6, params);
+    
+    g_graphicsContext.Unlock();
   }
   else if (execute.Equals("credits"))
   {
@@ -408,7 +582,6 @@ int CBuiltins::Execute(const CStdString& execString)
   {
     // get the parameters
     CStdString strWindow;
-    CStdString strPath;
     if (params.size())
     {
       strWindow = params[0];
@@ -429,14 +602,42 @@ int CBuiltins::Execute(const CStdString& execString)
       return false;
     }
   }
+  else if ((execute.Equals("activatewindowandfocus") || execute.Equals("replacewindowandfocus")) && params.size())
+  {
+    CStdString strWindow = params[0];
+
+    // confirm the window destination is valid prior to switching
+    int iWindow = CButtonTranslator::TranslateWindow(strWindow);
+    if (iWindow != WINDOW_INVALID)
+    {
+      // disable the screensaver
+      g_application.ResetScreenSaverWindow();
+      vector<CStdString> dummy;
+      g_windowManager.ActivateWindow(iWindow, dummy, false);
+
+      unsigned int iPtr = 1;
+      int absID = 1;
+      while (params.size() > iPtr + 1)
+      {
+        CGUIMessage msg(GUI_MSG_SETFOCUS, g_windowManager.GetFocusedWindow(), atol(params[iPtr].c_str()), (params.size() >= iPtr + 2) ? atol(params[iPtr + 1].c_str())+1 : 0, absID);
+        g_windowManager.SendMessage(msg);
+        iPtr += 2;
+      }
+    }
+    else
+    {
+      CLog::Log(LOGERROR, "Replace/ActivateWindowAndFocus called with invalid destination window: %s", strWindow.c_str());
+      return false;
+    }
+  }
   else if (execute.Equals("setfocus") || execute.Equals("control.setfocus") && params.size())
   {
-	int controlID = atol(params[0].c_str());
-	int subItem = (params.size() > 1) ? atol(params[1].c_str())+1 : 0;
-	int absID = 0;
-	absID = 1;
-	CGUIMessage msg(GUI_MSG_SETFOCUS, g_windowManager.GetFocusedWindow(), controlID, subItem, absID);
-	g_windowManager.SendMessage(msg);
+    int controlID = atol(params[0].c_str());
+    int subItem = (params.size() > 1) ? atol(params[1].c_str())+1 : 0;
+    int absID = 0;
+    absID = 1;
+    CGUIMessage msg(GUI_MSG_SETFOCUS, g_windowManager.GetFocusedWindow(), controlID, subItem, absID);
+    g_windowManager.SendMessage(msg);
   }
   else if (execute.Equals("runscript") && params.size())
   {
@@ -497,6 +698,7 @@ int CBuiltins::Execute(const CStdString& execString)
     {
       CFileItem item(params[0]);
       item.SetPath(params[0]);
+      
       if (item.IsShortCut())
         CUtil::RunShortcut(params[0]);
       else if (item.IsXBE())
@@ -504,11 +706,30 @@ int CBuiltins::Execute(const CStdString& execString)
         int iRegion;
         if (g_guiSettings.GetBool("myprograms.gameautoregion"))
         {
-          CXBE xbe;
-          iRegion = xbe.ExtractGameRegion(params[0]);
-          if (iRegion < 1 || iRegion > 7)
-          iRegion = 0;
-          iRegion = xbe.FilterRegion(iRegion);
+          // Check for second param (region value) and set it. This skips the perfected video region stuff
+          // This is so I can launch stuff via RunXBE using the DB region code, or what ever I pass to it (1 > 8) and not have the preferred region interferer on games I want forced in another
+          // NTSC       = 1
+          // NTSCJ      = 2
+          // NTSC-NTSCJ = 3
+          // PAL50      = 4
+          // NTSC-PAL50 = 5
+          // PAL60      = 8
+          if (params.size() > 1 && !params[1].empty())
+          {
+            iRegion = atoi(params[1].c_str());
+            if (iRegion < 1 || iRegion > 8)
+              iRegion = 0;
+            else if (iRegion == 3 || iRegion == 5 || iRegion == 6 || iRegion == 7)
+              iRegion = 1;
+          }
+          else
+          {
+            CXBE xbe;
+            iRegion = xbe.ExtractGameRegion(params[0]);
+            if (iRegion < 1 || iRegion > 7)
+              iRegion = 0;
+            iRegion = xbe.FilterRegion(iRegion);
+          }
         }
         else
           iRegion = 0;
@@ -520,9 +741,9 @@ int CBuiltins::Execute(const CStdString& execString)
     {
       CLog::Log(LOGERROR, "CBuiltins::Execute, runxbe called with no arguments.");
     }
-    }
-	else if (execute.Equals("xberegion"))
-	{
+  }
+  else if (execute.Equals("xberegion"))
+  {
     // only useful if there is actually an XBE to execute
     if (params.size())
     {
@@ -531,34 +752,34 @@ int CBuiltins::Execute(const CStdString& execString)
       if (item.IsXBE())
       {
         int iRegion;
-		CXBE xbe;
-		iRegion = xbe.ExtractGameRegion(params[0]);
+        CXBE xbe;
+        iRegion = xbe.ExtractGameRegion(params[0]);
 
-		if (iRegion < 1 || iRegion > 7)
-		{
-			// CLog::Log(LOGNOTICE, "0 - NTSC");
-			Execute("skin.setstring(xberegion,)");
-		}
-		else if (iRegion == 1)
-		{
-			// CLog::Log(LOGNOTICE, "1 - NTSC");
-			Execute("skin.setstring(xberegion,ntsc)");
-		}
-		else if (iRegion == 2)
-		{
-			// CLog::Log(LOGNOTICE, "2 - NTSC-J");
-			Execute("skin.setstring(xberegion,ntsc-j)");
-		}
-		else if (iRegion == 4)
-		{
-			// CLog::Log(LOGNOTICE, "4 - PAL");
-			Execute("skin.setstring(xberegion,pal)");
-		}
-		else
-		{
-			// CLog::Log(LOGNOTICE, "NTSC");
-			Execute("skin.setstring(xberegion,)");
-		}
+        if (iRegion < 1 || iRegion > 7)
+        {
+          // CLog::Log(LOGNOTICE, "0 - NTSC");
+          Execute("skin.setstring(xberegion,)");
+        }
+        else if (iRegion == 1)
+        {
+          // CLog::Log(LOGNOTICE, "1 - NTSC");
+          Execute("skin.setstring(xberegion,ntsc)");
+        }
+        else if (iRegion == 2)
+        {
+          // CLog::Log(LOGNOTICE, "2 - NTSC-J");
+          Execute("skin.setstring(xberegion,ntsc-j)");
+        }
+        else if (iRegion == 4)
+        {
+          // CLog::Log(LOGNOTICE, "4 - PAL");
+          Execute("skin.setstring(xberegion,pal)");
+        }
+        else
+        {
+          // CLog::Log(LOGNOTICE, "NTSC");
+          Execute("skin.setstring(xberegion,)");
+        }
       }
     }
   }
@@ -1044,7 +1265,7 @@ int CBuiltins::Execute(const CStdString& execString)
 
     CStdString strTmpTheme;
     // find current theme
-    if (!g_guiSettings.GetString("lookandfeel.skintheme").Equals("skindefault"))
+    if (!g_guiSettings.GetString("lookandfeel.skintheme").Equals("default"))
       for (unsigned int i=0;i<vecTheme.size();++i)
       {
         strTmpTheme = g_guiSettings.GetString("lookandfeel.skintheme");
@@ -1068,7 +1289,7 @@ int CBuiltins::Execute(const CStdString& execString)
 
     CStdString strSkinTheme;
     if (iTheme==-1)
-      g_guiSettings.SetString("lookandfeel.skintheme","SKINDEFAULT");
+      g_guiSettings.SetString("lookandfeel.skintheme","default");
     else
     {
       strSkinTheme.Format("%s.xpr",vecTheme[iTheme]);
@@ -1078,23 +1299,23 @@ int CBuiltins::Execute(const CStdString& execString)
     CStdString colorTheme(URIUtils::ReplaceExtension(strSkinTheme, ".xml"));
     g_guiSettings.SetString("lookandfeel.skincolors", colorTheme);
     CStdString soundTheme(URIUtils::ReplaceExtension(strSkinTheme, ""));
-	if (CFile::Exists("special://skin/sounds/" + soundTheme + "/sounds.xml"))
-	{
-		g_guiSettings.SetString("lookandfeel.soundskin",soundTheme);
-	}
-	else
-	{
-		g_guiSettings.SetString("lookandfeel.soundskin","SKINDEFAULT");
-	}
-	CStdString fontTheme(URIUtils::ReplaceExtension(strSkinTheme, ""));
-	if (CFile::Exists("special://skin/fonts/" + soundTheme + ".ttf"))
-	{
-		g_guiSettings.SetString("lookandfeel.font",fontTheme);
-	}
-	else
-	{
-		g_guiSettings.SetString("lookandfeel.font","default");;
-	}
+    if (CFile::Exists("special://skin/sounds/" + soundTheme + "/sounds.xml"))
+    {
+        g_guiSettings.SetString("lookandfeel.soundskin",soundTheme);
+    }
+    else
+    {
+        g_guiSettings.SetString("lookandfeel.soundskin","default");
+    }
+    CStdString fontTheme(URIUtils::ReplaceExtension(strSkinTheme, ""));
+    if (CFile::Exists("special://skin/fonts/" + soundTheme + ".ttf"))
+    {
+        g_guiSettings.SetString("lookandfeel.font",fontTheme);
+    }
+    else
+    {
+        g_guiSettings.SetString("lookandfeel.font","default");;
+    }
     g_application.DelayLoadSkin();
   }
   else if (execute.Equals("skin.setstring") || execute.Equals("skin.setimage") || execute.Equals("skin.setfile") ||
@@ -1202,7 +1423,7 @@ int CBuiltins::Execute(const CStdString& execString)
     g_settings.LoadMasterForLogin();
     g_passwordManager.bMasterUser = false;
     g_windowManager.ActivateWindow(WINDOW_LOGIN_SCREEN);
-    g_application.getNetwork().SetupNetwork();
+    // g_application.getNetwork().SetupNetwork();
   }
   else if (execute.Left(18).Equals("system.pwmcontrol"))
   {
@@ -1480,15 +1701,15 @@ int CBuiltins::Execute(const CStdString& execString)
         g_application.OnAction(CAction(actionID));
     }
   }
-  else if (execute.Equals("setproperty") && params.size() == 2)
+  else if (execute.Equals("setproperty") && params.size())
   {
-    CGUIWindow *window = g_windowManager.GetWindow(g_windowManager.GetFocusedWindow());
+    CGUIWindow *window = g_windowManager.GetWindow(params.size() > 2 ? CButtonTranslator::TranslateWindow(params[2]) : g_windowManager.GetFocusedWindow());
     if (window)
-      window->SetProperty(params[0],params[1]);
+      window->SetProperty(params[0], params[1]);
   }
-  else if (execute.Equals("clearproperty") && params.size() == 2)
+  else if (execute.Equals("clearproperty") && params.size())
   {
-    CGUIWindow *window = g_windowManager.GetWindow(g_windowManager.GetFocusedWindow());
+    CGUIWindow *window = g_windowManager.GetWindow(params.size() > 1 ? CButtonTranslator::TranslateWindow(params[1]) : g_windowManager.GetFocusedWindow());
     if (window)
       window->SetProperty(params[0],"");
   }

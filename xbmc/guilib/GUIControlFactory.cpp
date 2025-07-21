@@ -741,15 +741,10 @@ CGUIControl* CGUIControlFactory::Create(int parentID, const FRECT &rect, TiXmlEl
     XMLUtils::GetString(pControlNode, "left", perc);
     if (perc[perc.size() - 1] == '%')
     {
-    perc = perc.substr(0, perc.size() - 1);
-    float percValue = static_cast<float>(strtod(perc.c_str(), NULL));
-    posX = (percValue * screenWidth) / 100.0f;
+      perc = perc.substr(0, perc.size() - 1);
+      float percValue = static_cast<float>(strtod(perc.c_str(), NULL));
+      posX = (percValue * screenWidth) / 100.0f;
     }
-
-    // Compatibility with older method
-    XMLUtils::GetString(pControlNode, "left", pos);
-    if (pos.Right(1) == "r")
-    posX = screenWidth - posX;
   }
 
   // Calculate right position
@@ -763,9 +758,9 @@ CGUIControl* CGUIControlFactory::Create(int parentID, const FRECT &rect, TiXmlEl
     XMLUtils::GetString(pControlNode, "right", perc);
     if (perc[perc.size() - 1] == '%')
     {
-    perc = perc.substr(0, perc.size() - 1);
-    float percValue = static_cast<float>(strtod(perc.c_str(), NULL));
-    posX = screenWidth - ((percValue * screenWidth) / 100.0f) - width;
+      perc = perc.substr(0, perc.size() - 1);
+      float percValue = static_cast<float>(strtod(perc.c_str(), NULL));
+      posX = screenWidth - ((percValue * screenWidth) / 100.0f) - width;
     }
   }
 
@@ -778,15 +773,10 @@ CGUIControl* CGUIControlFactory::Create(int parentID, const FRECT &rect, TiXmlEl
     XMLUtils::GetString(pControlNode, "top", perc);
     if (perc[perc.size() - 1] == '%')
     {
-    perc = perc.substr(0, perc.size() - 1);
-    float percValue = static_cast<float>(strtod(perc.c_str(), NULL));
-    posY = ((percValue * screenHeight) / 100.0f);
+      perc = perc.substr(0, perc.size() - 1);
+      float percValue = static_cast<float>(strtod(perc.c_str(), NULL));
+      posY = ((percValue * screenHeight) / 100.0f);
     }
-
-    // Compatibility with older method
-    XMLUtils::GetString(pControlNode, "top", pos);
-    if (pos.Right(1) == "r")
-    posY = screenHeight - posY;
   }
 
   // Calculate bottom position
@@ -800,9 +790,9 @@ CGUIControl* CGUIControlFactory::Create(int parentID, const FRECT &rect, TiXmlEl
     XMLUtils::GetString(pControlNode, "bottom", perc);
     if (perc[perc.size() - 1] == '%')
     {
-    perc = perc.substr(0, perc.size() - 1);
-    float percValue = static_cast<float>(strtod(perc.c_str(), NULL));
-    posY = screenHeight - ((percValue * screenHeight) / 100.0f) - height;
+      perc = perc.substr(0, perc.size() - 1);
+      float percValue = static_cast<float>(strtod(perc.c_str(), NULL));
+      posY = screenHeight - ((percValue * screenHeight) / 100.0f) - height;
     }
   }
 
@@ -817,9 +807,9 @@ CGUIControl* CGUIControlFactory::Create(int parentID, const FRECT &rect, TiXmlEl
     XMLUtils::GetString(pControlNode, "centerleft", perc);
     if (perc[perc.size() - 1] == '%')
     {
-    perc = perc.substr(0, perc.size() - 1);
-    float percValue = static_cast<float>(strtod(perc.c_str(), NULL));
-    posX = (percValue * screenWidth) / 100.0f - (width / 2);
+      perc = perc.substr(0, perc.size() - 1);
+      float percValue = static_cast<float>(strtod(perc.c_str(), NULL));
+      posX = (percValue * screenWidth) / 100.0f - (width / 2);
     }
   }
 
@@ -834,9 +824,9 @@ CGUIControl* CGUIControlFactory::Create(int parentID, const FRECT &rect, TiXmlEl
     XMLUtils::GetString(pControlNode, "centerright", perc);
     if (perc[perc.size() - 1] == '%')
     {
-    perc = perc.substr(0, perc.size() - 1);
-    float percValue = static_cast<float>(strtod(perc.c_str(), NULL));
-    posX = screenWidth - ((percValue * screenWidth) / 100.0f) - (width / 2);
+      perc = perc.substr(0, perc.size() - 1);
+      float percValue = static_cast<float>(strtod(perc.c_str(), NULL));
+      posX = screenWidth - ((percValue * screenWidth) / 100.0f) - (width / 2);
     }
   }
 
@@ -851,9 +841,9 @@ CGUIControl* CGUIControlFactory::Create(int parentID, const FRECT &rect, TiXmlEl
     XMLUtils::GetString(pControlNode, "centertop", perc);
     if (perc[perc.size() - 1] == '%')
     {
-    perc = perc.substr(0, perc.size() - 1);
-    float percValue = static_cast<float>(strtod(perc.c_str(), NULL));
-    posY = ((percValue * screenHeight) / 100.0f) - (height / 2);
+      perc = perc.substr(0, perc.size() - 1);
+      float percValue = static_cast<float>(strtod(perc.c_str(), NULL));
+      posY = ((percValue * screenHeight) / 100.0f) - (height / 2);
     }
   }
 
@@ -868,9 +858,9 @@ CGUIControl* CGUIControlFactory::Create(int parentID, const FRECT &rect, TiXmlEl
     XMLUtils::GetString(pControlNode, "centerbottom", perc);
     if (perc[perc.size() - 1] == '%')
     {
-    perc = perc.substr(0, perc.size() - 1);
-    float percValue = static_cast<float>(strtod(perc.c_str(), NULL));
-    posY = screenHeight - ((percValue * screenHeight) / 100.0f) - (height / 2);
+      perc = perc.substr(0, perc.size() - 1);
+      float percValue = static_cast<float>(strtod(perc.c_str(), NULL));
+      posY = screenHeight - ((percValue * screenHeight) / 100.0f) - (height / 2);
     }
   }
 
@@ -1559,8 +1549,8 @@ void CGUIControlFactory::ScaleElement(TiXmlElement *element, RESOLUTION fileRes,
       else if (name == "posy" ||
           name == "top" ||
           name == "bottom" ||
-          name == "centerleft" ||
-          name == "centerright" ||
+          name == "centertop" ||
+          name == "centerbottom" ||
           name == "height" ||
           name == "textoffsety" ||
           name == "spinheight" ||

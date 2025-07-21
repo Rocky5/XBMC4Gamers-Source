@@ -225,19 +225,21 @@ void CGUISettings::Initialize()
 	 AddInt(4, "myprograms.ntscmode", 16110, 0, 0, 1, 3, SPIN_CONTROL_TEXT);
   }
   AddSeparator(5,"myprograms.sep2");
-  AddString(6, "myprograms.trainerpath", 20003, "select folder", BUTTON_CONTROL_PATH_INPUT, false, 657);
-  AddSeparator(7,"myprograms.sep3");
-  AddBool(8, "myprograms.usedashpath", 13007, true);
-  AddString(9, "myprograms.dashboard", 13006, "C:\\xboxdash.xbe", BUTTON_CONTROL_PATH_INPUT, false, 655);
+  AddBool(6, "myprograms.ignorethewhensorting", 13399, true);
+  AddString(7, "myprograms.trainerpath", 20003, "select folder", BUTTON_CONTROL_PATH_INPUT, false, 657);
+  AddSeparator(8,"myprograms.sep3");
+  // AddBool(9, "myprograms.usedashpath", 13007, true);
+  // AddString(10, "myprograms.dashboard", 13006, "C:\\xboxdash.xbe", BUTTON_CONTROL_PATH_INPUT, false, 655);
   
   AddCategory(1, "mygames", 32000);
   AddBool(2, "mygames.gamesfasterparsing",32002,false);
-  AddBool(3, "mygames.gamesynopsisinfo",32003,false);
-  AddBool(4, "mygames.gamesaltsynpsisbutton",32001,false);
-  AddBool(5, "mygames.games128mbartwork",32005,false);
+  AddString(3, "mygames.gamesfasterparsingignorelistdir", 32022, "", EDIT_CONTROL_INPUT, false, 655);
+  AddString(4, "mygames.gamesfasterparsingignorelistname", 32023, "", EDIT_CONTROL_INPUT, false, 655);
+  AddBool(5, "mygames.gamesynopsisinfo",32003,false);
+  AddBool(6, "mygames.gamesaltsynpsisbutton",32001,false);
+  AddBool(7, "mygames.games128mbartwork",32005,false);
 
   // AddString(5, "mygames.deletemyprogramsdb",32005, "", BUTTON_CONTROL_STANDARD);
-
 
   // My Weather settings
   AddGroup(2, 8);
@@ -351,7 +353,7 @@ void CGUISettings::Initialize()
   AddInt(1, "videooutput.aspect", 21374, VIDEO_NORMAL, VIDEO_NORMAL, 1, VIDEO_WIDESCREEN, SPIN_CONTROL_TEXT);
   AddBool(2,  "videooutput.hd480p", 21378, true);
   AddBool(3,  "videooutput.hd720p", 21379, true);
-  AddBool(4,  "videooutput.hd1080i", 21380, true);
+  AddBool(4,  "videooutput.hd1080i", 21380, false);
 
   AddCategory(4, "audiooutput", 772);
   AddInt(3, "audiooutput.mode", 337, AUDIO_ANALOG, AUDIO_ANALOG, 1, AUDIO_DIGITAL, SPIN_CONTROL_TEXT);
@@ -442,15 +444,16 @@ void CGUISettings::Initialize()
   AddString(13, "videolibrary.import", 648, "", BUTTON_CONTROL_STANDARD);
 
   AddCategory(5, "videoplayer", 14086);
-  //AddInt(1, "videoplayer.resumeautomatically", 12017, RESUME_ASK, RESUME_NO, 1, RESUME_ASK, SPIN_CONTROL_TEXT);
-  AddString(2, "videoplayer.calibrate", 214, "", BUTTON_CONTROL_STANDARD);
-  AddSeparator(3, "videoplayer.sep1");
-  AddInt(4, "videoplayer.rendermethod", 13354, RENDER_HQ_RGB_SHADER, RENDER_LQ_RGB_SHADER, 1, RENDER_HQ_RGB_SHADERV2, SPIN_CONTROL_TEXT);
-  AddInt(5, "videoplayer.displayresolution", 169, (int)AUTORES, (int)HDTV_1080i, 1, (int)AUTORES, SPIN_CONTROL_TEXT);
-  AddInt(6, "videoplayer.framerateconversions", 336, FRAME_RATE_LEAVE_AS_IS, FRAME_RATE_LEAVE_AS_IS, 1, FRAME_RATE_USE_PAL60, SPIN_CONTROL_TEXT);
-  AddInt(7, "videoplayer.flicker", 13100, 1, 0, 1, 5, SPIN_CONTROL_INT_PLUS, -1, TEXT_OFF);
-  AddBool(8, "videoplayer.soften", 215, false);
-  AddFloat(9, "videoplayer.errorinaspect", 22021, 3.0f, 0.0f, 1.0f, 20.0f);
+  AddBool(1, "videoplayer.autoplaynextitem", 13433, false);
+  // AddInt(2, "videoplayer.resumeautomatically", 12017, RESUME_ASK, RESUME_NO, 1, RESUME_ASK, SPIN_CONTROL_TEXT);
+  AddString(3, "videoplayer.calibrate", 214, "", BUTTON_CONTROL_STANDARD);
+  AddSeparator(4, "videoplayer.sep1");
+  AddInt(5, "videoplayer.rendermethod", 13354, RENDER_HQ_RGB_SHADER, RENDER_LQ_RGB_SHADER, 1, RENDER_HQ_RGB_SHADERV2, SPIN_CONTROL_TEXT);
+  AddInt(6, "videoplayer.displayresolution", 169, (int)AUTORES, (int)HDTV_1080i, 1, (int)AUTORES, SPIN_CONTROL_TEXT);
+  AddInt(7, "videoplayer.framerateconversions", 336, FRAME_RATE_LEAVE_AS_IS, FRAME_RATE_LEAVE_AS_IS, 1, FRAME_RATE_USE_PAL60, SPIN_CONTROL_TEXT);
+  AddInt(8, "videoplayer.flicker", 13100, 1, 0, 1, 5, SPIN_CONTROL_INT_PLUS, -1, TEXT_OFF);
+  AddBool(9, "videoplayer.soften", 215, false);
+  AddFloat(10, "videoplayer.errorinaspect", 22021, 3.0f, 0.0f, 1.0f, 20.0f);
   AddSeparator(11, "videoplayer.sep2");
   AddInt(12, "videoplayer.defaultplayer", 22003, PLAYER_DVDPLAYER, PLAYER_MPLAYER, 1, PLAYER_DVDPLAYER, SPIN_CONTROL_TEXT);
   AddBool(13, "videoplayer.allcodecs", 22025, false);
@@ -507,6 +510,13 @@ void CGUISettings::Initialize()
   // network settings
   AddGroup(6, 705);
 
+  AddCategory(6, "discord", 32025);
+  AddBool(1,  "discord.xbdstats", 32026, false);
+  AddBool(2,"discord.xbdstatsclose", 32028, false);
+  AddBool(3,"discord.xbdstatsforcenames", 32027, false);
+  AddString(4,"discord.xbdstatsip", 719, "", EDIT_CONTROL_IP_INPUT);
+  AddString(5,"discord.xbdstatsport", 730, "", EDIT_CONTROL_NUMBER_INPUT, true, 792);
+  
   AddCategory(6, "services", 14036);
  
   // AddBool(1, "services.upnpserver", 21360, false);
@@ -548,14 +558,15 @@ void CGUISettings::Initialize()
   AddString(4, "smb.workgroup",   1202,   "WORKGROUP", EDIT_CONTROL_INPUT, false, 1202);
 
   AddCategory(6, "network", 705);
-  AddInt(1, "network.assignment", 715, NETWORK_DHCP, NETWORK_DASH, 1, NETWORK_STATIC, SPIN_CONTROL_TEXT);
-  AddString(2, "network.ipaddress", 719, "0.0.0.0", EDIT_CONTROL_IP_INPUT);
-  AddString(3, "network.subnet", 720, "255.255.255.0", EDIT_CONTROL_IP_INPUT);
-  AddString(4, "network.gateway", 721, "0.0.0.0", EDIT_CONTROL_IP_INPUT);
-  AddString(5, "network.dns", 34006, "0.0.0.0", EDIT_CONTROL_IP_INPUT);
-  AddString(6, "network.dns2", 34007, "0.0.0.0", EDIT_CONTROL_IP_INPUT);
-  AddString(7, "network.dnssuffix", 22002, "", EDIT_CONTROL_INPUT, true);
-  AddInt(8, "network.bandwidth", 14042, 0, 0, 512, 100*1024, SPIN_CONTROL_INT_PLUS, MASK_KBPS, TEXT_OFF);
+  AddString(1, "network.text", 32029, "", BUTTON_CONTROL_STANDARD);
+  AddInt(2, "network.assignment", 715, NETWORK_DHCP, NETWORK_DASH, 1, NETWORK_STATIC, SPIN_CONTROL_TEXT);
+  AddString(3, "network.ipaddress", 719, "0.0.0.0", EDIT_CONTROL_IP_INPUT);
+  AddString(4, "network.subnet", 720, "255.255.255.0", EDIT_CONTROL_IP_INPUT);
+  AddString(5, "network.gateway", 721, "0.0.0.0", EDIT_CONTROL_IP_INPUT);
+  AddString(6, "network.dns", 34006, "0.0.0.0", EDIT_CONTROL_IP_INPUT);
+  AddString(7, "network.dns2", 34007, "0.0.0.0", EDIT_CONTROL_IP_INPUT);
+  AddString(8, "network.dnssuffix", 22002, "", EDIT_CONTROL_INPUT, true);
+  AddInt(9, "network.bandwidth", 14042, 0, 0, 512, 100*1024, SPIN_CONTROL_INT_PLUS, MASK_KBPS, TEXT_OFF);
 
   AddSeparator(12, "network.sep1");
   AddBool(13, "network.usehttpproxy", 708, false);
@@ -568,12 +579,12 @@ void CGUISettings::Initialize()
   AddGroup(7, 480);
   // AddCategory(7,"lookandfeel", 166);
   AddString(1, "lookandfeel.skin",166,DEFAULT_SKIN, SPIN_CONTROL_TEXT);
-  AddString(2, "lookandfeel.skintheme",15111,"SKINDEFAULT", SPIN_CONTROL_TEXT);
-  AddString(3, "lookandfeel.skincolors",14078, "SKINDEFAULT", SPIN_CONTROL_TEXT);
-  AddString(4, "lookandfeel.font",13303,"Default", SPIN_CONTROL_TEXT);
+  AddString(2, "lookandfeel.skintheme",15111,"default", SPIN_CONTROL_TEXT);
+  AddString(3, "lookandfeel.skincolors",14078, "default", SPIN_CONTROL_TEXT);
+  AddString(4, "lookandfeel.font",13303,"default", SPIN_CONTROL_TEXT);
   AddInt(5, "lookandfeel.skinzoom",20109, 0, -20, 2, 20, SPIN_CONTROL_INT, MASK_PERCENT);
   AddInt(6, "lookandfeel.startupwindow",512,1, WINDOW_HOME, 1, WINDOW_PYTHON_END, SPIN_CONTROL_TEXT);
-  AddString(7, "lookandfeel.soundskin",15108,"SKINDEFAULT", SPIN_CONTROL_TEXT);
+  AddString(7, "lookandfeel.soundskin",15108,"default", SPIN_CONTROL_TEXT);
   AddBool(8,"lookandfeel.soundsduringplayback",21370, false);
   AddSeparator(9, "lookandfeel.sep2");
   AddBool(10, "lookandfeel.enablerssfeeds",13305,  true);
@@ -603,7 +614,6 @@ void CGUISettings::Initialize()
   AddCategory(7, "filelists", 14081);
   AddBool(1, "filelists.showparentdiritems", 13306, false);
   AddBool(2, "filelists.showextensions", 497, false);
-  AddBool(3, "filelists.ignorethewhensorting", 13399, true);
   AddBool(4, "filelists.allowfiledeletion", 14071, false);
   AddBool(5, "filelists.showaddsourcebuttons", 21382,  false);
   AddBool(6, "filelists.showhidden", 21330, false);

@@ -26,6 +26,7 @@
 #include "settings/AdvancedSettings.h"
 #include "utils/URIUtils.h"
 #include "utils/SingleLock.h"
+#include "Util.h"
 
 using namespace std;
 
@@ -148,9 +149,9 @@ void CGUILargeTextureManager::Process()
         width = g_advancedSettings.m_thumbSize;
         height = g_advancedSettings.m_thumbSize;
       }
-      else if (loadPath.Find("Thumbnails\\Wallpapers") != -1 && !g_advancedSettings.m_wallpaperImage.empty())
+      else if (loadPath.Find("Thumbnails\\Wallpapers") != -1)
       {
-        GetImageSize(g_advancedSettings.m_wallpaperImage, width, height);
+        GetImageSize(CUtil::GetWallpaperSettings(), width, height);
       }
       else if (URIUtils::GetFileName(loadPath).Equals("cd_small.jpg") && !g_advancedSettings.m_cdsmallImage.empty())
       {

@@ -36,6 +36,7 @@
 #include "XMLUtils.h"
 
 using namespace XFILE;
+using namespace std;
 
 int cutoffPoint = 700;
 
@@ -122,59 +123,6 @@ bool CProgramDatabase::UpdateOldVersion(int version)
 	if (NULL == m_pDB.get()) return false;
 	if (NULL == m_pDS.get()) return false;
 	if (NULL == m_pDS2.get()) return false;
-
-	// try
-	// {	
-		// if (version < 4)
-		// {
-			// m_pDS->exec("ALTER TABLE files ADD COLUMN altname text NOT NULL DEFAULT ''");
-			// m_pDS->exec("ALTER TABLE files ADD COLUMN developer text NOT NULL DEFAULT ''");
-			// m_pDS->exec("ALTER TABLE files ADD COLUMN publisher text NOT NULL DEFAULT ''");
-			// m_pDS->exec("ALTER TABLE files ADD COLUMN features_general text NOT NULL DEFAULT ''");
-			// m_pDS->exec("ALTER TABLE files ADD COLUMN features_online text NOT NULL DEFAULT ''");
-			// m_pDS->exec("ALTER TABLE files ADD COLUMN esrb text NOT NULL DEFAULT ''");
-			// m_pDS->exec("ALTER TABLE files ADD COLUMN esrb_descriptors text NOT NULL DEFAULT ''");
-			// m_pDS->exec("ALTER TABLE files ADD COLUMN genre text NOT NULL DEFAULT ''");
-			// m_pDS->exec("ALTER TABLE files ADD COLUMN release_date text NOT NULL DEFAULT ''");
-			// m_pDS->exec("ALTER TABLE files ADD COLUMN year text NOT NULL DEFAULT ''");
-			// m_pDS->exec("ALTER TABLE files ADD COLUMN rating text NOT NULL DEFAULT ''");
-			// m_pDS->exec("ALTER TABLE files ADD COLUMN platform text NOT NULL DEFAULT ''");
-			// m_pDS->exec("ALTER TABLE files ADD COLUMN exclusive text NOT NULL DEFAULT ''");
-			// m_pDS->exec("ALTER TABLE files ADD COLUMN title_id text NOT NULL DEFAULT ''");
-			// m_pDS->exec("ALTER TABLE files ADD COLUMN synopsis text NOT NULL DEFAULT ''");
-			// m_pDS->exec("ALTER TABLE files ADD COLUMN resources text NOT NULL DEFAULT ''");
-			// m_pDS->exec("ALTER TABLE files ADD COLUMN preview text NOT NULL DEFAULT ''");
-
-			// CLog::Log(LOGINFO, "Updated database to version 4");
-		// }
-	// } catch (...){}
-	
-	// try
-	// {	
-		// if (version < 5)
-		// {
-			// m_pDS->exec("ALTER TABLE files ADD COLUMN last_played text NOT NULL DEFAULT ''");
-			// CLog::Log(LOGINFO, "Updated database to version 5");
-		// }
-	// } catch (...){}
-	
-	// try
-	// {	
-		// if (version < 6)
-		// {
-			// m_pDS->exec("ALTER TABLE files ADD COLUMN fanart text NOT NULL DEFAULT ''");
-			// CLog::Log(LOGINFO, "Updated database to version 6");
-		// }
-	// } catch (...){}
-	
-	// try
-	// {	
-		// if (version < 7)
-		// {
-			// m_pDS->exec("ALTER TABLE files ADD COLUMN screenshot text NOT NULL DEFAULT ''");
-			// CLog::Log(LOGINFO, "Updated database to version 7");
-		// }
-	// } catch (...){}
 	
 	return true;
 }
@@ -363,6 +311,31 @@ CStdString CProgramDatabase::GetXBEType(const CStdString& strFilenameAndPath)
 	return "";
 }
 
+bool CProgramDatabase::GetFullOverview(CFileItem* item)
+{
+	try
+	{
+		if (NULL == m_pDB.get() || NULL == m_pDS.get()) return false;
+
+		CStdString strSQL = PrepareSQL("select * from files where files.strFileName like '%s'", item->GetPath().c_str());
+		if (!m_pDS->query(strSQL.c_str())) return false;
+		int iRowsFound = m_pDS->num_rows();
+		if (iRowsFound == 0)
+		{
+			m_pDS->close();
+			return false;
+		}
+		item->SetProperty("Synopsis_Overview_Full", m_pDS->fv("files.synopsis").get_asString());
+		m_pDS->close();
+		return true;
+	}
+	catch (...)
+	{
+		CLog::Log(LOGERROR, "CProgramDatabase:GetFullOverview(%s) failed", item->GetPath().c_str());
+	}
+
+	return false;
+}
 
 bool CProgramDatabase::SetLastPlayed(const CStdString& strFilenameAndPath)
 {
@@ -535,7 +508,7 @@ bool CProgramDatabase::RemoveTrainer(const CStdString& strTrainerPath)
 	return false;
 }
 
-bool CProgramDatabase::GetTrainers(unsigned int iTitleId, std::vector<CStdString>& vecTrainers)
+bool CProgramDatabase::GetTrainers(unsigned int iTitleId, vector<CStdString>& vecTrainers)
 {
 	vecTrainers.clear();
 	CStdString strSQL;
@@ -561,7 +534,7 @@ bool CProgramDatabase::GetTrainers(unsigned int iTitleId, std::vector<CStdString
 
 }
 
-bool CProgramDatabase::GetAllTrainers(std::vector<CStdString>& vecTrainers)
+bool CProgramDatabase::GetAllTrainers(vector<CStdString>& vecTrainers)
 {
 	vecTrainers.clear();
 	CStdString strSQL;
@@ -682,131 +655,120 @@ CStdString CProgramDatabase::ReplaceWith(const CStdString& strInput, CStdString&
 {
 	CStdString output = strInput;
 	size_t pos = 0;
-	while ((pos = output.find(strToReplace, pos)) != std::string::npos) {
+	while ((pos = output.find(strToReplace, pos)) != string::npos) {
 		output.replace(pos, strToReplace.length(), strToReplaceWith);
 		pos += strToReplaceWith.length();
 	}
 	return output;
 }
 
-int CProgramDatabase::GetProgramInfo(CFileItem* item)
+int CProgramDatabase::GetProgramInfoFull(CFileItem* item)
 {
 	int synopsisCheck = g_guiSettings.GetBool("mygames.gamesynopsisinfo");
 	int idTitle = 0;
+	
+	struct fieldMap
+	{const char* fieldName; void (CFileItem::*output)(const CStdString&);}
+	fields[] = {
+		{"files.altname", &CFileItem::SetLabelSynopsis_AltName},
+		{"files.developer", &CFileItem::SetLabelSynopsis_Developer},
+		{"files.publisher", &CFileItem::SetLabelSynopsis_Publisher},
+		{"files.features_general", &CFileItem::SetLabelSynopsis_FeaturesGeneral},
+		{"files.features_online", &CFileItem::SetLabelSynopsis_FeaturesOnline},
+		{"files.esrb", &CFileItem::SetLabelSynopsis_ESRB},
+		{"files.esrb_descriptors", &CFileItem::SetLabelSynopsis_ESRBDescriptors},
+		{"files.genre", &CFileItem::SetLabelSynopsis_Genre},
+		{"files.release_date", &CFileItem::SetLabelSynopsis_ReleaseDate},
+		{"files.year", &CFileItem::SetLabelSynopsis_Year},
+		{"files.rating", &CFileItem::SetLabelSynopsis_Rating},
+		{"files.platform", &CFileItem::SetLabelSynopsis_Platform},
+		{"files.exclusive", &CFileItem::SetLabelSynopsis_Exclusive},
+		{"files.title_id", &CFileItem::SetLabelSynopsis_TitleID},
+		{"files.resources", &CFileItem::SetLabelSynopsis_Resources},
+		{"files.last_played", &CFileItem::SetLabelLastPlayed},
+		{"files.preview", &CFileItem::SetSynopsis_Preview},
+		{"files.screenshot", &CFileItem::SetSynopsis_Screenshot},
+		{"files.fanart", &CFileItem::SetSynopsis_Fanart}
+	};
+	
 	try
 	{
 		if (!m_pDB.get() || !m_pDS.get()) return false;
 
-		CStdString strSQL = PrepareSQL("select xbedescription,iTimesPlayed,lastAccessed,titleId,iSize,altname,developer,publisher,features_general,features_online,esrb,esrb_descriptors,genre,release_date,year,rating,platform,exclusive,title_id,synopsis,resources,preview,screenshot,fanart,last_played from files where strFileName like '%s'", item->GetPath().c_str());
+		CStdString strSQL = PrepareSQL(
+			"SELECT xbedescription, iTimesPlayed, lastAccessed, titleId, iSize, altname, developer, publisher, "
+			"features_general, features_online, esrb, esrb_descriptors, genre, release_date, year, rating, "
+			"platform, exclusive, title_id, synopsis, resources, preview, screenshot, fanart, last_played "
+			"FROM files WHERE strFileName LIKE '%s'", item->GetPath().c_str());
+		
 		m_pDS->query(strSQL.c_str());
 		if (!m_pDS->eof())
 		{
 			// get info - only set the label if not pre-formatted
-			if (!item->IsLabelPreformated()) {
-				if (!synopsisCheck) {
-					item->SetLabel(m_pDS->fv("files.altname").get_asString().empty() ? m_pDS->fv("xbedescription").get_asString() : m_pDS->fv("files.altname").get_asString());
-				}
-				else {
-					item->SetLabel(m_pDS->fv("xbedescription").get_asString());
-				}
+			CStdString altName = m_pDS->fv("files.altname").get_asString();
+			CStdString xbeDescription = m_pDS->fv("xbedescription").get_asString();
+			if (!item->IsLabelPreformated())
+			{
+				if (!synopsisCheck)
+					item->SetLabel(!altName.empty() ? altName : xbeDescription);
+				else
+					item->SetLabel(xbeDescription);
 			}
 			
 			// Check if the _resources folder exists
-			CStdString resources;
-			CStdString resources_path;
-			URIUtils::GetDirectory(item->GetPath(), resources_path);
-			resources = resources_path + "_resources\\";
+			CStdString resourcesPath;
+			URIUtils::GetDirectory(item->GetPath(), resourcesPath);
+			CStdString resources = resourcesPath + "_resources\\";
+			
+			// Fanart files
+			// CStdString fanart = resourcesPath + "_resources\\artwork\\fanart.jpg";
+			// CStdString fanart_blur = resourcesPath + "_resources\\artwork\\fanart-blur.jpg";
+			// CStdString fanart_fog = resourcesPath + "_resources\\artwork\\fog.jpg";
+			// item->SetProperty("fanart_image",fanart.c_str());
+			// item->SetProperty("fanart_blur_image",fanart_blur.c_str());
+			// item->SetProperty("fanart_fog_image",fanart_fog.c_str());
 			
 			item->m_iprogramCount = m_pDS->fv("iTimesPlayed").get_asInt();
 			item->m_strTitle = item->GetLabel();  // is this needed?
 			item->m_dateTime = TimeStampToLocalTime(_atoi64(m_pDS->fv("lastAccessed").get_asString().c_str()));
 			item->m_dwSize = _atoi64(m_pDS->fv("iSize").get_asString().c_str());
 			idTitle = m_pDS->fv("titleId").get_asInt();
+			
+			// Synopsis info
+			for (int i = 0; i < sizeof(fields) / sizeof(fields[0]); ++i)
+			{
+				CStdString value = m_pDS->fv(fields[i].fieldName).get_asString();
+				(item->*(fields[i].output))(value);
+			}
+			
+			CStdString synopsis = m_pDS->fv("files.synopsis").get_asString();
+			// item->SetProperty("Synopsis_Overview_Full", synopsis);
+			if (synopsis.length() > static_cast<size_t>(cutoffPoint)) 
+			{
+				size_t cutoff = static_cast<size_t>(cutoffPoint);
+				size_t pos = synopsis.find_first_of(", ", cutoff);
+				synopsis = synopsis.substr(0, (pos != std::string::npos && pos < cutoff + 200) ? pos : cutoff) + "...";
+			}
+			item->SetLabelSynopsis_Overview(synopsis);
 
-			item->SetLabelSynopsis_AltName(m_pDS->fv("files.altname").get_asString());
-			item->SetLabelSynopsis_Developer(m_pDS->fv("files.developer").get_asString());
-			item->SetLabelSynopsis_Publisher(m_pDS->fv("files.publisher").get_asString());
-			item->SetLabelSynopsis_FeaturesGeneral(m_pDS->fv("files.features_general").get_asString());
-			item->SetLabelSynopsis_FeaturesOnline(m_pDS->fv("files.features_online").get_asString());
-			item->SetLabelSynopsis_ESRB(m_pDS->fv("files.esrb").get_asString());
-			item->SetLabelSynopsis_ESRBDescriptors(m_pDS->fv("files.esrb_descriptors").get_asString());
-			item->SetLabelSynopsis_Genre(m_pDS->fv("files.genre").get_asString());
-			item->SetLabelSynopsis_ReleaseDate(m_pDS->fv("files.release_date").get_asString());
-			item->SetLabelSynopsis_Year(m_pDS->fv("files.year").get_asString());
-			item->SetLabelSynopsis_Rating(m_pDS->fv("files.rating").get_asString());
-			item->SetLabelSynopsis_Platform(m_pDS->fv("files.platform").get_asString());
-			item->SetLabelSynopsis_Exclusive(m_pDS->fv("files.exclusive").get_asString());
-			item->SetLabelSynopsis_TitleID(m_pDS->fv("files.title_id").get_asString());
-			
-            CStdString synopsis = m_pDS->fv("files.synopsis").get_asString();
-            item->SetProperty("Synopsis_Overview_Full", synopsis);
-            size_t cutoffPointSizeT = static_cast<size_t>(cutoffPoint);
-            if (synopsis.length() > cutoffPointSizeT)
-            {
-              size_t posComma = synopsis.find_first_of(',', cutoffPointSizeT);
-              size_t posSpace = synopsis.find_first_of(' ', cutoffPointSizeT);
-              if (posComma != std::string::npos && posComma < cutoffPointSizeT + 200) {
-                  synopsis = synopsis.substr(0, posComma) + "...";
-              } else if (posSpace != std::string::npos && posSpace < cutoffPointSizeT + 200) {
-                  synopsis = synopsis.substr(0, posSpace) + "...";
-              } else {
-                  synopsis = synopsis.substr(0, cutoffPointSizeT) + "...";
-              }
-            }
-            item->SetLabelSynopsis_Overview(synopsis);
-			
-			// item->SetLabelSynopsis_Overview(m_pDS->fv("files.synopsis").get_asString());
-			item->SetLabelSynopsis_Resources(m_pDS->fv("files.resources").get_asString());
-			item->SetLabelLastPlayed(m_pDS->fv("files.last_played").get_asString());
-			item->SetSynopsis_Preview(m_pDS->fv("files.preview").get_asString());
-			item->SetSynopsis_Screenshot(m_pDS->fv("files.screenshot").get_asString());
-			item->SetSynopsis_Fanart(m_pDS->fv("files.fanart").get_asString());
-			
-			// Eats up 5MB :/ but it works fine, I just don't like seeing it goto 20/21MB of free memory with over 1000 games
-			// if (!m_pDS->fv("files.resources").get_asString().empty())
-				// item->SetProperty("alt_synopsis_image", resources_path + "_resources\\artwork\\alt_synopsis.jpg");
-				// item->SetProperty("banner_image", resources_path + "_resources\\artwork\\banner.png");
-				// item->SetProperty("cd_image", resources_path + "_resources\\artwork\\cd.png");
-				// item->SetProperty("cd_small_image", resources_path + "_resources\\artwork\\cd_small.jpg");
-				// item->SetProperty("cdposter_image", resources_path + "_resources\\artwork\\cdposter.png");
-				// item->SetProperty("dual3d_image", resources_path + "_resources\\artwork\\dual3d.png");
-				// item->SetProperty("fanart_image", resources_path + "_resources\\artwork\\fanart.jpg");
-				// item->SetProperty("fanart_thumb_image", resources_path + "_resources\\artwork\\fanart_thumb.jpg");
-				// item->SetProperty("fanart-blur_image", resources_path + "_resources\\artwork\\fanart-blur.jpg");
-				// item->SetProperty("fog_image", resources_path + "_resources\\artwork\\fog.jpg");
-				// item->SetProperty("icon_image", resources_path + "_resources\\artwork\\icon.png");
-				// item->SetProperty("opencase_image", resources_path + "_resources\\artwork\\opencase.png");
-				// item->SetProperty("poster_image", resources_path + "_resources\\artwork\\poster.jpg");
-				// item->SetProperty("poster_small_image", resources_path + "_resources\\artwork\\poster_small.jpg");
-				// item->SetProperty("poster_small_blurred_image", resources_path + "_resources\\artwork\\poster_small_blurred.jpg");
-				// item->SetProperty("synopsis_image", resources_path + "_resources\\artwork\\synopsis.jpg");
-				// item->SetProperty("thumb_image", resources_path + "_resources\\artwork\\thumb.jpg");
-				// item->SetProperty("screenshot_images", resources_path + "_resources\\screenshots");
-				// item->SetProperty("preview_video", resources_path + "_resources\\media\\preview.mp4");
-
-			// Handling player count
-			CStdString synopsisFeaturesGeneral = m_pDS->fv("files.features_general").get_asString();
-			item->SetLabelSynopsis_FeaturesGeneral(synopsisFeaturesGeneral);
-			CStdString strTest = synopsisFeaturesGeneral;
+			// Handle player count
+			CStdString strTest = m_pDS->fv("files.features_general").get_asString();
+			item->SetLabelSynopsis_FeaturesGeneral(strTest);
 			strTest.ToLower();
 
-			if (strTest.Left(8).Equals("players ")) {
+			if (strTest.Left(8).Equals("players ")) 
+			{
 				int pos = strTest.Find(" /");
-				if (pos > 0) {
-					item->SetLabelSynopsis_PlayerCount(strTest.Mid(8, pos - 8));
-				}
-				else if ((pos = strTest.Find(",")) > 0) {
-					item->SetLabelSynopsis_PlayerCount(strTest.Mid(8, pos - 8));
-				}
-				else {
-					item->SetLabelSynopsis_PlayerCount(strTest.Mid(8));
-				}
-			}
-			else {
+				if (pos <= 0) pos = strTest.Find(",");
+				item->SetLabelSynopsis_PlayerCount(pos > 0 ? strTest.Mid(8, pos - 8) : strTest.Mid(8));
+			} 
+			else 
+			{
 				item->SetLabelSynopsis_PlayerCount("1");
 			}
 
-			if (item->m_dwSize == -1) {
+			if (item->m_dwSize == -1)
+			{
 				CStdString strPath1;
 				URIUtils::GetDirectory(item->GetPath(), strPath1);
 				__int64 iSize = CGUIWindowFileManager::CalculateFolderSize(strPath1);
@@ -823,6 +785,42 @@ int CProgramDatabase::GetProgramInfo(CFileItem* item)
 	return idTitle;
 }
 
+int CProgramDatabase::GetProgramInfo(CFileItem* item)
+{
+  int idTitle = 0;
+  try
+  {
+    if (NULL == m_pDB.get()) return false;
+    if (NULL == m_pDS.get()) return false;
+
+    CStdString strSQL = PrepareSQL("select xbedescription,iTimesPlayed,lastAccessed,titleId,iSize from files where strFileName like '%s'", item->GetPath().c_str());
+    m_pDS->query(strSQL.c_str());
+    if (!m_pDS->eof())
+    { // get info - only set the label if not preformatted
+      if (!item->IsLabelPreformated())
+        item->SetLabel(m_pDS->fv("xbedescription").get_asString());
+      item->m_iprogramCount = m_pDS->fv("iTimesPlayed").get_asInt();
+      item->m_strTitle = item->GetLabel();  // is this needed?
+      item->m_dateTime = TimeStampToLocalTime(_atoi64(m_pDS->fv("lastAccessed").get_asString().c_str()));
+      item->m_dwSize = _atoi64(m_pDS->fv("iSize").get_asString().c_str());
+      idTitle = m_pDS->fv("titleId").get_asInt();
+      if (item->m_dwSize == -1)
+      {
+        CStdString strPath;
+        URIUtils::GetDirectory(item->GetPath(),strPath);
+        __int64 iSize = CGUIWindowFileManager::CalculateFolderSize(strPath);
+        CStdString strSQL=PrepareSQL("update files set iSize=%I64u where strFileName like '%s'",iSize,item->GetPath().c_str());
+        m_pDS->exec(strSQL.c_str());
+      }
+    }
+    m_pDS->close();
+  }
+  catch (...)
+  {
+    CLog::Log(LOGERROR, "CProgramDatabase::GetProgramInfo(%s) failed", item->GetPath().c_str());
+  }
+  return idTitle;
+}
 
 bool CProgramDatabase::UpdateProgramInfo(CFileItem* item, unsigned int titleID)
 {
@@ -849,10 +847,8 @@ bool CProgramDatabase::UpdateProgramInfo(CFileItem* item, unsigned int titleID)
 
 		// Get system language and check for the default.xml and translated section
 		CStdString strLanguage = g_guiSettings.GetString("locale.language");
-		if (strLanguage.Find('(') != -1) {
-			strLanguage.Replace(" (", "_");
-			strLanguage.Replace(")", "");
-		}
+		strLanguage.Replace(" (", "_");
+		strLanguage.Replace(")", "");
 		strLanguage.MakeLower();
 
 		CStdString defaultxml;
@@ -924,6 +920,15 @@ bool CProgramDatabase::UpdateProgramInfo(CFileItem* item, unsigned int titleID)
 		}
 		synopsis.erase(0, start);
 		
+		// Replace &amp; with &
+		const string amp = "&amp;";
+		const string actualAnd = "&";
+		size_t pos = 0;
+		while ((pos = synopsis.find(amp, pos)) != string::npos) {
+			synopsis.replace(pos, amp.length(), actualAnd);
+			pos += actualAnd.length();
+		}
+		
 		// This is disabled here as I do it when the database is pulling info for the games
 		// Truncate the synopsis
 		// size_t cutoffPointSizeT = static_cast<size_t>(cutoffPoint);
@@ -931,9 +936,9 @@ bool CProgramDatabase::UpdateProgramInfo(CFileItem* item, unsigned int titleID)
 		// {
 		  // size_t posComma = synopsis.find_first_of(',', cutoffPointSizeT);
 		  // size_t posSpace = synopsis.find_first_of(' ', cutoffPointSizeT);
-		  // if (posComma != std::string::npos && posComma < cutoffPointSizeT + 200) {
+		  // if (posComma != string::npos && posComma < cutoffPointSizeT + 200) {
 			  // synopsis = synopsis.substr(0, posComma) + "...";
-		  // } else if (posSpace != std::string::npos && posSpace < cutoffPointSizeT + 200) {
+		  // } else if (posSpace != string::npos && posSpace < cutoffPointSizeT + 200) {
 			  // synopsis = synopsis.substr(0, posSpace) + "...";
 		  // } else {
 			  // synopsis = synopsis.substr(0, cutoffPointSizeT) + "...";
@@ -1072,11 +1077,8 @@ bool CProgramDatabase::AddProgramInfo(CFileItem* item, unsigned int titleID)
 
 		// Get system language and check for the default.xml and translated section
 		CStdString strLanguage = g_guiSettings.GetString("locale.language");
-		if (strLanguage.Find('(') != -1)
-		{
-			strLanguage.Replace(" (", "_");
-			strLanguage.Replace(")", "");
-		}
+		strLanguage.Replace(" (", "_");
+		strLanguage.Replace(")", "");
 		strLanguage.MakeLower();
 
 		CStdString defaultxml;
@@ -1148,6 +1150,15 @@ bool CProgramDatabase::AddProgramInfo(CFileItem* item, unsigned int titleID)
 		}
 		synopsis.erase(0, start);
 
+		// Replace &amp; with &
+		const string amp = "&amp;";
+		const string actualAnd = "&";
+		size_t pos = 0;
+		while ((pos = synopsis.find(amp, pos)) != string::npos) {
+			synopsis.replace(pos, amp.length(), actualAnd);
+			pos += actualAnd.length();
+		}
+
 		// This is disabled here as I do it when the database is pulling info for the games
 		// Truncate the synopsis
 		// size_t cutoffPointSizeT = static_cast<size_t>(cutoffPoint);
@@ -1155,9 +1166,9 @@ bool CProgramDatabase::AddProgramInfo(CFileItem* item, unsigned int titleID)
 		// {
 		  // size_t posComma = synopsis.find_first_of(',', cutoffPointSizeT);
 		  // size_t posSpace = synopsis.find_first_of(' ', cutoffPointSizeT);
-		  // if (posComma != std::string::npos && posComma < cutoffPointSizeT + 200) {
+		  // if (posComma != string::npos && posComma < cutoffPointSizeT + 200) {
 			  // synopsis = synopsis.substr(0, posComma) + "...";
-		  // } else if (posSpace != std::string::npos && posSpace < cutoffPointSizeT + 200) {
+		  // } else if (posSpace != string::npos && posSpace < cutoffPointSizeT + 200) {
 			  // synopsis = synopsis.substr(0, posSpace) + "...";
 		  // } else {
 			  // synopsis = synopsis.substr(0, cutoffPointSizeT) + "...";
@@ -1331,8 +1342,7 @@ bool CProgramDatabase::IncTimesPlayed(const CStdString& strFileName)
 		int iTimesPlayed = m_pDS->fv("files.iTimesPlayed").get_asInt();
 		m_pDS->close();
 
-		CLog::Log(LOGDEBUG, "CProgramDatabase::IncTimesPlayed(%s), idFile=%i, iTimesPlayed=%i",
-		strFileName.c_str(), idFile, iTimesPlayed);
+		CLog::Log(LOGDEBUG, "CProgramDatabase::IncTimesPlayed(%s), idFile=%i, iTimesPlayed=%i",strFileName.c_str(), idFile, iTimesPlayed);
 
 		strSQL=PrepareSQL("update files set iTimesPlayed=%i where idFile=%i",
 		++iTimesPlayed, idFile);
@@ -1345,6 +1355,46 @@ bool CProgramDatabase::IncTimesPlayed(const CStdString& strFileName)
 	}
 
 	return false;
+}
+
+bool CProgramDatabase::getTitleName(const CStdString& strFileName, CStdString& strTitleName)
+{
+    try
+    {
+        if (NULL == m_pDB.get() || NULL == m_pDS.get()) return false;
+        CStdString strSQL = PrepareSQL("SELECT altName, xbedescription FROM files WHERE strFileName LIKE '%s'", strFileName.c_str());
+        if (!m_pDS->query(strSQL.c_str())) return false;
+        int iRowsFound = m_pDS->num_rows();
+        if (iRowsFound == 0)
+        {
+            m_pDS->close();
+            return false;
+        }
+        CStdString altName = m_pDS->fv("files.altName").get_asString();
+        CStdString xbeDescription = m_pDS->fv("files.xbedescription").get_asString();
+        m_pDS->close();
+		
+        if (!altName.IsEmpty())
+        {
+            strTitleName = altName;
+        }
+        else if (!xbeDescription.IsEmpty())
+        {
+            strTitleName = xbeDescription;
+        }
+        else 
+        {
+            return false;
+        }
+        CLog::Log(LOGDEBUG, "CProgramDatabase::getTitleName(%s) -> strTitleName=%s", strFileName.c_str(), strTitleName.c_str());
+        return true;
+    }
+    catch (...)
+    {
+        CLog::Log(LOGERROR, "CProgramDatabase::getTitleName(%s) failed", strFileName.c_str());
+    }
+
+    return false;
 }
 
 bool CProgramDatabase::SetDescription(const CStdString& strFileName, const CStdString& strDescription)

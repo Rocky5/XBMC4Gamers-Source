@@ -40,11 +40,15 @@ public:
 protected:
   virtual void OnItemLoaded(CFileItem* pItem) {};
   virtual bool Update(const CStdString& strDirectory);
+  virtual void RefreshItem(CFileItemPtr item);
   virtual bool OnPlayMedia(int iItem);
   virtual bool GetDirectory(const CStdString &strDirectory, CFileItemList &items);
   virtual void GetContextButtons(int itemNumber, CContextButtons &buttons);
   virtual bool OnContextButton(int itemNumber, CONTEXT_BUTTON button);
   virtual CStdString GetStartFolder(const CStdString &dir);
+  
+  virtual bool IgnoreFastParsingItemPath(const CStdString& item);
+  virtual CStdString IgnoreFastParsingItemName(const CStdString& item);
 
   int GetRegion(int iItem, bool bReload=false);
   bool OnChooseVideoModeAndLaunch(int iItem);

@@ -21,6 +21,7 @@
 #include "programs/GUIWindowPrograms.h"
 #include "Util.h"
 #include "Shortcut.h"
+#include "SkinInfo.h"
 #include "FileSystem/HDDirectory.h"
 #include "GUIPassword.h"
 #include "dialogs/GUIDialogTrainerSettings.h"
@@ -65,6 +66,7 @@ CStdString up_xbe_path;
 CStdString xhd_xbe_path;
 CStdString hd_480_xbe_path;
 CStdString hd_720_xbe_path;
+CStdString hd_1080_xbe_path;
 CStdString xresizer_xbe_path;
 CStdString altXBECheck;
 int foundExtraXBE = 0;
@@ -144,7 +146,8 @@ void CGUIWindowPrograms::GetContextButtons(int itemNumber, CContextButtons &butt
 		return;
 
 	CFileItemPtr item = m_vecItems->Get(itemNumber);
-	bool KioskMode = g_infoManager.GetBool(g_infoManager.TranslateString("skin.hassetting(kioskmode)")) == 1;
+	bool KioskMode = g_infoManager.GetBool(g_infoManager.TranslateString("skin.hassetting(kioskmode)")) == 0;
+	bool MediaXBE = false;
 
 	if (item)
 	{
@@ -156,112 +159,134 @@ void CGUIWindowPrograms::GetContextButtons(int itemNumber, CContextButtons &butt
 		{
 			if (item->IsXBE() || item->IsShortCut())
 			{
+				// Check for media titleid and skip these context menu entries
+				DWORD checkMediaTitleID = CUtil::GetXbeID(item->GetPath());
+				CStdString strcheckMediaTitleID;
+				strcheckMediaTitleID.Format("%08X", checkMediaTitleID);
+				if (strcheckMediaTitleID == "4C464456")
+					MediaXBE = true;
+				
 				if (!g_guiSettings.GetBool("mygames.gamesaltsynpsisbutton"))
 					buttons.Add(CONTEXT_BUTTON_SYNOPSIS, g_localizeStrings.Get(32019));
 				
-				CStdString strLaunch = g_localizeStrings.Get(518); // Launch
-				if (g_guiSettings.GetBool("myprograms.gameautoregion"))
+				if (MediaXBE)
+					buttons.Add(CONTEXT_BUTTON_LAUNCH, g_localizeStrings.Get(208)); // Play button instead of launch
+				else
 				{
-					int iRegion = GetRegion(itemNumber);
-					if (iRegion == VIDEO_NTSCM)
-						strLaunch += " (NTSC-M)";
-					else if (iRegion == VIDEO_NTSCJ)
-						strLaunch += " (NTSC-J)";
-					else if (iRegion == VIDEO_PAL50)
-						strLaunch += " (PAL)";
-					else if (iRegion == VIDEO_PAL60)
-						strLaunch += " (PAL-60)";
-				}
-				buttons.Add(CONTEXT_BUTTON_LAUNCH, strLaunch);
+					// Launch button
+					buttons.Add(CONTEXT_BUTTON_LAUNCH, g_localizeStrings.Get(518));
+					CStdString strLaunch = g_localizeStrings.Get(519); // Launch in
+					if (g_guiSettings.GetBool("myprograms.gameautoregion"))
+					{
+						int iRegion = GetRegion(itemNumber);
+						if (iRegion == VIDEO_NTSCM)
+							strLaunch += " (NTSC-M)";
+						else if (iRegion == VIDEO_NTSCJ)
+							strLaunch += " (NTSC-J)";
+						else if (iRegion == VIDEO_PAL50)
+							strLaunch += " (PAL)";
+						else if (iRegion == VIDEO_PAL60)
+							strLaunch += " (PAL-60)";
+						buttons.Add(CONTEXT_BUTTON_LAUNCH_IN, strLaunch); // launch in video mode
+					}	
 
-				if (g_guiSettings.GetBool("myprograms.gameautoregion"))
-					buttons.Add(CONTEXT_BUTTON_LAUNCH_IN, 519); // launch in video mode
-
-				// Add new menu entry for custom xbe files
-				foundExtraXBE = 0, check_xbe_path = "", hd_480_xbe_path = "", hd_720_xbe_path = "", patched_xbe_path = "", ws_xbe_path = "", up_xbe_path = "", xhd_xbe_path = "", xresizer_xbe_path = "";
-				URIUtils::GetParentPath(item->GetPath(), check_xbe_path);
-				
-				if (CFile::Exists(check_xbe_path+"default_orig.xbe")) {   
-					// Unpatched Patched XBE
-					foundExtraXBE = 1;
-					up_xbe_path = (check_xbe_path+"default_orig.xbe");
-				}
-				if (CFile::Exists(check_xbe_path+"default480p.xbe")) {
-					// 720p Patched XBE
-					foundExtraXBE = 1;
-					hd_480_xbe_path = (check_xbe_path+"default480p.xbe");
-				}
-				if (CFile::Exists(check_xbe_path+"default720p.xbe")) {
-					// 720p Patched XBE
-					foundExtraXBE = 1;
-					hd_720_xbe_path = (check_xbe_path+"default720p.xbe");
-				}
-				if (CFile::Exists(check_xbe_path+"default_p.xbe")) {
-					// Any Patched XBE
-					foundExtraXBE = 1;
-					patched_xbe_path = (check_xbe_path+"default_p.xbe");
-				}
-				if (CFile::Exists(check_xbe_path+"defaultws.xbe")) {
-					// Widescreen Patched XBE
-					foundExtraXBE = 1;
-					ws_xbe_path = (check_xbe_path+"defaultws.xbe");
-				}
-				if (CFile::Exists(check_xbe_path+"defaultxhd.xbe")) {
-					// XHD Patched XBE
-					foundExtraXBE = 1;
-					xhd_xbe_path = (check_xbe_path+"defaultxhd.xbe");         
-				}
-				if (CFile::Exists(check_xbe_path+"xresizer.xbe")) {
-					// Resize window XBE used by homebrew
-					foundExtraXBE = 1;
-					xresizer_xbe_path = (check_xbe_path+"xresizer.xbe");
-				}
-				// Add new list if alternative xbes are found
-				if (foundExtraXBE) {
-					CStdString strLaunchExtraXBEs = g_localizeStrings.Get(32009);
-					altXBECheck = m_database.GetXBEType(item->GetPath());
-					if (altXBECheck == "default_orig.xbe")
-						strLaunchExtraXBEs = g_localizeStrings.Get(32010) + " " + g_localizeStrings.Get(305);
-					if (altXBECheck == "default480p.xbe")
-						strLaunchExtraXBEs = g_localizeStrings.Get(32011) + " " + g_localizeStrings.Get(305);
-					if (altXBECheck == "default720p.xbe")
-						strLaunchExtraXBEs = g_localizeStrings.Get(32012) + " " + g_localizeStrings.Get(305);
-					if (altXBECheck == "default_p.xbe")
-						strLaunchExtraXBEs = g_localizeStrings.Get(32013) + " " + g_localizeStrings.Get(305);
-					if (altXBECheck == "defaultws.xbe")
-						strLaunchExtraXBEs = g_localizeStrings.Get(32014) + " " + g_localizeStrings.Get(305);
-					if (altXBECheck == "defaultxhd.xbe")
-						strLaunchExtraXBEs = g_localizeStrings.Get(32015) + " " + g_localizeStrings.Get(305);
-					if (altXBECheck == "xresizer.xbe")
-						strLaunchExtraXBEs = g_localizeStrings.Get(32016) + " " + g_localizeStrings.Get(305);
+					// Add new menu entry for custom xbe files
+					foundExtraXBE = 0;
+					check_xbe_path = "", hd_480_xbe_path = "", hd_720_xbe_path = "", hd_1080_xbe_path = "", patched_xbe_path = "", ws_xbe_path = "", up_xbe_path = "", xhd_xbe_path = "", xresizer_xbe_path = "";
+					URIUtils::GetParentPath(item->GetPath(), check_xbe_path);
 					
-					buttons.Add(CONTEXT_BUTTON_LAUNCH_ALTXBE, strLaunchExtraXBEs);
+					if (CFile::Exists(check_xbe_path+"default_orig.xbe")) {   
+						// Unpatched Patched XBE
+						foundExtraXBE = 1;
+						up_xbe_path = (check_xbe_path+"default_orig.xbe");
+					}
+					if (CFile::Exists(check_xbe_path+"default480p.xbe")) {
+						// 720p Patched XBE
+						foundExtraXBE = 1;
+						hd_480_xbe_path = (check_xbe_path+"default480p.xbe");
+					}
+					if (CFile::Exists(check_xbe_path+"default720p.xbe")) {
+						// 720p Patched XBE
+						foundExtraXBE = 1;
+						hd_720_xbe_path = (check_xbe_path+"default720p.xbe");
+					}
+					if (CFile::Exists(check_xbe_path+"default1080i.xbe")) {
+						// 1080i Patched XBE
+						foundExtraXBE = 1;
+						hd_1080_xbe_path = (check_xbe_path+"default1080i.xbe");
+					}
+					if (CFile::Exists(check_xbe_path+"default_p.xbe")) {
+						// Any Patched XBE
+						foundExtraXBE = 1;
+						patched_xbe_path = (check_xbe_path+"default_p.xbe");
+					}
+					if (CFile::Exists(check_xbe_path+"defaultws.xbe")) {
+						// Widescreen Patched XBE
+						foundExtraXBE = 1;
+						ws_xbe_path = (check_xbe_path+"defaultws.xbe");
+					}
+					if (CFile::Exists(check_xbe_path+"defaultxhd.xbe")) {
+						// XHD Patched XBE
+						foundExtraXBE = 1;
+						xhd_xbe_path = (check_xbe_path+"defaultxhd.xbe");         
+					}
+					if (CFile::Exists(check_xbe_path+"xresizer.xbe")) {
+						// Resize window XBE used by homebrew
+						foundExtraXBE = 1;
+						xresizer_xbe_path = (check_xbe_path+"xresizer.xbe");
+					}
+					// Add new list if alternative xbes are found
+					if (foundExtraXBE) {
+						CStdString strLaunchExtraXBEs = g_localizeStrings.Get(32009);
+						altXBECheck = m_database.GetXBEType(item->GetPath());
+						if (altXBECheck == "default_orig.xbe")
+							strLaunchExtraXBEs = g_localizeStrings.Get(32010) + " " + g_localizeStrings.Get(305);
+						if (altXBECheck == "default480p.xbe")
+							strLaunchExtraXBEs = g_localizeStrings.Get(32011) + " " + g_localizeStrings.Get(305);
+						if (altXBECheck == "default720p.xbe")
+							strLaunchExtraXBEs = g_localizeStrings.Get(32012) + " " + g_localizeStrings.Get(305);
+						if (altXBECheck == "default_p.xbe")
+							strLaunchExtraXBEs = g_localizeStrings.Get(32013) + " " + g_localizeStrings.Get(305);
+						if (altXBECheck == "defaultws.xbe")
+							strLaunchExtraXBEs = g_localizeStrings.Get(32014) + " " + g_localizeStrings.Get(305);
+						if (altXBECheck == "defaultxhd.xbe")
+							strLaunchExtraXBEs = g_localizeStrings.Get(32015) + " " + g_localizeStrings.Get(305);
+						if (altXBECheck == "xresizer.xbe")
+							strLaunchExtraXBEs = g_localizeStrings.Get(32016) + " " + g_localizeStrings.Get(305);
+						
+						buttons.Add(CONTEXT_BUTTON_LAUNCH_ALTXBE, strLaunchExtraXBEs);
+					}
 				}
-				
-				if (KioskMode && (item->IsXBE() || item->IsShortCut()))
+
+				if (!MediaXBE)
 				{
-					buttons.Add(CONTEXT_BUTTON_EDIT_REFRESH, g_localizeStrings.Get(32017)); // Refresh synopsis or edit names
-				}
-				buttons.Add(CONTEXT_BUTTON_TRAINERS, g_localizeStrings.Get(32018)); // Refresh All Synopsis Info
-				
-				DWORD dwTitleId = CUtil::GetXbeID(item->GetPath());
-				CStdString strTitleID, strGameSavepath;
-				strTitleID.Format("%08X", dwTitleId);
-				URIUtils::AddFileToFolder("E:\\udata\\", strTitleID, strGameSavepath);
-				if (CDirectory::Exists(strGameSavepath) && KioskMode)
+					if (!KioskMode && (item->IsXBE() || item->IsShortCut()))
+						buttons.Add(CONTEXT_BUTTON_EDIT_REFRESH, g_localizeStrings.Get(32017)); // Refresh synopsis or edit names
+					
+					buttons.Add(CONTEXT_BUTTON_TRAINERS, g_localizeStrings.Get(32018)); // Refresh All Synopsis Info
+
+				CStdString strGameSavepath;
+				URIUtils::AddFileToFolder("E:\\udata\\", strcheckMediaTitleID, strGameSavepath);
+				if (CDirectory::Exists(strGameSavepath) && !KioskMode)
 					buttons.Add(CONTEXT_BUTTON_GAMESAVES, 20322); // Goto GameSaves
+				}
+
+				// Fave button
+				CGUIMediaWindow::GetContextButtons(itemNumber, buttons);
+				
+				if (!KioskMode) {
+					if (!MediaXBE) {
+						buttons.Add(CONTEXT_BUTTON_SETTINGS, 5); // Show Settings
+					}
+					else
+					{
+						buttons.Add(CONTEXT_BUTTON_GOTO_ROOT, 20128); // Go to Root
+					}
+				}
 				
 			}
-
-			// if (KioskMode)
-				// buttons.Add(CONTEXT_BUTTON_GOTO_ROOT, 20128); // Go to Root
 		}
 	}
-
-	CGUIMediaWindow::GetContextButtons(itemNumber, buttons);
-
-	if (item && KioskMode)
-		buttons.Add(CONTEXT_BUTTON_SETTINGS, 5); // Settings
 }
 
 bool CGUIWindowPrograms::OnContextButton(int itemNumber, CONTEXT_BUTTON button)
@@ -302,15 +327,88 @@ bool CGUIWindowPrograms::OnContextButton(int itemNumber, CONTEXT_BUTTON button)
 				}
 				else
 				{
-					if (g_guiSettings.GetBool("mygames.gamesynopsisinfo"))
-					{
+					if (g_guiSettings.GetBool("mygames.gamesynopsisinfo")) {
 						CUtil::SetXBEDescription(item->GetPath(), strDescription);
+						m_database.SetDescription(item->GetPath(),strDescription);
+						RefreshItem(item);
+						return true;
 					}
+
+					// Update default.xml title
+					// Get system language and check for the default.xml and translated section
+					CStdString strLanguage = g_guiSettings.GetString("locale.language");
+					strLanguage.Replace(" (", "_");
+					strLanguage.Replace(")", "");
+					strLanguage.MakeLower();
+
+					CStdString defaultXML;
+					URIUtils::GetDirectory(item->GetPath(), defaultXML);
+					defaultXML.Format("%s_resources\\default.xml", defaultXML.c_str());
+
+					TiXmlDocument xmlDoc(defaultXML);
+					if (!xmlDoc.LoadFile()) {
+						CLog::Log(LOGDEBUG, "Failed to load XML file: %s", defaultXML.c_str());
+						CLog::Log(LOGDEBUG, "Updating XBE Title");
+						CUtil::SetXBEDescription(item->GetPath(), strDescription);
+						m_database.SetDescription(item->GetPath(),strDescription);
+						RefreshItem(item);
+						return false;
+					}
+					
+					CLog::Log(LOGDEBUG, "Default XML Path: %s", defaultXML.c_str());
+
+					TiXmlNode* pRootNode = xmlDoc.RootElement();
+					if (!pRootNode) {
+						CLog::Log(LOGDEBUG, "Root element not found in %s", defaultXML.c_str());
+						return false;
+					}
+
+					// Check for current language nodes and if found update the <title>
+					TiXmlElement* pLanguageElement = pRootNode->FirstChildElement(strLanguage);
+					if (pLanguageElement)
+					{
+						TiXmlElement* pLangTitleElement = pLanguageElement->FirstChildElement("title");
+						if (pLangTitleElement)
+						{
+							TiXmlNode* pLangTextNode = pLangTitleElement->FirstChild();
+							if (pLangTextNode)
+							{
+								pLangTextNode->SetValue(strDescription.c_str());
+							}
+							CLog::Log(LOGDEBUG, "Replaced <title> content in language node (%s) for %s", strLanguage.c_str(), defaultXML.c_str());
+						}
+					}
+					else // Update main <title> current language version wasn't found
+					{
+						TiXmlElement* pTitleElement = pRootNode->FirstChildElement("title");
+						if (pTitleElement)
+						{
+							TiXmlNode* pRootTextNode = pTitleElement->FirstChild();
+							if (pRootTextNode)
+							{
+								pRootTextNode->SetValue(strDescription.c_str());
+							}
+							CLog::Log(LOGDEBUG, "Replaced <title> content in root for %s", defaultXML.c_str());
+						}
+						else
+						{
+							CLog::Log(LOGDEBUG, "No matching <title> found in root or language nodes in %s", defaultXML.c_str());
+						}
+					}
+
+					if (!xmlDoc.SaveFile(defaultXML))
+					{
+						CLog::Log(LOGDEBUG, "Failed to save updated XML file: %s", defaultXML.c_str());
+						return false;
+					}
+
+					// Update the database entry
 					m_database.SetDescription(item->GetPath(), strDescription);
+					RefreshItem(item);
+					return true;
 				}
-				Update(m_vecItems->GetPath());
 			}
-			return true;
+			return false;
 		}
 
 		case CONTEXT_BUTTON_TRAINER_OPTIONS:
@@ -326,7 +424,6 @@ bool CGUIWindowPrograms::OnContextButton(int itemNumber, CONTEXT_BUTTON button)
 		case CONTEXT_BUTTON_SCAN_TRAINERS:
 		{
 			PopulateTrainersList();
-			Update(m_vecItems->GetPath());
 			return true;
 		}
 
@@ -344,6 +441,7 @@ bool CGUIWindowPrograms::OnContextButton(int itemNumber, CONTEXT_BUTTON button)
 		
 		case CONTEXT_BUTTON_SYNOPSIS:
 		{
+			m_database.GetFullOverview(item.get());
 			CBuiltins::Execute("ActivateWindow(1101)");
 			return true;
 		}
@@ -352,7 +450,7 @@ bool CGUIWindowPrograms::OnContextButton(int itemNumber, CONTEXT_BUTTON button)
 		{
 			DWORD dwTitleId = CUtil::GetXbeID(item->GetPath());
 			m_database.UpdateProgramInfo(item.get(), dwTitleId);
-			Update(m_vecItems->GetPath());
+			RefreshItem(item);
 			return true;
 		}
 
@@ -487,6 +585,7 @@ bool CGUIWindowPrograms::OnChooseAltXBEAndLaunch(int item)
 		{&up_xbe_path, 32010, -1},
 		{&hd_480_xbe_path, 32011, -1},
 		{&hd_720_xbe_path, 32012, -1},
+		{&hd_1080_xbe_path, 32024, -1},
 		{&patched_xbe_path, 32013, -1},
 		{&ws_xbe_path, 32014, -1},
 		{&xhd_xbe_path, 32015, -1},
@@ -577,7 +676,8 @@ bool CGUIWindowPrograms::OnChooseVideoModeAndLaunch(int item)
 		}
 	}
 
-	return btnid > -1 ? OnClick(item) : true;
+	// return btnid > -1 ? OnClick(item) : true;
+	return btnid > -1 ? false : true;
 }
 
 bool CGUIWindowPrograms::Update(const CStdString &strDirectory)
@@ -592,6 +692,24 @@ bool CGUIWindowPrograms::Update(const CStdString &strDirectory)
 	return true;
 }
 
+void CGUIWindowPrograms::RefreshItem(CFileItemPtr item)
+{
+    if (!item) return; // Ensure item is valid
+
+    m_database.GetProgramInfoFull(item.get());
+
+	// used to fix sorting if label uses title name
+	// Yeah its some hacky way lol but I tried the proper way and it was to much of headache
+	CBuiltins::Execute("Container.SortDirection");
+	CBuiltins::Execute("Container.SortDirection");
+
+    if (m_thumbLoader.IsLoading())
+        m_thumbLoader.StopThread();
+
+    m_thumbLoader.Load(*m_vecItems);
+
+    SendMessage(GUI_MSG_REFRESH_LIST, GetID(), 0);
+}
 
 bool CGUIWindowPrograms::OnPlayMedia(int iItem)
 {
@@ -613,8 +731,8 @@ bool CGUIWindowPrograms::OnPlayMedia(int iItem)
 		{
 			dialog->SetHeading(g_localizeStrings.Get(33049));
 			dialog->SetLine(0, "");
-			dialog->SetLine(1, "No default.xbe found for this item.");
-			dialog->SetLine(2, "Disable fast game parsing if this is a folder or you will have to fix this game.");
+			dialog->SetLine(1, "No default.xbe found for this item.[CR]Disable fast game parsing or add this item to the ignore list.");
+			dialog->SetLine(2, "");
 			dialog->DoModal();
 		}
 		return false;
@@ -722,17 +840,26 @@ void CGUIWindowPrograms::PopulateTrainersList()
 		m_database.Open();
 	m_database.BeginTransaction();
 
-	// Remove dead items
-	for (unsigned int i = 0; i < vecTrainerPath.size(); ++i)
+	// Remove dead items from the database.
+	unsigned int totalTrainerPaths = vecTrainerPath.size();
+	for (unsigned int i = 0; i < totalTrainerPaths; ++i)
 	{
-		m_dlgProgress->SetPercentage((int)((float)i / vecTrainerPath.size() * 100.f));
-		CStdString strLine;
-		strLine.Format("%s %i / %i", g_localizeStrings.Get(12013).c_str(), i + 1, vecTrainerPath.size());
-		m_dlgProgress->SetLine(2, strLine);
-		m_dlgProgress->Progress();
+		if ((i % 25 == 0) || (i == totalTrainerPaths - 1))
+		{
+			int progress = (int)((float)i / totalTrainerPaths * 100.f);
+			m_dlgProgress->SetPercentage(progress);
+			CStdString strLine;
+			strLine.Format("%s %i / %i", g_localizeStrings.Get(12013).c_str(), i + 1, totalTrainerPaths);
+			m_dlgProgress->SetLine(2, strLine);
+			m_dlgProgress->Progress();
+		}
 
-		if (!CFile::Exists(vecTrainerPath[i]) || vecTrainerPath[i].find(g_guiSettings.GetString("myprograms.trainerpath", false)) == -1)
+		// Remove trainer entry if the file doesn't exist.
+		if (!CFile::Exists(vecTrainerPath[i]) ||
+		    vecTrainerPath[i].find(g_guiSettings.GetString("myprograms.trainerpath", false)) == -1)
+		{
 			m_database.RemoveTrainer(vecTrainerPath[i]);
+		}
 
 		if (m_dlgProgress->IsCanceled())
 		{
@@ -745,6 +872,8 @@ void CGUIWindowPrograms::PopulateTrainersList()
 	if (!bBreak)
 	{
 		CLog::Log(LOGDEBUG, "trainerpath %s", g_guiSettings.GetString("myprograms.trainerpath", false).c_str());
+
+		// Get trainers from the trainer directory.
 		directory.GetDirectory(g_guiSettings.GetString("myprograms.trainerpath").c_str(), trainers, ".xbtf|.etm");
 		if (g_guiSettings.GetString("myprograms.trainerpath", false).IsEmpty())
 		{
@@ -753,9 +882,10 @@ void CGUIWindowPrograms::PopulateTrainersList()
 			return;
 		}
 
+		// Get archives from the trainer directory.
 		directory.GetDirectory(g_guiSettings.GetString("myprograms.trainerpath").c_str(), archives, ".rar|.zip", false);
 
-		// Process archives
+		// Process archive files.
 		for (int i = 0; i < archives.Size(); ++i)
 		{
 			if (stricmp(URIUtils::GetExtension(archives[i]->GetPath()), ".rar") == 0)
@@ -798,8 +928,8 @@ void CGUIWindowPrograms::PopulateTrainersList()
 		CLog::Log(LOGDEBUG, "# trainers %i", trainers.Size());
 		m_dlgProgress->SetLine(0, "");
 
-		// Remove folders from list
-		for (int j = 0; j < trainers.Size();)
+		// Remove folders from the trainers list.
+		for (int j = 0; j < trainers.Size(); )
 		{
 			if (trainers[j]->m_bIsFolder)
 				trainers.Remove(j);
@@ -807,15 +937,21 @@ void CGUIWindowPrograms::PopulateTrainersList()
 				j++;
 		}
 
-		for (int i = 0; i < trainers.Size(); ++i)
+		// Process each trainer file.
+		int totalTrainers = trainers.Size();
+		for (int i = 0; i < totalTrainers; ++i)
 		{
 			CLog::Log(LOGDEBUG, "found trainer %s", trainers[i]->GetPath().c_str());
-			m_dlgProgress->SetPercentage((int)((float)(i) / trainers.Size() * 100.f));
-			CStdString strLine;
-			strLine.Format("%s %i / %i", g_localizeStrings.Get(12013).c_str(), i + 1, trainers.Size());
-			m_dlgProgress->SetLine(1, strLine);
-			m_dlgProgress->SetLine(2, "");
-			m_dlgProgress->Progress();
+			if ((i % 25 == 0) || (i == totalTrainers - 1))
+			{
+				int progress = (int)((float)i / totalTrainers * 100.f);
+				m_dlgProgress->SetPercentage(progress);
+				CStdString strLine;
+				strLine.Format("%s %i / %i", g_localizeStrings.Get(12013).c_str(), i + 1, totalTrainers);
+				m_dlgProgress->SetLine(1, strLine);
+				m_dlgProgress->SetLine(2, "");
+				m_dlgProgress->Progress();
+			}
 
 			if (m_database.HasTrainer(trainers[i]->GetPath()))
 				continue;
@@ -823,12 +959,14 @@ void CGUIWindowPrograms::PopulateTrainersList()
 			CTrainer trainer;
 			if (trainer.Load(trainers[i]->GetPath()))
 			{
-				m_dlgProgress->SetLine(2, trainer.GetName());
-				m_dlgProgress->Progress();
+				if ((i % 25 == 0) || (i == totalTrainers - 1))
+				{
+					m_dlgProgress->SetLine(2, trainer.GetName());
+					m_dlgProgress->Progress();
+				}
 
 				unsigned int iTitle1, iTitle2, iTitle3;
 				trainer.GetTitleIds(iTitle1, iTitle2, iTitle3);
-
 				if (iTitle1)
 					m_database.AddTrainer(iTitle1, trainers[i]->GetPath());
 				if (iTitle2)
@@ -856,9 +994,7 @@ void CGUIWindowPrograms::PopulateTrainersList()
 
 bool CGUIWindowPrograms::GetDirectory(const CStdString &strDirectory, CFileItemList &items)
 {
-	bool bFlattened = false;
-
-	if (!bFlattened && !CGUIMediaWindow::GetDirectory(strDirectory, items))
+	if (!CGUIMediaWindow::GetDirectory(strDirectory, items))
 		return false;
 
 	if (items.IsVirtualDirectoryRoot())
@@ -867,23 +1003,39 @@ bool CGUIWindowPrograms::GetDirectory(const CStdString &strDirectory, CFileItemL
 		return true;
 	}
 
+	DWORD startTime = GetTickCount();
+	bool showTime = g_SkinInfo.showScanTimes();
+
 	m_database.BeginTransaction();
 	bool bProgressVisible = false;
-	CStdString description, defaultXBE;
+	CStdString description;
+	CStdString defaultXBE;
+
 	m_dlgProgress->SetPercentage(0);
 	m_dlgProgress->ShowProgressBar(true);
 	CBuiltins::Execute("Skin.SetString(disablecancel,true)");
 
-	for (int i = 0; i < items.Size(); i++)
+	CStdString strIgnoreDir = g_guiSettings.GetString("mygames.gamesfasterparsingignorelistdir");
+	CStdString strIgnoreName = g_guiSettings.GetString("mygames.gamesfasterparsingignorelistname");
+	bool bFastParsingEnabled = g_guiSettings.GetBool("mygames.gamesfasterparsing");
+
+	int totalItems = items.Size();
+	for (int i = 0; i < totalItems; i++)
 	{
-		m_dlgProgress->SetPercentage((int)((float)(i) / items.Size() * 100.f));
+		if ((i % 25 == 0) || (i == totalItems - 1))
+		{
+			int progress = (i * 100) / totalItems;
+			m_dlgProgress->SetPercentage(progress);
+		}
+
 		CFileItemPtr item = items[i];
+
 		URIUtils::AddFileToFolder(item->GetPath(), "default.xbe", defaultXBE);
 
-		if (!g_guiSettings.GetBool("mygames.gamesfasterparsing") || 
-			defaultXBE.find("\\Media\\") != CStdString::npos || 
-			defaultXBE.find("\\Movies\\") != CStdString::npos || 
-			defaultXBE.find("\\TV Shows\\") != CStdString::npos)
+		bool bypassFastParse = (!bFastParsingEnabled ||
+			(IgnoreFastParsingItemPath(defaultXBE) && !strIgnoreDir.IsEmpty()));
+
+		if (bypassFastParse)
 		{
 			if (item->m_bIsFolder && !item->IsParentFolder())
 			{
@@ -898,7 +1050,6 @@ bool CGUIWindowPrograms::GetDirectory(const CStdString &strDirectory, CFileItemL
 				CShortcut cut;
 				if (cut.Create(item->GetPath()))
 				{
-					CStdString shortcutPath = item->GetPath();
 					item->SetPath(cut.m_strPath);
 					item->SetThumbnailImage(cut.m_strThumb);
 
@@ -911,7 +1062,6 @@ bool CGUIWindowPrograms::GetDirectory(const CStdString &strDirectory, CFileItemL
 						__stat64 stat;
 						if (CFile::Stat(item->GetPath(), &stat) == 0)
 							item->m_dwSize = stat.st_size;
-
 						formatter.FormatLabel2(item.get());
 						item->SetLabelPreformated(true);
 					}
@@ -920,14 +1070,22 @@ bool CGUIWindowPrograms::GetDirectory(const CStdString &strDirectory, CFileItemL
 		}
 		else
 		{
-			item->SetPath(defaultXBE);
-			item->m_bIsFolder = false;
+			CStdString folderLabel = IgnoreFastParsingItemName(item->GetLabel());
+			if (!strIgnoreName.IsEmpty() && !folderLabel.IsEmpty())
+			{
+				item->m_bIsFolder = true;
+				item->SetLabel(folderLabel);
+			}
+			else
+			{
+				item->SetPath(defaultXBE);
+				item->m_bIsFolder = false;
+			}
 		}
 
 		if (item->IsXBE())
 		{
-			DWORD dwTitleID = m_database.GetProgramInfo(item.get());
-
+			DWORD dwTitleID = m_database.GetProgramInfoFull(item.get());
 			if (!dwTitleID)
 			{
 				if (!bProgressVisible)
@@ -940,12 +1098,13 @@ bool CGUIWindowPrograms::GetDirectory(const CStdString &strDirectory, CFileItemL
 					bProgressVisible = true;
 				}
 
-				if (CUtil::GetXBEDescription(item->GetPath(), description) && !item->IsLabelPreformated() && !item->GetLabel().IsEmpty())
+				if (CUtil::GetXBEDescription(item->GetPath(), description) &&
+					!item->IsLabelPreformated() && !item->GetLabel().IsEmpty())
 				{
 					item->SetLabel(description);
 					if (bProgressVisible)
 					{
-						m_dlgProgress->SetLine(2, description);
+						// m_dlgProgress->SetLine(2, description);
 						m_dlgProgress->Progress();
 					}
 				}
@@ -962,7 +1121,7 @@ bool CGUIWindowPrograms::GetDirectory(const CStdString &strDirectory, CFileItemL
 				m_dlgProgress->SetLine(1, g_localizeStrings.Get(32008));
 				m_dlgProgress->SetLine(2, "");
 				m_dlgProgress->StartModal();
-				m_dlgProgress->SetLine(2, item->GetLabel());
+				// m_dlgProgress->SetLine(2, item->GetLabel());
 				m_dlgProgress->Progress();
 				bProgressVisible = true;
 				m_database.UpdateProgramInfo(item.get(), dwTitleID);
@@ -978,8 +1137,9 @@ bool CGUIWindowPrograms::GetDirectory(const CStdString &strDirectory, CFileItemL
 				}
 			}
 		}
+
 		if (bProgressVisible)
-			m_database.GetProgramInfo(item.get());
+			m_database.GetProgramInfoFull(item.get());
 	}
 
 	m_database.CommitTransaction();
@@ -997,7 +1157,92 @@ bool CGUIWindowPrograms::GetDirectory(const CStdString &strDirectory, CFileItemL
 		CBuiltins::Execute("Skin.SetString(disablecancel,)");
 	}
 
+	if (showTime)
+	{
+		DWORD endTime = GetTickCount();
+		DWORD duration = (endTime - startTime) / 1000;
+		CStdString scanDuration;
+		scanDuration.Format("Scan took[CR]%d seconds to complete", duration);
+
+		CGUIDialogOK *dialog = static_cast<CGUIDialogOK*>(g_windowManager.GetWindow(WINDOW_DIALOG_OK));
+		if (dialog)
+		{
+			dialog->SetHeading(g_localizeStrings.Get(33049));
+			dialog->SetLine(0, "");
+			dialog->SetLine(1, scanDuration);
+			dialog->SetLine(2, "");
+			dialog->DoModal();
+		}
+	}
+
 	return true;
+}
+
+bool CGUIWindowPrograms::IgnoreFastParsingItemPath(const CStdString& item)
+{
+	CStdString localIgnoreSources = g_guiSettings.GetString("mygames.gamesfasterparsingignorelistdir");
+	CStdString lowerDefaultXBE;
+	URIUtils::GetDirectory(item, lowerDefaultXBE);
+	lowerDefaultXBE.MakeLower();
+
+	TCHAR* searchToken = _tcstok(const_cast<TCHAR*>(localIgnoreSources.c_str()), _T("|"));
+	while (searchToken)
+	{
+		CStdString token = searchToken;
+		token.Trim();
+		token.MakeLower();
+
+		if (lowerDefaultXBE.Find(token) != CStdString::npos)
+		{
+			return true;
+		}
+
+		searchToken = _tcstok(NULL, _T("|"));
+	}
+
+	return false;
+}
+
+CStdString CGUIWindowPrograms::IgnoreFastParsingItemName(const CStdString& item)
+{
+	CStdString localIgnoreSources = g_guiSettings.GetString("mygames.gamesfasterparsingignorelistname");
+	CStdString itemLabel = item;
+	itemLabel.Trim();
+	itemLabel.MakeLower();
+	int labelSize = itemLabel.length();
+	bool updateLabel = false;
+
+	TCHAR* searchToken = _tcstok(const_cast<TCHAR*>(localIgnoreSources.c_str()), _T("|"));
+	while (searchToken)
+	{
+		CStdString token = searchToken;
+		token.Trim();
+		token.MakeLower();
+		int tokenSize = token.length();
+		
+        if (token.Right(3) == "[t]")
+        {
+            token = token.Left(tokenSize - 3);
+            tokenSize -= 3;
+			updateLabel = true;
+        }
+
+		if (itemLabel.Find(token) != CStdString::npos)
+		{
+			if (updateLabel)
+			{
+				return itemLabel.Left(labelSize - tokenSize);
+			}
+			else
+			{
+				return itemLabel;
+			}
+		}
+
+		searchToken = _tcstok(NULL, _T("|"));
+	}
+
+	return "";
 }
 
 CStdString CGUIWindowPrograms::GetStartFolder(const CStdString &dir)

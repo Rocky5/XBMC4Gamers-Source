@@ -33,6 +33,7 @@
 #include "../xbmc/FileSystem/Directory.h"
 #include "../xbmc/FileSystem/SpecialProtocol.h"
 #include "settings/AdvancedSettings.h"
+#include "Util.h"
 
 #ifdef HAS_XBOX_D3D
 #include <XGraphics.h>
@@ -599,9 +600,9 @@ int CGUITextureManager::Load(const CStdString& strTextureName, bool checkBundleO
       info.Width = pic.GetWidth();
       info.Height = pic.GetHeight();
     }
-    else if (strPath.Find("Thumbnails\\Wallpapers") != -1 && !g_advancedSettings.m_wallpaperImage.empty())
+    else if (strPath.Find("Thumbnails\\Wallpapers") != -1)
     {
-      GetImageSize(g_advancedSettings.m_wallpaperImage, width, height);
+      GetImageSize(CUtil::GetWallpaperSettings(), width, height);
       pTexture = pic.Load(strPath, width, height);
       info.Width = pic.GetWidth();
       info.Height = pic.GetHeight();

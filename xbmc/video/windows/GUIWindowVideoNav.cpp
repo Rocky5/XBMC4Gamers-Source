@@ -622,7 +622,7 @@ void CGUIWindowVideoNav::OnDeleteItem(CFileItemPtr pItem)
   {
     CStdString path;
     URIUtils::GetDirectory(pItem->GetPath(),path);
-    path.Replace("plugin://","special://home/system/plugins/");
+    path.Replace("plugin://","special://home/plugins/");
     CFileItem item2(path,true);
     CGUIWindowFileManager::DeleteItem(&item2);
   }
@@ -1049,7 +1049,7 @@ bool CGUIWindowVideoNav::OnContextButton(int itemNumber, CONTEXT_BUTTON button)
       if (button == CONTEXT_BUTTON_SET_PLUGIN_THUMB)
       {
         strPath = m_vecItems->Get(itemNumber)->GetPath();
-        strPath.Replace("plugin://video/","special://home/system/plugins/video/");
+        strPath.Replace("plugin://video/","special://home/plugins/video/");
         CFileItem item(strPath,true);
         cachedThumb = item.GetCachedProgramThumb();
       }

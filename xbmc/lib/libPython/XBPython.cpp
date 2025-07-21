@@ -203,8 +203,7 @@ void XBPython::Initialize()
       }
 
       // first we check if all necessary files are installed
-      if (!FileExist("Q:\\system\\python\\python27.zlib") ||
-        !FileExist("Q:\\system\\python\\DLLs\\_socket.pyd") ||
+      if (!FileExist("Q:\\system\\python\\DLLs\\_socket.pyd") ||
         !FileExist("Q:\\system\\python\\DLLs\\_sqlite3.pyd") ||
         !FileExist("Q:\\system\\python\\DLLs\\_ssl.pyd") ||
         !FileExist("Q:\\system\\python\\DLLs\\bz2.pyd") ||
@@ -337,7 +336,7 @@ void XBPython::Process()
     if (XFILE::CFile::Exists(strAutoExecPy))
     {
       // We need to make sure the network is up in case the start scripts require network
-      g_application.getNetwork().WaitForSetup(5000);
+      // g_application.getNetwork().WaitForSetup(3000);
 
       evalFile(strAutoExecPy);
     }

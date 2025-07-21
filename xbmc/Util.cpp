@@ -22,6 +22,7 @@
 #include "Application.h"
 #include "AutoPtrHandle.h"
 #include "video/windows/GUIWindowVideoBase.h"
+#include "GUIInfoManager.h"
 #include "Util.h"
 #include "ProgramDatabase.h"
 #include "xbox/IoSupport.h"
@@ -252,21 +253,21 @@ static BYTE FiveSevenOneThree_FiveEightThreeEight_searchBytes[57] = {
     0x4D, 0x0C, 0x89, 0x01, 0x8B, 0x45, 0x10, 0x8B, 0x0D,
 };
 // Cerbios pre 2.4 kernel
-static BYTE Cerbios_originalBytes[70] = {
-    0x55, 0x8B, 0xEC, 0x81, 0xEC, 0x04, 0x01, 0x00, 0x00, 0x8B, 0x45, 0x08,
-    0x3D, 0x04, 0x01, 0x00, 0x00, 0x53, 0x75, 0x32, 0x8B, 0x4D, 0x18, 0x85,
-    0xC9, 0x6A, 0x04, 0x58, 0x74, 0x02, 0x89, 0x01, 0x39, 0x45, 0x14, 0x73,
-    0x0A, 0xB8, 0x23, 0x00, 0x00, 0xC0, 0xE9, 0x59, 0x01, 0x00, 0x00, 0x8B,
-    0x4D, 0x0C, 0x89, 0x01, 0x8B, 0x45, 0x10, 0x8B, 0x0D, 0x54, 0x42, 0x04,
-    0x80, 0x89, 0x08, 0x33, 0xC0, 0xE9, 0x42, 0x01, 0x00, 0x00,
-};
-static BYTE Cerbios_searchBytes[57] = {
-    0x55, 0x8B, 0xEC, 0x81, 0xEC, 0x04, 0x01, 0x00, 0x00, 0x8B, 0x45, 0x08,
-    0x3D, 0x04, 0x01, 0x00, 0x00, 0x53, 0x75, 0x32, 0x8B, 0x4D, 0x18, 0x85,
-    0xC9, 0x6A, 0x04, 0x58, 0x74, 0x02, 0x89, 0x01, 0x39, 0x45, 0x14, 0x73,
-    0x0A, 0xB8, 0x23, 0x00, 0x00, 0xC0, 0xE9, 0x59, 0x01, 0x00, 0x00, 0x8B,
-    0x4D, 0x0C, 0x89, 0x01, 0x8B, 0x45, 0x10, 0x8B, 0x0D,
-};
+// static BYTE Cerbios_originalBytes[70] = {
+    // 0x55, 0x8B, 0xEC, 0x81, 0xEC, 0x04, 0x01, 0x00, 0x00, 0x8B, 0x45, 0x08,
+    // 0x3D, 0x04, 0x01, 0x00, 0x00, 0x53, 0x75, 0x32, 0x8B, 0x4D, 0x18, 0x85,
+    // 0xC9, 0x6A, 0x04, 0x58, 0x74, 0x02, 0x89, 0x01, 0x39, 0x45, 0x14, 0x73,
+    // 0x0A, 0xB8, 0x23, 0x00, 0x00, 0xC0, 0xE9, 0x59, 0x01, 0x00, 0x00, 0x8B,
+    // 0x4D, 0x0C, 0x89, 0x01, 0x8B, 0x45, 0x10, 0x8B, 0x0D, 0x54, 0x42, 0x04,
+    // 0x80, 0x89, 0x08, 0x33, 0xC0, 0xE9, 0x42, 0x01, 0x00, 0x00,
+// };
+// static BYTE Cerbios_searchBytes[57] = {
+    // 0x55, 0x8B, 0xEC, 0x81, 0xEC, 0x04, 0x01, 0x00, 0x00, 0x8B, 0x45, 0x08,
+    // 0x3D, 0x04, 0x01, 0x00, 0x00, 0x53, 0x75, 0x32, 0x8B, 0x4D, 0x18, 0x85,
+    // 0xC9, 0x6A, 0x04, 0x58, 0x74, 0x02, 0x89, 0x01, 0x39, 0x45, 0x14, 0x73,
+    // 0x0A, 0xB8, 0x23, 0x00, 0x00, 0xC0, 0xE9, 0x59, 0x01, 0x00, 0x00, 0x8B,
+    // 0x4D, 0x0C, 0x89, 0x01, 0x8B, 0x45, 0x10, 0x8B, 0x0D,
+// };
 // X2_5035 kernel
 static BYTE xTwoZeroThreeFive_originalBytes[70] = {
     0x55, 0x8B, 0xEC, 0x81, 0xEC, 0x04, 0x01, 0x00, 0x00, 0x8B, 0x45, 0x08,
@@ -825,198 +826,195 @@ void CUtil::GetQualifiedFilename(const CStdString &strBasePath, CStdString &strF
 bool CUtil::CheckForKernelPatchable(int strText) {
   CStdString kernel_version = g_sysinfo.GetKernelVersion();
   if (kernel_version == "1.0.3944.1" || kernel_version == "1.0.4034.1" ||
-      kernel_version == "1.0.4132.1" || kernel_version == "1.0.4627.1" ||
-      kernel_version == "1.0.4817.1" || kernel_version == "1.0.5101.1" ||
-      kernel_version == "1.0.5530.1" || kernel_version == "1.0.5713.1" ||
-      kernel_version == "1.0.5838.1" || kernel_version == "1.0.8008.135" ||
-      kernel_version == "1.0.5034.1" || kernel_version == "1.0.5035.1") {
-    return (true);
+	  kernel_version == "1.0.4132.1" || kernel_version == "1.0.4627.1" ||
+	  kernel_version == "1.0.4817.1" || kernel_version == "1.0.5101.1" ||
+	  kernel_version == "1.0.5530.1" || kernel_version == "1.0.5713.1" ||
+	  kernel_version == "1.0.5838.1" || kernel_version == "1.0.5034.1" ||
+	  kernel_version == "1.0.5035.1" /*|| kernel_version == "1.0.8008.135"*/) {
+	return (true);
   }
   return (false);
 }
 
 bool CUtil::PatchCountryVideo(F_COUNTRY Country, F_VIDEO Video) {
 #ifdef HAS_XBOX_HARDWARE
-  BYTE *Kernel = (BYTE *)0x80010000;
-  DWORD i, j = 0, k;
-  DWORD *CountryPtr;
-  BYTE CountryValues[4] = {0, 1, 2, 4};
-  BYTE VideoTyValues[5] = {0, 1, 2, 3, 3};
-  BYTE VideoFrValues[5] = {0x00, 0x40, 0x40, 0x80, 0x40};
-  CStdString kernel_version = g_sysinfo.GetKernelVersion();
+	BYTE *Kernel = (BYTE *)0x80010000;
+	DWORD i, j, k;
+	DWORD *CountryPtr;
+	BYTE CountryValues[4] = {0, 1, 2, 4};
+	BYTE VideoTyValues[5] = {0, 1, 2, 3, 3};
+	BYTE VideoFrValues[5] = {0x00, 0x40, 0x40, 0x80, 0x40};
+	CStdString kernel_version = g_sysinfo.GetKernelVersion();
 
-  // Skip if no change is necessary...
-  // That is to avoid a situation in which our Patch *and* the EvoX patch are
-  // installed Otherwise the Infinite-Reboot-Patch does not work anymore!
-  if (Video == XGetVideoStandard()) return true;
+	// Skip if no change is necessary...
+	// That is to avoid a situation in which our Patch *and* the EvoX patch are installed
+	// Otherwise the Infinite-Reboot-Patch does not work anymore!
+	if (Video == XGetVideoStandard()) return true;
 
-  switch (Country) {
-    case COUNTRY_EUR:
-      if (!Video) Video = VIDEO_PAL50;
-      break;
-    case COUNTRY_USA:
-      Country = COUNTRY_USA;
-      Video = VIDEO_NTSCM;
-      break;
-    case COUNTRY_JAP:
-      Country = COUNTRY_JAP;
-      Video = VIDEO_NTSCJ;
-      break;
-    default:
-      Country = COUNTRY_EUR;
-      Video = VIDEO_PAL50;
-  };
+	switch (Country) {
+		case COUNTRY_EUR: if (!Video) Video = VIDEO_PAL50; break;
+		case COUNTRY_USA: Country = COUNTRY_USA; Video = VIDEO_NTSCM; break;
+		case COUNTRY_JAP: Country = COUNTRY_JAP; Video = VIDEO_NTSCJ; break;
+		default: Country = COUNTRY_EUR; Video = VIDEO_PAL50;
+	}
 
-  // Search for the original code in the Kernel.
-  // Searching from 0x80011000 to 0x80024000 in order that this will work on as
-  // many Kernels as possible.
-  for (i = 0x1000; i < 0x14000; i++) {
-    if (kernel_version == "1.0.3944.1") {
-      if (Kernel[i] != ThreeNineFourFour_searchBytes[0]) continue;
+	// Lookup table for kernel versions
+	std::map<std::string, const uint8_t*> kernelSearchMap;
+	kernelSearchMap["1.0.3944.1"] = ThreeNineFourFour_searchBytes;
+	kernelSearchMap["1.0.4034.1"] = FourZeroThreeFour_FourOneThreeTwo_searchBytes;
+	kernelSearchMap["1.0.4132.1"] = FourZeroThreeFour_FourOneThreeTwo_searchBytes;
+	kernelSearchMap["1.0.4627.1"] = FourSixTwoSeven_searchBytes;
+	kernelSearchMap["1.0.4817.1"] = FourEightOneSeven_searchBytes;
+	kernelSearchMap["1.0.5101.1"] = FiveOneZeroOne_searchBytes;
+	kernelSearchMap["1.0.5530.1"] = FiveFiveThreeZero_searchBytes;
+	kernelSearchMap["1.0.5713.1"] = FiveSevenOneThree_FiveEightThreeEight_searchBytes;
+	kernelSearchMap["1.0.5838.1"] = FiveSevenOneThree_FiveEightThreeEight_searchBytes;
+	kernelSearchMap["1.0.5034.1"] = xThree_searchBytes;
+	kernelSearchMap["1.0.5035.1"] = xTwoZeroThreeFive_searchBytes;
+	// kernelSearchMap["1.0.8008.135"] = Cerbios_searchBytes;
 
-      for (j = 0; j < 57; j++) {
-        if (Kernel[i + j] != ThreeNineFourFour_searchBytes[j]) break;
-      }
-      if (j == 57) break;
-    } else if (kernel_version == "1.0.4034.1" ||
-               kernel_version == "1.0.4132.1") {
-      if (Kernel[i] != FourZeroThreeFour_FourOneThreeTwo_searchBytes[0])
-        continue;
+	const uint8_t* searchBytes = kernelSearchMap.count(kernel_version) ? kernelSearchMap[kernel_version] : Retail_searchBytes;
 
-      for (j = 0; j < 57; j++) {
-        if (Kernel[i + j] != FourZeroThreeFour_FourOneThreeTwo_searchBytes[j])
-          break;
-      }
-      if (j == 57) break;
-    } else if (kernel_version == "1.0.4627.1") {
-      if (Kernel[i] != FourSixTwoSeven_searchBytes[0]) continue;
+	// Search for the original code in the Kernel.
+	// Searching from 0x80011000 to 0x80024000 in order that this will work on as many Kernels
+	// as possible.
+	for (i = 0x1000; i < 0x14000; i++) {
+		if (Kernel[i] != searchBytes[0]) continue;
 
-      for (j = 0; j < 57; j++) {
-        if (Kernel[i + j] != FourSixTwoSeven_searchBytes[j]) break;
-      }
-      if (j == 57) break;
-    } else if (kernel_version == "1.0.4817.1") {
-      if (Kernel[i] != FourEightOneSeven_searchBytes[0]) continue;
+		for (j = 0; j < 57; j++) {
+			if (Kernel[i + j] != searchBytes[j]) break;
+		}
+		if (j == 57) break;
+	}
 
-      for (j = 0; j < 57; j++) {
-        if (Kernel[i + j] != FourEightOneSeven_searchBytes[j]) break;
-      }
-      if (j == 57) break;
-    } else if (kernel_version == "1.0.5101.1") {
-      if (Kernel[i] != FiveOneZeroOne_searchBytes[0]) continue;
+	if (j == 57) {
+		// Ok, found the code to patch. Get pointer to original Country setting.
+		// This may not be strictly neccessary, but lets do it anyway for completeness.
+		j = (Kernel[i + 57]) |
+			(Kernel[i + 58] << 8) |
+			(Kernel[i + 59] << 16) |
+			(Kernel[i + 60] << 24);
 
-      for (j = 0; j < 57; j++) {
-        if (Kernel[i + j] != FiveOneZeroOne_searchBytes[j]) break;
-      }
-      if (j == 57) break;
-    } else if (kernel_version == "1.0.5530.1") {
-      if (Kernel[i] != FiveFiveThreeZero_searchBytes[0]) continue;
+		CountryPtr = (DWORD *)j;
+	} else {
+		// Did not find code in the Kernel. Check if my patch is already there.
+		for (i = 0x1000; i < 0x14000; i++) {
+			if (Kernel[i] != PatchData[0]) continue;
 
-      for (j = 0; j < 57; j++) {
-        if (Kernel[i + j] != FiveFiveThreeZero_searchBytes[j]) break;
-      }
-      if (j == 57) break;
-    } else if (kernel_version == "1.0.5713.1" ||
-               kernel_version == "1.0.5838.1") {
-      if (Kernel[i] != FiveSevenOneThree_FiveEightThreeEight_searchBytes[0])
-        continue;
+			for (j = 0; j < 25; j++) {
+				if (Kernel[i + j] != PatchData[j]) break;
+			}
+			if (j == 25) break;
+		}
 
-      for (j = 0; j < 57; j++) {
-        if (Kernel[i + j] !=
-            FiveSevenOneThree_FiveEightThreeEight_searchBytes[j])
-          break;
-      }
-      if (j == 57) break;
-    } else if (kernel_version == "1.0.5034.1") {
-      if (Kernel[i] != xThree_searchBytes[0]) continue;
+		if (j == 25) {
+			// Ok, found my patch. Get pointer to original Country setting.
+			// This may not be strictly neccessary, but lets do it anyway for completeness.
+			j = (Kernel[i + 66]) |
+				(Kernel[i + 67] << 8) |
+				(Kernel[i + 68] << 16) |
+				(Kernel[i + 69] << 24);
 
-      for (j = 0; j < 57; j++) {
-        if (Kernel[i + j] != xThree_searchBytes[j]) break;
-      }
-      if (j == 57) break;
-    } else if (kernel_version == "1.0.5035.1") {
-      if (Kernel[i] != xTwoZeroThreeFive_searchBytes[0]) continue;
+			CountryPtr = (DWORD *)j;
+		} else {
+			// Did not find my patch - so I can't work with this BIOS. Exit.
+			return false;
+		}
+	}
 
-      for (j = 0; j < 57; j++) {
-        if (Kernel[i + j] != xTwoZeroThreeFive_searchBytes[j]) break;
-      }
-      if (j == 57) break;
-    } else if (kernel_version == "1.0.8008.135") {
-      if (Kernel[i] != Cerbios_searchBytes[0]) continue;
+	// Patch in new code.
+	// Apply patch
+	j = MmQueryAddressProtect(&Kernel[i]);
+	MmSetAddressProtect(&Kernel[i], 70, PAGE_READWRITE);
+	memcpy(&Kernel[i], &PatchData[0], 70);
 
-      for (j = 0; j < 57; j++) {
-        if (Kernel[i + j] != Cerbios_searchBytes[j]) break;
-      }
-      if (j == 57) break;
-    } else {
-      if (Kernel[i] != Retail_searchBytes[0]) continue;
+	// Patch Success. Fix up values.
+	*CountryPtr = (DWORD)CountryValues[Country];
+	Kernel[i + 0x1f] = CountryValues[Country];
+	Kernel[i + 0x19] = VideoTyValues[Video];
+	Kernel[i + 0x1a] = VideoFrValues[Video];
 
-      for (j = 0; j < 57; j++) {
-        if (Kernel[i + j] != Retail_searchBytes[j]) break;
-      }
-      if (j == 57) break;
-    }
-  }
+	k = (DWORD)CountryPtr;
+	Kernel[i + 66] = (BYTE)(k & 0xff);
+	Kernel[i + 67] = (BYTE)((k >> 8) & 0xff);
+	Kernel[i + 68] = (BYTE)((k >> 16) & 0xff);
+	Kernel[i + 69] = (BYTE)((k >> 24) & 0xff);
 
-  if (j == 57) {
-    // Ok, found the code to patch. Get pointer to original Country setting.
-    // This may not be strictly necessary, but lets do it anyway for
-    // completeness.
-
-    j = (Kernel[i + 57]) + (Kernel[i + 58] << 8) + (Kernel[i + 59] << 16) +
-        (Kernel[i + 60] << 24);
-    CountryPtr = (DWORD *)j;
-  } else {
-    // Did not find code in the Kernel. Check if my patch is already there.
-
-    for (i = 0x1000; i < 0x14000; i++) {
-      if (Kernel[i] != PatchData[0]) continue;
-
-      for (j = 0; j < 25; j++) {
-        if (Kernel[i + j] != PatchData[j]) break;
-      }
-      if (j == 25) break;
-    }
-
-    if (j == 25) {
-      // Ok, found my patch. Get pointer to original Country setting.
-      // This may not be strictly neccessary, but lets do it anyway for
-      // completeness.
-
-      j = (Kernel[i + 66]) + (Kernel[i + 67] << 8) + (Kernel[i + 68] << 16) +
-          (Kernel[i + 69] << 24);
-      CountryPtr = (DWORD *)j;
-    } else {
-      // Did not find my patch - so I can't work with this BIOS. Exit.
-      return (false);
-    }
-  }
-
-  // Patch in new code.
-
-  j = MmQueryAddressProtect(&Kernel[i]);
-  MmSetAddressProtect(&Kernel[i], 70, PAGE_READWRITE);
-
-  memcpy(&Kernel[i], &PatchData[0], 70);
-
-  // Patch Success. Fix up values.
-
-  *CountryPtr = (DWORD)CountryValues[Country];
-  Kernel[i + 0x1f] = CountryValues[Country];
-  Kernel[i + 0x19] = VideoTyValues[Video];
-  Kernel[i + 0x1a] = VideoFrValues[Video];
-
-  k = (DWORD)CountryPtr;
-  Kernel[i + 66] = (BYTE)(k & 0xff);
-  Kernel[i + 67] = (BYTE)((k >> 8) & 0xff);
-  Kernel[i + 68] = (BYTE)((k >> 16) & 0xff);
-  Kernel[i + 69] = (BYTE)((k >> 24) & 0xff);
-
-  MmSetAddressProtect(&Kernel[i], 70, j);
-
+	MmSetAddressProtect(&Kernel[i], 70, j);
 #endif
-  // All Done!
-  return (true);
+
+	return true;
+}
+
+// We check if the MediaCenter-Video-patch is already installed.
+// To do this we search for the original code in the Kernel.
+// This is done by searching from 0x80011000 to 0x80024000.
+bool CUtil::LookForKernelPatch()
+{
+#ifdef HAS_XBOX_HARDWARE
+	BYTE	*Kernel=(BYTE *)0x80010000;
+	DWORD	i, j = 0;
+
+	for(i=0x1000; i<0x14000; i++)
+	{
+		if(Kernel[i]!=PatchData[0])
+		continue;
+		for(j=0; j<25; j++)
+		{
+			if(Kernel[i+j]!=PatchData[j])
+			break;
+		}
+		if(j==25)
+		return true;
+	}
+#endif
+	return false;
+}
+
+// This routine removes our patch if it is not used.
+// This is to ensure proper testing whether we are responsible
+// for a mismatch of eeprom setting and current resolution.
+void CUtil::RemoveKernelPatch()
+{
+#ifdef HAS_XBOX_HARDWARE
+	BYTE *Kernel = (BYTE *)0x80010000;
+	DWORD i, j = 0;
+	CStdString kernel_version = g_sysinfo.GetKernelVersion();
+
+	std::map<std::string, const uint8_t*> kernelResetMap;
+	kernelResetMap["1.0.3944.1"] = ThreeNineFourFour_originalBytes;
+	kernelResetMap["1.0.4034.1"] = FourZeroThreeFour_FourOneThreeTwo_originalBytes;
+	kernelResetMap["1.0.4132.1"] = FourZeroThreeFour_FourOneThreeTwo_originalBytes;
+	kernelResetMap["1.0.4627.1"] = FourSixTwoSeven_originalBytes;
+	kernelResetMap["1.0.4817.1"] = FourEightOneSeven_originalBytes;
+	kernelResetMap["1.0.5101.1"] = FiveOneZeroOne_originalBytes;
+	kernelResetMap["1.0.5530.1"] = FiveFiveThreeZero_originalBytes;
+	kernelResetMap["1.0.5713.1"] = FiveSevenOneThree_FiveEightThreeEight_originalBytes;
+	kernelResetMap["1.0.5838.1"] = FiveSevenOneThree_FiveEightThreeEight_originalBytes;
+	kernelResetMap["1.0.5034.1"] = xThree_originalBytes;
+	kernelResetMap["1.0.5035.1"] = xTwoZeroThreeFive_originalBytes;
+	// kernelResetMap["1.0.8008.135"] = Cerbios_originalBytes;  // Uncomment if needed
+
+	const uint8_t* resetBytes = kernelResetMap.count(kernel_version) ? kernelResetMap[kernel_version] : Retail_originalBytes;
+
+	for (i = 0x1000; i < 0x14000; i++)
+	{
+		if (Kernel[i] != PatchData[0]) continue;
+
+		for (j = 0; j < 25; j++)
+		{
+			if (Kernel[i + j] != PatchData[j]) break;
+		}
+
+		if (j == 25)
+		{
+			j = MmQueryAddressProtect(&Kernel[i]);
+			MmSetAddressProtect(&Kernel[i], 70, PAGE_READWRITE);
+			memcpy(&Kernel[i], resetBytes, 70); // Reset Kernel
+			MmSetAddressProtect(&Kernel[i], 70, j);
+		}
+	}
+#endif
 }
 
 bool CUtil::InstallTrainer(CTrainer& trainer)
@@ -3915,102 +3913,79 @@ bool CUtil::PWMControl(const CStdString &strRGBa, const CStdString &strRGBb, con
 #endif
 }
 
-// We check if the MediaCenter-Video-patch is already installed.
-// To do this we search for the original code in the Kernel.
-// This is done by searching from 0x80011000 to 0x80024000.
-bool CUtil::LookForKernelPatch()
+bool CUtil::PlayIntro()
 {
-#ifdef HAS_XBOX_HARDWARE
-	BYTE	*Kernel=(BYTE *)0x80010000;
-	DWORD	i, j = 0;
-
-	for(i=0x1000; i<0x14000; i++)
+	if (g_infoManager.GetBool(g_infoManager.TranslateString("skin.hassetting(introenabled)")) == 1 && !CFile::Exists("E:/CACHE/tmp.bin"))
 	{
-		if(Kernel[i]!=PatchData[0])
-		continue;
-		for(j=0; j<25; j++)
+		bool foundVideoFile = false;
+
+		CStdString skinIntro = g_infoManager.GetLabel(g_infoManager.TranslateString("skin.string(intro_file)"));
+		if (CFile::Exists(skinIntro))
 		{
-			if(Kernel[i+j]!=PatchData[j])
-			break;
+			g_application.ExecuteXBMCAction(skinIntro);
+			foundVideoFile = true;
 		}
-		if(j==25)
-		return true;
-	}
+		else if (CFile::Exists("Special://root/intro.mp4"))
+		{
+			g_application.ExecuteXBMCAction("Special://root/intro.mp4");
+			foundVideoFile = true;
+		}
+		else
+		{
+			std::vector<CStdString> introFiles;
+			const char* videoExtensions = g_settings.m_videoExtensions;
+			CStdString resolvedPath = CSpecialProtocol::TranslatePath("Special://root/system/intros/*.*");
+			WIN32_FIND_DATA findData;
+			HANDLE hFile = FindFirstFile(resolvedPath.c_str(), &findData);
+			if (hFile != INVALID_HANDLE_VALUE)
+			{
+				do
+				{
+					if (!(findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
+					{
+						const char* fileName = findData.cFileName;
+						const char* fileExtension = strrchr(fileName, '.');
+
+						if (fileExtension && strstr(videoExtensions, fileExtension))
+						{
+							CStdString fullPath = "Special://root/system/intros/";
+							fullPath += fileName;
+							introFiles.push_back(fullPath);
+						}
+					}
+				} while (FindNextFile(hFile, &findData) != 0);
+				FindClose(hFile);
+			}
+
+			if (!introFiles.empty())
+			{
+				int randomIndex = rand() % introFiles.size();
+				g_application.ExecuteXBMCAction(introFiles[randomIndex].c_str());
+				foundVideoFile = true;
+			}
+		}
+
+		if (foundVideoFile)
+		{
+			g_windowManager.ActivateWindow(WINDOW_FULLSCREEN_VIDEO);
+#ifdef HAS_GAMEPAD
+			while (1)
+			{
+				Sleep(10);
+				g_application.ReadInput();
+				
+				if (g_application.m_DefaultGamepad.bAnalogButtons[XINPUT_GAMEPAD_B])
+				{
+					g_application.m_pPlayer->CloseFile();
+					break;
+				}
+				if (!g_application.IsPlayingVideo())
+					break;
+			}
 #endif
-	return false;
-}
-// This routine removes our patch if it is not used.
-// This is to ensure proper testing whether we are responsible
-// for a mismatch of eeprom setting and current resolution.
-void CUtil::RemoveKernelPatch()
-{
-#ifdef HAS_XBOX_HARDWARE
-	BYTE  *Kernel=(BYTE *)0x80010000;
-	DWORD i, j = 0;
-	CStdString kernel_version = g_sysinfo.GetKernelVersion();
-
-	for(i=0x1000; i<0x14000; i++)
-	{
-		if(Kernel[i]!=PatchData[0])
-		continue;
-
-		for(j=0; j<25; j++)
-		{
-			if(Kernel[i+j]!=PatchData[j])
-			break;
-		}
-		if(j==25)
-		{
-			j=MmQueryAddressProtect(&Kernel[i]);
-			MmSetAddressProtect(&Kernel[i], 70, PAGE_READWRITE);
-			if (kernel_version == "1.0.3944.1")
-			{
-				memcpy(&Kernel[i], &ThreeNineFourFour_originalBytes[0], 70); // Reset Kernel
-			}
-			else if (kernel_version == "1.0.4034.1" || kernel_version == "1.0.4132.1")
-			{
-				memcpy(&Kernel[i], &FourZeroThreeFour_FourOneThreeTwo_originalBytes[0], 70); // Reset Kernel
-			}
-			else if (kernel_version == "1.0.4627.1")
-			{
-				memcpy(&Kernel[i], &FourSixTwoSeven_originalBytes[0], 70); // Reset Kernel
-			}
-			else if (kernel_version == "1.0.4817.1")
-			{
-				memcpy(&Kernel[i], &FourEightOneSeven_originalBytes[0], 70); // Reset Kernel
-			}
-			else if (kernel_version == "1.0.5101.1")
-			{
-				memcpy(&Kernel[i], &FiveOneZeroOne_originalBytes[0], 70); // Reset Kernel
-			}
-			else if (kernel_version == "1.0.5530.1")
-			{
-				memcpy(&Kernel[i], &FiveFiveThreeZero_originalBytes[0], 70); // Reset Kernel
-			}
-			else if (kernel_version == "1.0.5713.1" || kernel_version == "1.0.5838.1")
-			{
-				memcpy(&Kernel[i], &FiveSevenOneThree_FiveEightThreeEight_originalBytes[0], 70); // Reset Kernel
-			}
-			else if (kernel_version == "1.0.5034.1")
-			{
-				memcpy(&Kernel[i], &xThree_originalBytes[0], 70); // Reset Kernel
-			}
-			else if (kernel_version == "1.0.5035.1")
-			{
-				memcpy(&Kernel[i], &xTwoZeroThreeFive_originalBytes[0], 70); // Reset Kernel
-			}
-			else if (kernel_version == "1.0.8008.135")
-			{
-				memcpy(&Kernel[i], &Cerbios_originalBytes[0], 70); // Reset Kernel
-			}
-			else
-			{
-				memcpy(&Kernel[i], &Retail_originalBytes[0], 70); // Reset Kernel  
-			}
-			MmSetAddressProtect(&Kernel[i], 70, j);
 		}
 	}
-#endif
+	return true;
 }
 
 void CUtil::BootToDash()
@@ -4196,103 +4171,189 @@ CFile	xbe;
 	return true;
 }
 
-void CUtil::UpdateXBELastPlayed(const char* szPath1)
+CStdString CUtil::UpdateLastPlayedAndXBEPath(const CStdString& xbePath, const CStdString& folderPath)
 {
 	CProgramDatabase m_database;
-    m_database.Open();
-    m_database.SetLastPlayed(szPath1);
-    m_database.IncTimesPlayed(szPath1);
-    m_database.Close();
+	bool dbOpened = m_database.Open();
+
+	if (!dbOpened)
+	{
+		CLog::Log(LOGDEBUG, "Error UpdateLastPlayedAndXBEPath: Failed to open myprograms6.db");
+		return CStdString(xbePath);
+	}
+
+	// Update/Add last played timestamp
+	if (m_database.IncTimesPlayed(xbePath))
+	{
+		m_database.SetLastPlayed(xbePath);
+
+		// Check for existence of alt xbe
+		CStdString AltXBEPath;
+		URIUtils::AddFileToFolder(folderPath, m_database.GetXBEType(xbePath), AltXBEPath);
+
+		if (CFile::Exists(AltXBEPath))
+			CStdString xbePath = AltXBEPath;
+	}
+
+	m_database.Close();
+	return CStdString(xbePath);
 }
 
-CStdString CUtil::UpdateXBEPath(const char* szPath1)
+bool CUtil::MediaPlayHack(const CStdString& xbePath, const CStdString& folderPath)
 {
-	CProgramDatabase m_database;
-    m_database.Open();
-    CStdString szPathOut = m_database.GetXBEType(szPath1);
-    m_database.Close();
-    return szPathOut;
-}
+	// Hack to play videos in gamers without using the video menus, to keep the look consistent and everything in 1 menu.
+	// Check for video files if the titleid matches what am looking for.
+	DWORD TitleId = CUtil::GetXbeID(xbePath);
+	CStdString strTitleID;
+	strTitleID.Format("%08X", TitleId);
+	if (strTitleID == "4C464456")
+	{
+		CLog::Log(LOGDEBUG, "Found video titleid: %s\n", strTitleID.c_str());
+		const char* videoExtensions = g_settings.m_videoExtensions;
+		CStdString searchPattern = folderPath + "\\*";
+		WIN32_FIND_DATA findData;
+		HANDLE hFind = FindFirstFile(searchPattern.c_str(), &findData);
 
-bool CUtil::MediaPlayHack(const char* szPath1, const CStdString& folderPath)
-{
-    // Hack to play videos in gamers without using the video menus, to keep the look consistent and everything in 1 menu.
-    // Check for video files if the titleid matches what am looking for.
-    DWORD TitleId = CUtil::GetXbeID(szPath1);
-    CStdString strTitleID;
-    strTitleID.Format("%08X", TitleId);
-
-    if (strTitleID == _T("4C464456"))
-    {
-        CLog::Log(LOGDEBUG, "Found video titleid: %s\n", strTitleID.c_str());
-        const TCHAR* videoExtensions = _T(g_settings.m_videoExtensions);
-        const TCHAR* searchPattern = _T("\\*");
-        CStdString concatenatedPath = folderPath + searchPattern;
-        WIN32_FIND_DATA findData;
-        HANDLE hFind = FindFirstFile(concatenatedPath, &findData);
-        if (hFind != INVALID_HANDLE_VALUE)
-        {
-            do
-            {
-                if (!(findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
-                {
-                    const TCHAR* fileName = findData.cFileName;
-                    const TCHAR* fileExtension = _tcsrchr(fileName, _T('.'));
-                    if (fileExtension && _tcsstr(videoExtensions, fileExtension))
-                    {
-                        CStdString videoFilePath;
-                        URIUtils::AddFileToFolder(folderPath, fileName, videoFilePath);
-                        
+		if (hFind != INVALID_HANDLE_VALUE)
+		{
+			do
+			{
+				if (!(findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
+				{
+					const char* fileName = findData.cFileName;
+					const char* fileExtension = strrchr(fileName, '.');
+					if (fileExtension && strstr(videoExtensions, fileExtension))
+					{
+						CStdString videoFilePath;
+						URIUtils::AddFileToFolder(folderPath, fileName, videoFilePath);
 						CLog::Log(LOGDEBUG, "Found video file: %s\n", fileName);
-                        
-						UpdateXBELastPlayed(szPath1);
+
+						UpdateLastPlayedAndXBEPath(xbePath, folderPath);
 						Sleep(400);
-                        CBuiltins::Execute("Skin.SetBool(HomeReloadCustoms)");
-                        CBuiltins::Execute(CStdString("PlayMedia(") + videoFilePath + ")");
+						CBuiltins::Execute("Skin.SetBool(HomeReloadCustoms)");
+						CBuiltins::Execute(CStdString("PlayMedia(") + videoFilePath + ")");
+						CBuiltins::Execute("PlayerControl(RepeatOff)");
 						// CLog::Log(LOGDEBUG, "Playing video file: %s\n", fileName);
-                        return true;
-                    }
-                }
-            } while (FindNextFile(hFind, &findData) != 0);
-            FindClose(hFind);
-        }
-    }
-    return false;
+						FindClose(hFind);
+						return true;
+					}
+				}
+			} while (FindNextFile(hFind, &findData) != 0);
+			FindClose(hFind);
+		}
+	}
+	return false;
+}
+
+void CUtil::SendToXBDStats(const CStdString& xbePath)
+{
+	CStdString strTitleID, strTitleName;
+	CProgramDatabase m_database;
+	strTitleID.Format("%08X", CUtil::GetXbeID(xbePath));
+	CStdString ipaddress = g_guiSettings.GetString("discord.xbdstatsip");
+	int port = atoi(g_guiSettings.GetString("discord.xbdstatsport"));
+
+	bool dbOpened = m_database.Open();
+	if (!dbOpened)
+		CLog::Log(LOGERROR, "Error: Failed to open myprograms6.db.");
+
+	bool foundTitle = dbOpened && m_database.getTitleName(xbePath, strTitleName);
+	if (!foundTitle)
+	{
+		CLog::Log(LOGWARNING, "Title not found in database for %s. Using xbe title name.", xbePath.c_str());
+		GetXBEDescription(xbePath, strTitleName);
+	}
+	if (dbOpened)
+		m_database.Close();
+
+	char message[128];
+	if (xbePath.IsEmpty())
+		snprintf(message, sizeof(message), "{\"id\":\"\"}");
+	else if (g_guiSettings.GetBool("discord.xbdstatsforcenames"))
+		snprintf(message, sizeof(message), "{\"id\":\"%s\", \"name\":\"%s\"}", strTitleID.c_str(), strTitleName.c_str());
+	else
+		snprintf(message, sizeof(message), "{\"id\":\"%s\"}", strTitleID.c_str());
+
+	// UDP
+	SOCKET sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+	if (sock == INVALID_SOCKET)
+	{
+		CLog::Log(LOGERROR, "Failed to create UDP socket for SendToXBDStats");
+		return;
+	}
+
+	sockaddr_in addr;
+	addr.sin_family = AF_INET;
+	addr.sin_port = htons(port);
+	addr.sin_addr.s_addr = inet_addr(ipaddress.c_str());
+
+	int sentBytes = sendto(sock, message, strlen(message), 0, (sockaddr*)&addr, sizeof(addr));
+	if (sentBytes == SOCKET_ERROR)
+	{
+		CLog::Log(LOGERROR, "UDP send failed. Falling back to TCP...");
+		closesocket(sock);
+
+		// TCP fallback
+		sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+		if (sock == INVALID_SOCKET)
+		{
+			CLog::Log(LOGERROR, "Failed to create TCP socket. Error: %d", WSAGetLastError());
+			return;
+		}
+
+		addr.sin_port = htons(port + 1);
+
+		CLog::Log(LOGINFO, "Connecting to XBDStats server at %s:%d", ipaddress.c_str(), port + 1);
+		if (connect(sock, (sockaddr*)&addr, sizeof(addr)) == SOCKET_ERROR)
+		{
+			CLog::Log(LOGERROR, "Failed to connect via TCP. Error: %d", WSAGetLastError());
+		}
+		else
+		{
+			CLog::Log(LOGINFO, "Connected to XBDStats server. Sending message...");
+			sentBytes = send(sock, message, strlen(message), 0);
+			if (sentBytes == SOCKET_ERROR)
+				CLog::Log(LOGERROR, "Failed to send TCP message. Error: %d", WSAGetLastError());
+			else
+				CLog::Log(LOGINFO, "TCP fallback message sent successfully (%d bytes)", sentBytes);
+		}
+	}
+	else
+	{
+		CLog::Log(LOGINFO, "UDP message sent successfully (%d bytes)", sentBytes);
+	}
+
+	closesocket(sock);
 }
 
 void CUtil::RunXBE(const char* szPath1, char* szParameters, F_VIDEO ForceVideo, F_COUNTRY ForceCountry, CUSTOM_LAUNCH_DATA* pData)
 {
-    CStdString xbePath(szPath1);
+	CStdString xbePath(szPath1);
 	CStdString folderPath;
 	URIUtils::GetDirectory(xbePath, folderPath);
-	
-    if (MediaPlayHack(xbePath, folderPath))
-        return;
 
-    // Update last played (this is in this file so the home screen updates the database)
-    UpdateXBELastPlayed(xbePath);
-	Sleep(200);
+	if (MediaPlayHack(xbePath, folderPath))
+		return;
 
-	// Check for alt xbe from the database and run it instead.
-	CStdString AltXBEPath = UpdateXBEPath(xbePath);
-	CStdString strXBEFullpath;
-	URIUtils::AddFileToFolder(folderPath, AltXBEPath, strXBEFullpath);
-	if (CFile::Exists(strXBEFullpath))
-		xbePath = strXBEFullpath;
-	Sleep(200);
+	// Update last played and alt xbe path
+	xbePath = UpdateLastPlayedAndXBEPath(xbePath, folderPath);
 
-	// check if locked
+	// Check if locked
 	// if (g_settings.GetCurrentProfile().programsLocked() && 
-			// g_settings.GetMasterProfile().getLockMode() != LOCK_MODE_EVERYONE)
+	// g_settings.GetMasterProfile().getLockMode() != LOCK_MODE_EVERYONE)
 	// if (!g_passwordManager.IsMasterLockUnlocked(true))
 	// return;
 
-	/// \brief Runs an executable file
-	/// \param szPath1 Path of executable to run
-	/// \param szParameters Any parameters to pass to the executable being run
-	g_application.PrintXBEToLCD(xbePath); //write to LCD
+	// \brief Runs an executable file
+	// \param xbePath Path of executable to run
+	// \param szParameters Any parameters to pass to the executable being run
+	g_application.PrintXBEToLCD(xbePath); // Write to LCD
 	
-	Sleep(600); //and wait a little bit to execute
+	// check if discord stats is enabled
+	if (g_guiSettings.GetBool("discord.xbdstats"))
+		SendToXBDStats(xbePath);
+	
+	Sleep(600); // Wait a bit before executing
 	
 	char szPath[1024];
 	strcpy(szPath, _P(xbePath).c_str());
@@ -4305,16 +4366,17 @@ void CUtil::RunXBE(const char* szPath1, char* szParameters, F_VIDEO ForceVideo, 
 	}
 
 	if (strncmp(szPath, "Q:", 2) == 0)
-	{ // may aswell support the virtual drive as well...
+	{
+		// Support for the virtual drive
 		CStdString strPath;
-		// home dir is xbe dir
+		// Home dir is xbe dir
 		GetHomePath(strPath);
 		if (!URIUtils::HasSlashAtEnd(strPath))
-		strPath += "\\";
+			strPath += "\\";
 		if (szPath[2] == '\\')
-		strPath += szPath + 3;
+			strPath += szPath + 3;
 		else
-		strPath += szPath + 2;
+			strPath += szPath + 2;
 		strcpy(szPath, strPath.c_str());
 	}
 
@@ -4337,7 +4399,7 @@ void CUtil::RunXBE(const char* szPath1, char* szParameters, F_VIDEO ForceVideo, 
 			CIoSupport::GetPartition(szDrive[0], szDevicePath);
 
 			strcat(szDevicePath, szDirectory);
-			wsprintf(szXbePath, "d:\\%s", szXbe);
+			wsprintf(szXbePath, "D:\\%s", szXbe);
 
 #ifdef HAS_XBOX_HARDWARE
 			g_application.Stop(false);
@@ -4347,19 +4409,19 @@ void CUtil::RunXBE(const char* szPath1, char* szParameters, F_VIDEO ForceVideo, 
 		}
 	}
 
-	CLog::Log(LOGERROR, "Unable to run xbe : %s", szPath);
+	CLog::Log(LOGERROR, "Unable to run xbe: %s", szPath);
 }
 
 void CUtil::LaunchXbe(const char* szPath, const char* szXbe, const char* szParameters, F_VIDEO ForceVideo, F_COUNTRY ForceCountry, CUSTOM_LAUNCH_DATA* pData)
 {
-	Sleep(2000);
 	CStdString strPath(_P(szPath));
-	// CLog::Log(LOGINFO, "Mapping xbe:%s %s", strPath.c_str(), szXbe);
+	CLog::Log(LOGINFO, "launch xbe: %s %s", strPath.c_str(), szXbe);
+	CLog::Log(LOGINFO, " mount %s as D:", strPath.c_str());
 
 #ifdef HAS_XBOX_HARDWARE
 	CIoSupport::RemapDriveLetter('D', const_cast<char*>(strPath.c_str()));
-	CLog::Log(LOGINFO, "Mounting %s as D:", strPath.c_str());
-	CLog::Log(LOGINFO, "Launching xbe:%s", szXbe);
+	
+	CLog::Log(LOGINFO, "launch xbe: %s", szXbe);
 
 	if (ForceVideo != VIDEO_NULL)
 	{
@@ -4521,4 +4583,21 @@ int CUtil::TranslateRomanNumeral(const char* roman_numeral)
 		decimal += 2 * last - temp_sum;
 	}
 	return decimal;
+}
+
+CStdString CUtil::GetWallpaperSettings()
+{
+  CStdString wallpaperSize = "720x405";
+  MEMORYSTATUS status;
+  GlobalMemoryStatus(&status);
+  if (status.dwTotalPhys > 67108864)
+   wallpaperSize = "953x536";
+
+  // Fetch skin settings
+  CStdString wallwidth  = g_infoManager.GetLabel(g_infoManager.TranslateString("skin.string(wallpaperwidth)"));
+  CStdString wallheight = g_infoManager.GetLabel(g_infoManager.TranslateString("skin.string(wallpaperheight)"));
+  if (!wallwidth.empty() && !wallheight.empty() && atoi(wallwidth.c_str()) > 7 && atoi(wallheight.c_str()) > 7)
+    wallpaperSize.Format("%sx%s", wallwidth.c_str(), wallheight.c_str());
+
+  return wallpaperSize;
 }

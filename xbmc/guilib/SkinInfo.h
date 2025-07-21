@@ -69,6 +69,11 @@ public:
    \return true if skin debugging (set via <debugging>true</debugging> in skin.xml) is enabled.
    */
   bool IsDebugging() const { return m_debugging; };
+  
+/*! \brief Return whether scan times is enabled
+   \return true if skin debugging (set via <showscantimes>true</showscantimes> in skin.xml) is enabled.
+   */
+  bool showScanTimes() const { return m_showscantimes; };
 
   /*! \brief Get the id of the first window to load
    The first window is generally Startup.xml unless it doesn't exist or if the skinner
@@ -143,6 +148,7 @@ protected:
   std::vector<CStartupWindow> m_startupWindows;
   bool m_onlyAnimateToHome;
   bool m_debugging;
+  bool m_showscantimes;
 
   float m_skinzoom;
 

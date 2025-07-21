@@ -82,6 +82,8 @@ bool CSysInfo::DoWork()
     GetHDDInfo(m_HDDModel, 
                           m_HDDSerial,
                           m_HDDFirmware,
+                          m_HDDUDMAMode,
+                          m_HDDSupportedUDMASMode,
                           m_HDDpw, 
                           m_HDDLockState);
   // don't check the DVD-ROM if we have already successfully retrieved its info, or it is specified
@@ -183,6 +185,12 @@ CStdString CSysInfo::TranslateInfo(int info) const
   case SYSTEM_HDD_FIRMWARE:
     if (m_hddRequest) return m_HDDFirmware;
     else return CInfoLoader::BusyInfo(info);
+  case SYSTEM_HDD_UDMA_MODE:
+    if (m_hddRequest) return m_HDDUDMAMode;
+    else return CInfoLoader::BusyInfo(info);
+  case SYSTEM_HDD_SUPPORTED_UDMA_MODE:
+    if (m_hddRequest) return m_HDDSupportedUDMASMode;
+    else return CInfoLoader::BusyInfo(info);
   case SYSTEM_HDD_PASSWORD:
     if (m_hddRequest) return m_HDDpw;
     else return CInfoLoader::BusyInfo(info);
@@ -235,6 +243,8 @@ void CSysInfo::Reset()
   m_HDDModel ="";
   m_HDDSerial="";
   m_HDDFirmware="";
+  m_HDDUDMAMode ="";
+  m_HDDSupportedUDMASMode ="";
   m_HDDpw ="";
   m_HDDLockState = "";
   m_DVDModel=""; 
@@ -717,7 +727,7 @@ bool CSysInfo::GetDVDInfo(CStdString& strDVDModel, CStdString& strDVDFirmware)
 
   return m_dvdRequest;
 }
-bool CSysInfo::GetHDDInfo(CStdString& strHDDModel, CStdString& strHDDSerial,CStdString& strHDDFirmware,CStdString& strHDDpw,CStdString& strHDDLockState)
+bool CSysInfo::GetHDDInfo(CStdString& strHDDModel, CStdString& strHDDSerial, CStdString& strHDDFirmware, CStdString& strHDDUDMAMode, CStdString& strHDDSupportedUDMASMode, CStdString& strHDDpw, CStdString& strHDDLockState)
 {
   XKHDD::ATA_COMMAND_OBJ hddcommand;
 
@@ -728,6 +738,7 @@ bool CSysInfo::GetHDDInfo(CStdString& strHDDModel, CStdString& strHDDSerial,CStd
 
   if (XKHDD::SendATACommand(XBOX_DEVICE_HDD, &hddcommand, IDE_COMMAND_READ))
   {
+	
     //Get Model Name
     CHAR lpsHDDModel[100] = "";
     XKHDD::GetIDEModel(hddcommand.DATA_BUFFER, lpsHDDModel);
@@ -742,6 +753,18 @@ bool CSysInfo::GetHDDInfo(CStdString& strHDDModel, CStdString& strHDDSerial,CStd
     CHAR lpsHDDFirmware[100] = "";
     XKHDD::GetIDEFirmWare(hddcommand.DATA_BUFFER, lpsHDDFirmware);
     strHDDFirmware.Format("%s", lpsHDDFirmware);
+
+    //Get UDMA Mode
+    XKHDD HDD;
+    if (HDD.SendATACommand(XBOX_DEVICE_HDD, &hddcommand, IDE_COMMAND_READ)) {
+      UCHAR UDMAMode = HDD.GetUDMAMode(hddcommand.DATA_BUFFER);
+      strHDDUDMAMode.Format("%d", static_cast<int>(UDMAMode));;
+    }
+    //Get Supported UDMA Mode
+    if (HDD.SendATACommand(XBOX_DEVICE_HDD, &hddcommand, IDE_COMMAND_READ)) {
+      UCHAR highestUDMAMode = HDD.GetSupportedUDMAMode(hddcommand.DATA_BUFFER);
+      strHDDSupportedUDMASMode.Format("%d", static_cast<int>(highestUDMAMode));
+    }
 
     //Print HDD Password...
     BYTE pbHDDPassword[32] = "";
@@ -1207,8 +1230,8 @@ CStdString CSysInfo::GetMPlayerVersion()
 CStdString CSysInfo::GetKernelVersion()
 {
   int ikrnl = XboxKrnlVersion->Qfe & 67;
-  //CLog::Log(LOGDEBUG, "- XBOX Kernel Qfe= %i", XboxKrnlVersion->Qfe);
-  //CLog::Log(LOGDEBUG, "- XBOX Kernel Drive FG result= %i", ikrnl);
+  CLog::Log(LOGDEBUG, "- XBOX Kernel Qfe= %i", XboxKrnlVersion->Qfe);
+  CLog::Log(LOGDEBUG, "- XBOX Kernel Drive FG result= %i", ikrnl);
   CStdString strKernel;
   strKernel.Format("%u.%u.%u.%u", XboxKrnlVersion->VersionMajor,XboxKrnlVersion->VersionMinor,XboxKrnlVersion->Build,XboxKrnlVersion->Qfe);
   return strKernel;

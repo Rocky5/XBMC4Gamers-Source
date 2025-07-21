@@ -62,6 +62,7 @@ void CSkinInfo::SetDefaults()
   m_Version = 1.0;
   m_skinzoom = 1.0f;
   m_debugging = false;
+  m_showscantimes = false;
   m_onlyAnimateToHome = true;
 }
 void CSkinInfo::Load(const CStdString& strSkinDir, bool loadIncludes)
@@ -87,6 +88,7 @@ void CSkinInfo::Load(const CStdString& strSkinDir, bool loadIncludes)
       XMLUtils::GetFloat(root, "effectslowdown", m_effectsSlowDown);
       XMLUtils::GetFloat(root, "zoom", m_skinzoom);
 	  XMLUtils::GetBoolean(root, "debugging", m_debugging);
+	  XMLUtils::GetBoolean(root, "showscantimes", m_showscantimes);
 
       // get the legacy parameter to tweak the control behaviour for old skins such as PM3
       XMLUtils::GetBoolean(root, "legacy", m_bLegacy);   

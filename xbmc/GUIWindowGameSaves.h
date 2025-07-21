@@ -38,6 +38,9 @@ protected:
   virtual bool OnClick(int iItem);
   virtual void GetContextButtons(int itemNumber, CContextButtons &buttons);
   virtual bool OnContextButton(int itemNumber, CONTEXT_BUTTON button);
+
+  virtual void ProcessMetaFile(CFileItem& item, const CStdString& value, CStdString& path);
+  
   //bool DownloadSaves(CFileItem item);
   bool m_bViewOutput;
   VECSOURCES m_shares;

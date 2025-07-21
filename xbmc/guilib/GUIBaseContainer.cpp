@@ -1103,7 +1103,11 @@ void CGUIBaseContainer::GetCacheOffsets(int &cacheBefore, int &cacheAfter)
   }
   else
   {
-    cacheBefore = m_cacheItems;
-    cacheAfter = m_cacheItems;
+    cacheBefore = m_cacheItems / 2;
+    cacheAfter = m_cacheItems / 2;
+
+    // Workaround for odd numbers
+    if (m_cacheItems % 2 != 0)
+      cacheAfter++;
   }
 }

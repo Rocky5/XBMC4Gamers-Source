@@ -29,6 +29,7 @@
 #include "LangInfo.h"
 #include "utils/URIUtils.h"
 #include "settings/Settings.h"
+#include "GUIInfoManager.h"
 
 using namespace XFILE;
 
@@ -37,7 +38,6 @@ CAdvancedSettings g_advancedSettings;
 CAdvancedSettings::CAdvancedSettings()
 {
   m_DisableModChipDetection = true;
-  m_bPowerSave = true;
 
   m_audioHeadRoom = 0;
   m_ac3Gain = 12.0f;
@@ -94,7 +94,7 @@ CAdvancedSettings::CAdvancedSettings()
   m_autoDetectPingTime = 30;
 
   m_songInfoDuration = 10;
-  m_busyDialogDelay = 2000;
+  m_busyDialogDelay = 4000;
   m_logLevel     = LOG_LEVEL_NORMAL;
   m_logLevelHint = LOG_LEVEL_NORMAL;
   m_cddbAddress = "freedb.freedb.org";
@@ -109,24 +109,22 @@ CAdvancedSettings::CAdvancedSettings()
   m_displayRemoteCodes = false;
   
   // resources images
-  m_bannerImage = "";
-  m_cdImage = "";
-  m_cdposterImage = "";
-  m_cdsmallImage = "";
-  m_dual3dImage = "";
-  m_fanartImage = "";
-  m_fanartblurImage = "";
-  m_fanartthumbImage = "";
-  m_fogImage = "";
-  m_iconImage = "";
-  m_opencaseImage = "";
-  m_posterImage = "";
-  m_postersmallImage = "";
-  m_synopsisImage = "";
-  m_thumbImage = "";
-  
-  // wallpapers
-  m_wallpaperImage = "";
+  m_bannerImage = "448x84";
+  m_cdImage = "256x256";
+  m_cdposterImage = "64x64";
+  m_cdsmallImage = "200x283";
+  m_dual3dImage = "256x256";
+  m_fanartImage = "640x360";
+  m_fanartblurImage = "220x124";
+  m_fanartthumbImage = "360x203";
+  m_fogImage = "8x8";
+  m_iconImage = "149x263";
+  m_opencaseImage = "149x263";
+  m_posterImage = "200x283";
+  m_postersmallImage = "64x91";
+  m_synopsisImage = "362x512";
+  m_thumbImage = "227x129";
+ 
 
   m_videoCleanDateTimeRegExp = "(.*[^ _\\,\\.\\(\\)\\[\\]\\-])[ _\\.\\(\\)\\[\\]\\-]+(19[0-9][0-9]|20[0-1][0-9])([ _\\,\\.\\(\\)\\[\\]\\-]|[^0-9]$)";
 
@@ -482,19 +480,10 @@ bool CAdvancedSettings::Load()
   XMLUtils::GetBoolean(pRootElement, "splash", m_splashImage);
   XMLUtils::GetBoolean(pRootElement, "removekernelpatch", m_videoPatch);
   XMLUtils::GetBoolean(pRootElement, "disablemodchipdetection", m_DisableModChipDetection);
-  XMLUtils::GetBoolean(pRootElement, "powersave", m_bPowerSave);
-  
+
   pElement = pRootElement->FirstChildElement("images");
   if (pElement)
-  { 
-    // Get wallpaper value
-    XMLUtils::GetString(pElement, "wallpaper", m_wallpaperImage);
-	
-	MEMORYSTATUS status;
-	GlobalMemoryStatus( &status );
-	if (status.dwTotalPhys > 67108864)
-		XMLUtils::GetString(pElement, "wallpaper_128mb", m_wallpaperImage);
-
+  {
     // Get <_resources> values
     pElement = pElement->FirstChildElement("_resources");
     if (pElement)

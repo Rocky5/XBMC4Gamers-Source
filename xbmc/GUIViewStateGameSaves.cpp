@@ -34,9 +34,9 @@ CGUIViewStateWindowGameSaves::CGUIViewStateWindowGameSaves(const CFileItemList& 
   /// NOTE:  GAME ID is saved to %T  (aka TITLE) and t         // Date is %J     %L is Label1
   /////////////
   AddSortMethod(SORT_METHOD_LABEL, 551,  LABEL_MASKS("%L", "%T", "%L", ""));  // Filename, Size | Foldername, empty
-  AddSortMethod(SORT_METHOD_TITLE, 560, LABEL_MASKS("%L", "%T", "%L", "%T"));  // Filename, TITLE | Foldername, TITLE
-  AddSortMethod(SORT_METHOD_DATE, 552, LABEL_MASKS("%L", "%J", "%L", "%J"));  // Filename, Date | Foldername, Date
-  AddSortMethod(SORT_METHOD_FILE, 561, LABEL_MASKS("%L", "%I", "%L", ""));  // Filename, Size | FolderName, empty
+  // AddSortMethod(SORT_METHOD_TITLE, 560, LABEL_MASKS("%L", "%T", "%L", "%T"));  // Filename, TITLE | Foldername, TITLE
+  // AddSortMethod(SORT_METHOD_DATE, 552, LABEL_MASKS("%L", "%J", "%L", "%J"));  // Filename, Date | Foldername, Date
+  // AddSortMethod(SORT_METHOD_FILE, 561, LABEL_MASKS("%L", "%I", "%L", ""));  // Filename, Size | FolderName, empty
   SetSortMethod(SORT_METHOD_LABEL);
 
   SetViewAsControl(DEFAULT_VIEW_LIST);
@@ -52,12 +52,38 @@ void CGUIViewStateWindowGameSaves::SaveViewState()
 
 VECSOURCES& CGUIViewStateWindowGameSaves::GetSources()
 {
-  m_sources.clear();
-  CMediaSource share;
-  share.strName = "Local GameSaves";
-  share.strPath = "E:\\udata";
-  share.m_iDriveType = CMediaSource::SOURCE_TYPE_LOCAL;
-  m_sources.push_back(share);
-  return CGUIViewState::GetSources();
-}
+	m_sources.clear();
 
+	// Check and add E:\udata if it exists.
+	if (CDirectory::Exists("E:\\udata"))
+	{
+		CMediaSource sourceE;
+		sourceE.strName = "Local E: Game Saves";
+		sourceE.strPath = "E:\\udata";
+		sourceE.m_iDriveType = CMediaSource::SOURCE_TYPE_LOCAL;
+		m_sources.push_back(sourceE);
+	}
+
+	// Check and add F:\udata if it exists.
+	if (CDirectory::Exists("F:\\udata"))
+	{
+		CMediaSource sourceF;
+		sourceF.strName = "Local F: Game Saves";
+		sourceF.strPath = "F:\\udata";
+		sourceF.m_iDriveType = CMediaSource::SOURCE_TYPE_LOCAL;
+		m_sources.push_back(sourceF);
+	}
+
+	// Check and add G:\udata if it exists.
+	if (CDirectory::Exists("G:\\udata"))
+	{
+		CMediaSource sourceG;
+		sourceG.strName = "Local G: Game Saves";
+		sourceG.strPath = "G:\\udata";
+		sourceG.m_iDriveType = CMediaSource::SOURCE_TYPE_LOCAL;
+		m_sources.push_back(sourceG);
+	}
+
+	// Return the sources (calls the base class GetSources()).
+	return CGUIViewState::GetSources();
+}

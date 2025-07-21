@@ -271,14 +271,6 @@ bool CPicture::CacheFanart(const CStdString& sourceUrl, const CStdString& destFi
   return CacheImage(sourceUrl, destFile, width, height);
 }
 
-bool CPicture::CacheWallpaper(const CStdString& sourceUrl, const CStdString& destFile, const int& height)
-{
-  // Assume 16:9 size
-  int width = height * 16 / 9;
-
-  return CacheImage(sourceUrl, destFile, width, height);
-}
-
 bool CPicture::CreateThumbnailFromMemory(const unsigned char* buffer, int bufSize, const CStdString& extension, const CStdString& thumbFile)
 {
   CLog::Log(LOGINFO, "Creating album thumb from memory: %s", thumbFile.c_str());

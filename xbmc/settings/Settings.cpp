@@ -177,6 +177,8 @@ bool CSettings::Load(bool& bXboxMediacenter, bool& bSettings)
   if (!LoadSettings(GetSettingsFile()))
   {
     CLog::Log(LOGERROR, "Unable to load %s, creating new %s with default values", GetSettingsFile().c_str(), GetSettingsFile().c_str());
+    CLog::Log(LOGERROR, "Backup was saved to P:\\guisettings_before_error.xml this will allow you to try recovering it.");
+	XFILE::CFile::Cache("Special://profile/guisettings.xml","Special://profile/guisettings_before_error.xml");
     Save();
     if (!(bSettings = Reset()))
       return false;
@@ -1786,25 +1788,22 @@ void CSettings::SetSkinBool(int setting, bool set)
 void CSettings::ResetSkinSettings()
 {
   CStdString currentSkin = g_guiSettings.GetString("lookandfeel.skin") + ".";
-  // clear all the settings and strings from this skin.
-  map<int, CSkinBool>::iterator it = m_skinBools.begin();
+
+  // Remove all the bool settings related to this skin
+  std::map<int, CSkinBool>::iterator it = m_skinBools.begin();
   while (it != m_skinBools.end())
   {
-    CStdString skinName = (*it).second.name;
-    if (skinName.Left(currentSkin.size()) == currentSkin)
-      (*it).second.value = false;
-
-    it++;
+    CStdString skinName = it->second.name;
+    it = m_skinBools.erase(it);
   }
-  map<int, CSkinString>::iterator it2 = m_skinStrings.begin();
+
+  std::map<int, CSkinString>::iterator it2 = m_skinStrings.begin();
   while (it2 != m_skinStrings.end())
   {
-    CStdString skinName = (*it2).second.name;
-    if (skinName.Left(currentSkin.size()) == currentSkin)
-      (*it2).second.value = "";
-
-    it2++;
+    CStdString skinName = it2->second.name;
+	it2 = m_skinStrings.erase(it2);
   }
+
   g_infoManager.ResetCache();
 }
 

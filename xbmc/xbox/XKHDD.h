@@ -80,6 +80,10 @@
 	#error ERR: Have to Define _WINDOWS or _XBOX !!
 #endif
 
+// UDMA Stuff
+#define PCI_CONFIG_ADDRESS 0xCF8
+#define PCI_CONFIG_DATA    0xCFC
+
 // Performs S.M.A.R.T cmd --> Requires valid bFeaturesReg, bCylLowReg, and bCylHighReg
 #define	ATA_SMART                 0xB0
 
@@ -341,6 +345,8 @@ public:
 	static VOID SpindownHarddisk(bool bSpinDown=true);
 
 	//Helper Functions to Parse Data from ATA IDENTIFY Command
+	static UCHAR GetSupportedUDMAMode(const UCHAR* dataBuffer);
+	static UCHAR GetUDMAMode(const UCHAR* dataBuffer);
 	static void	GetIDEModel(UCHAR* IDEData, LPSTR ModelString);
 	static void	GetIDESerial(UCHAR* IDEData, LPSTR SerialString);
 	static void	GetIDEFirmWare(UCHAR* IDEData, LPSTR FirmwareString);

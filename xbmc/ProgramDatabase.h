@@ -52,8 +52,10 @@ public:
   
   bool SetXBEType(const CStdString& strFilenameAndPath, const CStdString& strFilenamePath);
   CStdString GetXBEType(const CStdString& strFilenameAndPath);
+  bool GetFullOverview(CFileItem* item);
   
   bool SetLastPlayed(const CStdString& strFilenameAndPath);
+  bool getTitleName(const CStdString& strFileName, CStdString& strTitleName);
   
   CStdString ReplaceWith(const CStdString& strInput, CStdString& strtoReplace, CStdString& strtoReplaceWith);
   
@@ -64,6 +66,7 @@ public:
   bool SetDescription(const CStdString& strFileName1, const CStdString& strDescription);
   bool GetXBEPathByTitleId(const int idTitle, CStdString& strPathAndFilename);
 
+  int GetProgramInfoFull(CFileItem *item);
   int GetProgramInfo(CFileItem *item);
   bool AddProgramInfo(CFileItem *item, unsigned int titleID);
   bool UpdateProgramInfo(CFileItem *item, unsigned int titleID);
@@ -74,7 +77,7 @@ public:
 protected:
   virtual bool CreateTables();
   virtual bool UpdateOldVersion(int version);
-  virtual int GetMinVersion() const { return 7; };
+  virtual int GetMinVersion() const { return 8; };
 
   FILETIME TimeStampToLocalTime( unsigned __int64 timeStamp );
 };

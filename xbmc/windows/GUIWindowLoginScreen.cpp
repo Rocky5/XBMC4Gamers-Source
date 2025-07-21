@@ -278,7 +278,7 @@ void CGUIWindowLoginScreen::LoadProfile(unsigned int profile)
     g_windowManager.ChangeActiveWindow(WINDOW_LOGIN_SCREEN);
     g_settings.LoadProfile(profile);
 	g_graphicsContext.SetVideoResolution(g_guiSettings.m_LookAndFeelResolution, TRUE); // update resolution when logging into a profile that differs from the master profile.
-    g_application.getNetwork().SetupNetwork();
+    // g_application.getNetwork().SetupNetwork();
   }
   else
   {

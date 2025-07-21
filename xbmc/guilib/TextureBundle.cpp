@@ -114,7 +114,7 @@ bool CTextureBundle::OpenBundle()
     // if we are the theme bundle, we only load if the user has chosen
     // a valid theme (or the skin has a default one)
     CStdString themeXPR = g_guiSettings.GetString("lookandfeel.skintheme");
-    if (!themeXPR.IsEmpty() && themeXPR.CompareNoCase("SKINDEFAULT"))
+    if (!themeXPR.IsEmpty() && themeXPR.CompareNoCase("default"))
     {
       strPath = URIUtils::AddFileToFolder(g_graphicsContext.GetMediaDir(), "media");
       strPath = URIUtils::AddFileToFolder(strPath, themeXPR);

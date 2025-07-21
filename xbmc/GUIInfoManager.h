@@ -156,6 +156,8 @@ namespace INFO
 #define SYSTEM_HAS_DRIVE_G          149
 #define SYSTEM_HDD_SMART            150
 #define SYSTEM_HDD_TEMPERATURE      151
+#define SYSTEM_HDD_SUPPORTED_UDMA_MODE  1006
+#define SYSTEM_HDD_UDMA_MODE        1007
 #define SYSTEM_HDD_MODEL            152
 #define SYSTEM_HDD_SERIAL           153
 #define SYSTEM_HDD_FIRMWARE         154

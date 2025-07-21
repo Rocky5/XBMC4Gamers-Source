@@ -52,7 +52,6 @@ class CAdvancedSettings
     static void GetCustomExtensions(TiXmlElement *pRootElement, CStdString& extensions);
 
     bool m_DisableModChipDetection;
-    bool m_bPowerSave;
 
     int m_audioHeadRoom;
     float m_karaokeSyncDelay;
@@ -138,8 +137,6 @@ class CAdvancedSettings
     CStdString m_dual3dImage;
     CStdString m_iconImage;
     CStdString m_opencaseImage;
-	// wallpapers
-    CStdString m_wallpaperImage;
 	
     CStdString m_cachePath;
     bool m_displayRemoteCodes;

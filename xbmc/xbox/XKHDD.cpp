@@ -188,6 +188,34 @@ void XKHDD::GetIDEModel(UCHAR* IDEData, LPSTR ModelString)
 	CleanATAData((UCHAR*)ModelString, IDEData+HDD_MODEL_OFFSET, HDD_MODEL_LENGTH);
 }
 
+UCHAR XKHDD::GetSupportedUDMAMode(const UCHAR* dataBuffer) {
+	WORD supportedUDMABuffer = reinterpret_cast<const WORD*>(dataBuffer)[87];
+	UCHAR maxMode = 0;
+	for (int modeVal = 0; modeVal <= 6; modeVal++)
+	{
+		if (supportedUDMABuffer & (1 << modeVal))
+		{
+			maxMode = modeVal;
+		}
+	}
+	return maxMode;
+}
+
+UCHAR XKHDD::GetUDMAMode(const UCHAR* dataBuffer)
+{
+	WORD udmaModeBuffer = reinterpret_cast<const WORD*>(dataBuffer)[88];
+	UCHAR UDMAMode = 0;
+	for (int bits = 14; bits >= 8; bits--)
+	{
+		if (udmaModeBuffer & (1 << bits))
+		{
+			UDMAMode = bits - 8;
+			break;
+		}
+	}
+	return UDMAMode;
+}
+
 BOOL XKHDD::IsSmartSupported(UCHAR * IDEData)
 {
 	return ((WORD)*(IDEData + HDD_CMD_SUPPORT_OFFSET)) & 1;

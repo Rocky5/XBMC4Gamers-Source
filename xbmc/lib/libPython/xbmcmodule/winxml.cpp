@@ -60,7 +60,7 @@ namespace PYXBMC
 
     string strXMLname, strFallbackPath;
     string strDefault = "Default";
-    string resolution = "720p";
+    string resolution = "xml";
 
     if (!PyArg_ParseTuple(args, (char*)"OO|OO", &pyOXMLname, &pyOname, &pyDName, &pyRes)) return NULL;
 

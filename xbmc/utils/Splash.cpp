@@ -170,10 +170,6 @@ bool CSplash::Start()
 		CLog::Log(LOGDEBUG, "Splash disabled because an update was recently performed.");
 		return false;
 	}
-	if (g_infoManager.GetBool(g_infoManager.TranslateString("skin.hassetting(randomtheme)")) == 1)
-	{
-		return false;
-	}
 	m_ThemeSplash = "Special://root/skins/" + g_guiSettings.GetString("lookandfeel.skin") + "/extras/themes/splashes/" + URIUtils::ReplaceExtension(g_guiSettings.GetString("lookandfeel.skintheme"), ".png");
 	m_CustomSplash = "Special://root/custom_splash.png";
 	Create();

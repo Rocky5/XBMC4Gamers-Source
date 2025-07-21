@@ -115,7 +115,7 @@ void CGUIDialogProfileSettings::CreateSettings()
   if (m_strName != "Add User")
   {
     AddButton(8,20092);
-    AddButton(1,20093);
+    // AddButton(1,20093);
     AddButton(2,20065);
   }
 
